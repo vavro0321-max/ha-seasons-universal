@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.9.1 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.9.2 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -12,6 +12,20 @@ Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení je
 
 ![Ukážka](docs/preview.jpg)
 
+## Nové vo V1.9.2 – rozdiel medzi oblakmi a skutočnou hmlou
+
+**Zamračené neznamená hmla.** Nová verzia používa hmlovú vrstvu výhradne vtedy, keď vybraná Home Assistant entita `weather.*` hlási stav `fog` alebo `mist`. Ani vysoká vlhkosť, nízky rosný bod či 100 % vlhkosť z meteostanice už nezapínajú vizuálnu hmlu.
+
+- `sunny`, `clear-night` → čistá krajina bez oblačných alebo hmlových vrstiev
+- `partlycloudy` → len niekoľko mrakov v hornej časti oblohy, nie nad domami
+- `cloudy` → oblačná obloha a jemne tlmené farby, ale **bez oparu na budovách, cestách a horách**
+- `fog`, `mist` → viditeľná hmla, pokiaľ `fog_effect` nie je vypnuté
+- `rainy`, `pouring`, `snowy` → pôvodný dážď/sneh a oblačné nebo, bez dodatočnej hmly
+
+Hustota oblačnosti sa teraz odráža v samostatných oblačných vrstvách, obmedzených na horných 28 % obrazovky. Saturácia pri zamračenom počasí zostáva bližšia pôvodnej fotografii, aby nevyzerala mliečne.
+
+**Diagnostika:** Ak je aj po aktualizácii a pri `fog_effect: false` obraz zahmlený, môže ísť o hmlu napevno zachytenú v samotnej použitej fotografii, o znečistenie skla alebo o starý JavaScript uložený v cache prehliadača. Samotný nový filter nedokáže odstrániť hmlu, ktorá už je súčasťou pixelov obrázka. Pre úplne čistý záber môžeš nahrať vlastnú fotografiu pomocou poľa `custom_image` alebo piatich sezónnych obrázkov.
+
 ## V1.9.1 – vlastná fotografia, štyri sezóny a čistejšie nebo
 
 Používateľ si môže bez zásahu do JavaScriptu vybrať **vlastný obrázok** ako celoročné pozadie alebo nastaviť vlastné obrázky pre **jar, leto, jeseň a zimu**, prípadne zimu bez snehu. Obrázky sú zadávané cez grafický editor karty ako odkazy na miestne fotografie, napríklad `/local/moja-krajina.jpg`, alebo na HTTPS obrázky. Na Home Assistante patrí súbor `moja-krajina.jpg` do `/config/www/`.
@@ -20,7 +34,7 @@ Používateľ si môže bez zásahu do JavaScriptu vybrať **vlastný obrázok**
 
 Efekty fixné pre našu dedinu – osvetlené okná budov, pozície pôvodného tieňa stromu a ďalšie lokálne prvky – sa pri ľubovoľnom cudzom obrázku skryjú, aby nesvietili na nesprávnych miestach. Slnko a Mesiac ostávajú voliteľné. Používateľ môže intenzitu sezónneho zafarbenia nastaviť v grafickom editore. Ak je vlastná fotografia nedostupná, doplnok sa vráti k pôvodnému pozadiu.
 
-Pri vylepšení V1.9.1 sú **rozmazané cloud vrstvy slabšie**, aby čiastočne zamračená obloha nepôsobila ako hmla. Odhadovaná hmla z vlhkosti/rosného bodu sa kreslí len jemne; výrazná je hlavne vtedy, keď entita `weather.*` priamo hlási `fog`. Časť prirodzeného oparu, ktorá je natrvalo na fotografii, zostáva súčasťou samotného obrázka.
+V1.9.1 ešte zobrazovala slabý odhadovaný opar podľa vlhkosti. **V1.9.2 toto správanie úplne odstránila**: hmla sa zapne výlučne pri hlásenom stave `fog` alebo `mist`. Opar natrvalo zakomponovaný do fotografie sa tým nemení.
 
 Príklad základného nastavenia:
 
@@ -113,7 +127,7 @@ Používame štvoricu používateľom schválených pohľadov na rovnakú dedinu
 
 - **Jar:** strom kvitne počas celej jari. **Leto:** zelený strom. **Jeseň:** holé vetvy. **Zima:** bez lístia, zasnežená alebo suchá podľa podmienok.
 - **Slnko:** vypočítané podľa `sun.sun` a jeho výšky; teplé svitanie a západ, plynulé zosvetľovanie/stmievanie. Poloha grafického slnka v panoráme je ilustračná.
-- **Počasie:** jasná, polooblačná a zamračená obloha, statické oblaky, hmla podľa `weather.fog` alebo vlhkosti/rosného bodu, dážď podľa intenzity a hlásené sneženie.
+- **Počasie:** jasná, polooblačná a zamračená obloha, statické oblaky na oblohe a hmla výlučne podľa `weather.fog`/`weather.mist`, dážď podľa intenzity a hlásené sneženie.
 - **Mesiac a noc:** mesačný svit podľa fázy a oblačnosti, hviezdy pri jasnej noci a postupne rozsvietené okná kostola/dediny.
 - **Sneh a námraza:** orientačný vzhľad podľa vonkajšej teploty a hláseného sneženia, bez tvrdenia, že ide o meranú vrstvu.
 - **Kamery:** šetrič sa pri otvorenom `#kamery` nespustí; po návrate sa 30 sekúnd odpočítava odznova.
@@ -171,7 +185,7 @@ Pôvodné dve fotografie `universal-landscape.webp` a `universal-landscape-leafl
 Pôvodnú fotografiu s kostolíkom **naľavo**, dedinou, cestou a horami používame ako spoločné pozadie. Zdrojová fotografia `dist/assets/universal-landscape.webp` je pre jar, leto a skorú jeseň; pixelovo podobná odvodená verzia `dist/assets/universal-landscape-leafless.webp` odstráni lístie od 10. novembra a v zime. Poloha kostolíka, hôr a domov zostáva zachovaná.
 
 Doplnok ďalej používa plynulý deň/noc, mesačný svit, oblačnosť, teplotne odhadovanú námrazu a sneh, nočné svetlá a pozastavenie šetriča na `#kamery`. Teraz pribudla:
-- statická hmla podľa `weather.fog`; voliteľne orientačný výpočet z vysokej vonkajšej vlhkosti, rosného bodu a slabého vetra
+- statická hmla výhradne pri `weather.* = fog` alebo `mist` (od V1.9.2 sa odhad podľa vlhkosti nepoužíva)
 - suchšia hnedá neskoro-jesenná tráva a zimná vegetácia
 - letné/jarné/jesenné farby z tej istej fotografie
 
@@ -198,7 +212,7 @@ entities:
   dewpoint: sensor.ws2900_v2_02_01_dewpoint
 ```
 
-Poznámka: hmla a snehová vrstva založené na senzoroch sú vizuálne odhady, nie fyzické meranie hmly či výšky snehu.
+Poznámka: od V1.9.2 sa hmla zobrazuje len pri hlásení `fog`/`mist`, zatiaľ čo snehová vrstva môže zostať vizuálnym odhadom, nie meraním výšky snehu.
 
 ## Nové vo V1.4 – ročné obdobia majú odlišnú krajinu
 
