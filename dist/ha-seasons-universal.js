@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.8.0 — optional waste collection dates and enhanced moonlit night visibility. */
-const VERSION='1.8.0';
+/* HA Seasons Universal 1.9.0 — personal backgrounds with adaptive seasonal styling. */
+const VERSION='1.9.0';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -178,6 +178,42 @@ function unifiedAssetName(d){
   if(['spring','summer','autumn'].includes(scene))return 'universal-landscape-'+scene+'.webp';
   return 'universal-landscape-autumn.webp';
 }
+
+// User-supplied backgrounds: URLs are interpreted by the browser, never injected into HTML.
+// Same-origin /local/... images work without CORS; external HTTPS must be browser-accessible.
+function customPhotoUrl(value){
+  if(typeof value!=='string')return null;
+  const url=value.trim();
+  if(!url||url.length>2048||/[\u0000-\u001f<>"'\\]/.test(url))return null;
+  if(url.startsWith('/')&&!url.startsWith('//'))return url;
+  if(/^https?:\/\//i.test(url)){
+    try{const parsed=new URL(url);return ['http:','https:'].includes(parsed.protocol)?parsed.href:null;}catch{return null;}
+  }
+  return null;
+}
+function chooseCustomPhoto(config,d,bad){
+  const photos=config?.custom_images&&typeof config.custom_images==='object'?config.custom_images:{};
+  const scene=visualSeason(d.scene);
+  const winterDry=scene==='winter'&&d.precipitation!=='snow'&&d.snowCover<.38;
+  const wanted=winterDry?'winter_dry':scene;
+  const usable=v=>{const src=customPhotoUrl(v);return src&&!(bad?.has(src))?src:null;};
+  const specific=usable(photos[wanted])||(wanted==='winter_dry'?usable(photos.winter):null);
+  if(specific)return {src:specific,graded:false,scene,seasonPhoto:true};
+  const base=usable(config?.custom_image);
+  if(base)return {src:base,graded:true,scene,seasonPhoto:false};
+  for(const key of ['spring','summer','autumn','winter','winter_dry']){
+    const src=usable(photos[key]);
+    if(src)return {src,graded:true,scene,seasonPhoto:false};
+  }
+  return null;
+}
+const CUSTOM_SEASON_COLOR={
+  spring:'linear-gradient(180deg,rgba(255,207,224,.32),rgba(149,220,141,.23))',
+  summer:'linear-gradient(180deg,rgba(255,224,148,.22),rgba(74,181,78,.30))',
+  autumn:'linear-gradient(180deg,rgba(234,153,82,.24),rgba(165,92,47,.51))',
+  winter:'linear-gradient(180deg,rgba(178,215,251,.23),rgba(187,219,243,.51))'
+};
+
 function assetName(d){
   // A single landscape stays mounted throughout the entire solar cycle. Switching
   // day/night pictures here causes visibly doubled trees, mountains and houses.
@@ -275,6 +311,10 @@ const OVERLAY_STYLE=`
 :host{all:initial;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#fff;position:fixed;inset:0;z-index:2147483000;pointer-events:auto;}
 .screen{position:fixed;inset:0;width:100vw;width:100dvw;height:100vh;height:100dvh;overflow:hidden;background:#081729;touch-action:manipulation;user-select:none;cursor:pointer;--glass-opacity:.48;--font-factor:1;isolation:isolate}
 .photo{position:absolute;inset:0;background-size:cover;background-position:center center;background-repeat:no-repeat;transition:filter 5s ease,background-image .5s linear}
+.customseason,.customsnow,.customfog{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 5s ease,background 5s ease;}
+.customseason{mix-blend-mode:soft-light;}
+.customsnow{background:linear-gradient(180deg,transparent 22%,rgba(214,230,242,.12) 48%,rgba(239,248,255,.62) 100%);mix-blend-mode:screen;}
+.customfog{background:radial-gradient(ellipse 75% 36% at 50% 64%,rgba(217,231,236,.70),rgba(214,228,235,.22) 64%,transparent 100%);mix-blend-mode:screen;}
 .tint{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,rgba(3,13,30,.17),rgba(6,17,37,.03) 45%,rgba(1,11,24,.30));}
 .nightveil{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(2,9,35,.26) 0%,rgba(4,12,34,.17) 45%,rgba(0,3,19,.24) 100%);transition:opacity 6s ease;}
 .skyshade{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(1,8,24,.92),rgba(3,15,33,.53) 34%,rgba(4,15,30,.1) 61%,transparent 78%);transition:opacity 6s ease;}
@@ -361,7 +401,7 @@ const OVERLAY_STYLE=`
 const SCENE_SVG='<svg class="scene-map" viewBox="0 0 1672 941" aria-hidden="true" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">\n <defs><filter id="haWindowBlur" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="5"/></filter><linearGradient id="haSnowFall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7fcff" stop-opacity="0"/><stop offset=".25" stop-color="#f7fcff" stop-opacity=".09"/><stop offset="1" stop-color="#ecf6ff" stop-opacity=".56"/></linearGradient></defs>\n <g class="frost-cover" opacity="0"><g class="frost-normal"><path d="M0 690 C190 717 415 750 710 759 C950 764 1120 739 1270 751 C1400 773 1565 802 1672 823 L1672 941 L0 941 Z" fill="url(#haSnowFall)"/><path d="M0 804 C240 815 400 833 638 822 M0 865 C300 870 530 884 704 856 M1435 810 C1545 800 1613 818 1672 839" fill="none" stroke="#e9f9ff" stroke-width="14" opacity=".30"/></g><g class="frost-winter"><path d="M0 665 C220 690 412 713 635 722 C930 733 1090 694 1290 709 C1440 715 1565 744 1672 750 L1672 941 L0 941 Z" fill="url(#haSnowFall)"/></g></g>\n <g class="village-lights" opacity="0"><g class="lights-normal"><ellipse cx="1427" cy="655" rx="11.6" ry="14.3" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1427" cy="655" rx="3.4" ry="5.1" fill="#ffe4a7"/><ellipse cx="1467" cy="657" rx="11.6" ry="14.3" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1467" cy="657" rx="3.4" ry="5.1" fill="#ffe4a7"/><ellipse cx="1504" cy="657" rx="10.9" ry="13.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1504" cy="657" rx="3.2" ry="4.8" fill="#ffe4a7"/><ellipse cx="1573" cy="657" rx="10.9" ry="13.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1573" cy="657" rx="3.2" ry="4.8" fill="#ffe4a7"/><ellipse cx="1427" cy="522" rx="8.5" ry="10.5" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1427" cy="522" rx="2.5" ry="3.8" fill="#ffe4a7"/><ellipse cx="1456" cy="531" rx="8.5" ry="10.5" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1456" cy="531" rx="2.5" ry="3.8" fill="#ffe4a7"/><ellipse cx="1361" cy="682" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1361" cy="682" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1319" cy="647" rx="7.5" ry="9.2" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1319" cy="647" rx="2.2" ry="3.3" fill="#ffe4a7"/><ellipse cx="1356" cy="648" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1356" cy="648" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="527" cy="685" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="525.6" y="683.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="549" cy="680" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="547.6" y="678.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="569" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="567.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="609" cy="685" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="607.6" y="683.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="640" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="638.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="667" cy="677" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="665.6" y="675.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="779" cy="681" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="777.6" y="679.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="803" cy="676" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="801.6" y="674.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="834" cy="681" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="832.6" y="679.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="861" cy="667" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="859.6" y="665.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="897" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="895.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="922" cy="673" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="920.6" y="671.5" width="2.8" height="3" fill="#ffd790"/></g><g class="lights-winter"><ellipse cx="1438" cy="594" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1438" cy="594" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1473" cy="595" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1473" cy="595" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1515" cy="597" rx="9.9" ry="12.2" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1515" cy="597" rx="2.9" ry="4.3" fill="#ffe4a7"/><ellipse cx="1575" cy="596" rx="10.2" ry="12.6" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1575" cy="596" rx="3.0" ry="4.5" fill="#ffe4a7"/><ellipse cx="1429" cy="420" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1429" cy="420" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="1344" cy="608" rx="9.5" ry="11.8" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1344" cy="608" rx="2.8" ry="4.2" fill="#ffe4a7"/><ellipse cx="1303" cy="584" rx="7.1" ry="8.8" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1303" cy="584" rx="2.1" ry="3.2" fill="#ffe4a7"/><ellipse cx="1385" cy="587" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1385" cy="587" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="496" cy="631" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="494.6" y="629.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="532" cy="624" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="530.6" y="622.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="563" cy="624" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="561.6" y="622.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="582" cy="620" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="580.6" y="618.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="773" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="771.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="807" cy="613" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="805.6" y="611.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="837" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="835.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="883" cy="608" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="881.6" y="606.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="927" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="925.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="961" cy="619" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="959.6" y="617.5" width="2.8" height="3" fill="#ffd790"/></g></g>\n</svg>';
 class HASeasonsUniversalCard extends HTMLElement {
   constructor(){super();this.attachShadow({mode:'open'}).innerHTML=`<style>${STYLE}</style><div id="anchor" aria-hidden="true"></div>`;this._config={idle_seconds:30,source:'auto',layout:'auto',style:'glass'};this._last=Date.now();this._weather=null;this._onActivity=this._onActivity.bind(this);this._onKey=this._onKey.bind(this);this._onTick=this._onTick.bind(this);this._onNavigation=this._onNavigation.bind(this);}
-  setConfig(config){if(config&&typeof config!=='object')throw new Error('Konfigurácia musí byť objekt');this._config={idle_seconds:30,source:'auto',scene:'auto',layout:'auto',style:'glass',show_clock:true,show_date:true,show_temperature:true,show_heating:true,show_nameday:true,show_lights:true,show_weather:true,show_sun:true,show_moon:true,precipitation_animation:true,leaf_animation:true,night_lights:true,moonlight_effect:true,snow_cover:true,pause_on_camera:true,season_colors:true,unified_scene:true,fog_effect:true,night_brightness:1.1,show_waste:true,...config};this._last=Date.now();}
+  setConfig(config){if(config&&typeof config!=='object')throw new Error('Konfigurácia musí byť objekt');this._config={idle_seconds:30,source:'auto',scene:'auto',layout:'auto',style:'glass',show_clock:true,show_date:true,show_temperature:true,show_heating:true,show_nameday:true,show_lights:true,show_weather:true,show_sun:true,show_moon:true,precipitation_animation:true,leaf_animation:true,night_lights:true,moonlight_effect:true,snow_cover:true,pause_on_camera:true,season_colors:true,unified_scene:true,fog_effect:true,night_brightness:1.1,show_waste:true,custom_image:'',custom_images:{},custom_season_strength:.8,custom_sky_objects:true,...config};this._last=Date.now();}
   set hass(value){this._hass=value;if(this._visible)this._update();}
   getCardSize(){return 1;}
   static getStubConfig(){return {idle_seconds:30,source:'auto',layout:'auto'};}
@@ -393,13 +433,29 @@ class HASeasonsUniversalCard extends HTMLElement {
     if(this._cameraActive()){if(this._visible)this._close();this._last=Date.now();return;}
     if(this._visible){this._update();return;}if(document.hidden||this._editing()||!this._hass)return;
     if(Date.now()-this._last>=clamp(Number(this._config.idle_seconds)||30,5,3600)*1000)this._open();}
-  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo"></div><div class="cloudbank"></div><div class="tint"></div><div class="nightveil"></div><div class="skyshade"></div><div class="moonwash"></div><div class="cloudshade"></div><div class="warmth"></div><div class="stars"></div><div class="sceneryfx">${SCENE_SVG}</div><div class="unifiedfx">${UNIFIED_SCENE_FX}</div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas><div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="wastebar" aria-live="off"><div class="wasteitem" data-waste="municipal"><span>🗑️</span><strong>Komunálny odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div><div class="wasteitem" data-waste="recycling"><span>♻️</span><strong>Separovaný odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
+  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo"></div><div class="customseason"></div><div class="customsnow"></div><div class="customfog"></div><div class="cloudbank"></div><div class="tint"></div><div class="nightveil"></div><div class="skyshade"></div><div class="moonwash"></div><div class="cloudshade"></div><div class="warmth"></div><div class="stars"></div><div class="sceneryfx">${SCENE_SVG}</div><div class="unifiedfx">${UNIFIED_SCENE_FX}</div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas><div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="wastebar" aria-live="off"><div class="wasteitem" data-waste="municipal"><span>🗑️</span><strong>Komunálny odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div><div class="wasteitem" data-waste="recycling"><span>♻️</span><strong>Separovaný odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
     document.body.appendChild(this._host);this._root=this._host.shadowRoot;this._lastImage=null;
     const leaves=this._root.querySelector('.leaves');for(let i=0;i<12;i++){const n=document.createElement('i');n.className='leaf';n.style.setProperty('--top',`${7+(i%5)*6}%`);n.style.setProperty('--left',`${2+(i*13)%32}%`);n.style.setProperty('--delay',`${-(i%7)*.5}s`);leaves.append(n);}
   }
   _open(){if(this._visible||this._cameraActive())return;this._visible=true;this._make();this._update();this._animate();}
   showForDemo(){this._last=Date.now();this._open();}
   _close(){this._visible=false;if(this._raf)cancelAnimationFrame(this._raf);this._raf=null;this._host?.remove();this._host=null;this._root=null;}
+  _setCustomPhoto(src,d){
+    const photo=this._root?.querySelector('.photo');
+    if(!photo||this._lastImage==='custom:'+src)return;
+    this._lastImage='custom:'+src;
+    const token=this._imageToken=(this._imageToken||0)+1,root=this._root;
+    photo.style.backgroundImage='url('+JSON.stringify(src)+')';
+    const probe=new Image();
+    probe.onerror=()=>{
+      if(this._root!==root||this._imageToken!==token)return;
+      (this._badCustomImages??(this._badCustomImages=new Set())).add(src);
+      this._lastImage=null;
+      // Missing/blocked custom photo must not leave the screen blank.
+      this._update();
+    };
+    probe.src=src;
+  }
   _setSeasonPhoto(image,d){
     const photo=this._root?.querySelector('.photo');if(!photo)return;
     const visual=visualSeason(d.scene);
@@ -477,9 +533,20 @@ class HASeasonsUniversalCard extends HTMLElement {
     const screen=el('.screen');screen.dataset.season=visualSeason(d.scene);screen.dataset.weather=d.weather;screen.dataset.layout=['auto','compact','wide'].includes(this._config.layout)?this._config.layout:'auto';screen.dataset.style=this._config.style==='minimal'?'minimal':'glass';screen.style.setProperty('--glass-opacity',String(clamp(Number(this._config.glass_opacity??0.48),0.2,0.9)));screen.style.setProperty('--font-factor',String(({small:0.82,normal:1,large:1.15})[this._config.clock_size]||1));
     const photo=el('.photo');photo.style.backgroundSize=this._config.image_fit==='contain'?'contain':'cover';photo.style.backgroundPosition=`${clamp(Number(this._config.image_focus??55),0,100)}% center`;
     const preferred=unifiedAssetName(d);
-    const useUnified=this._config.unified_scene!==false&&!this._missingImages?.has(preferred);
+    const custom=chooseCustomPhoto(this._config,d,this._badCustomImages);
+    const usingCustom=!!custom;
+    const useUnified=!usingCustom&&this._config.unified_scene!==false&&!this._missingImages?.has(preferred);
     const image=useUnified?preferred:assetName(d);
-    this._setSeasonPhoto(image,d);
+    if(usingCustom)this._setCustomPhoto(custom.src,d);
+    else this._setSeasonPhoto(image,d);
+    const coat=el('.customseason'),frost=el('.customsnow'),fog=el('.customfog');
+    if(coat){
+      coat.style.background=usingCustom&&custom.graded?(CUSTOM_SEASON_COLOR[custom.scene]||CUSTOM_SEASON_COLOR.autumn):'none';
+      coat.style.opacity=usingCustom&&custom.graded&&this._config.season_colors!==false?
+        String(clamp(Number(this._config.custom_season_strength??.8),0,1.2)): '0';
+      frost.style.opacity=usingCustom&&this._config.snow_cover!==false?(d.snowCover*.70).toFixed(3):'0';
+      fog.style.opacity=usingCustom?(d.fogLevel*.65).toFixed(3):'0';
+    }
     const saturation=(d.clouds==='overcast'?.85:1.05)*(.82+.18*d.dayLight);
     // Soft gamma-like shadow lift reveals church, mountains and village at night
     // while sunlight, solar elevation, seasonal photos and day brightness stay unchanged.
@@ -499,7 +566,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     view.style.width=`${sw}px`;view.style.height=`${shh}px`;
     view.style.left=`${(bounds.width-sw)*clamp(Number(this._config.image_focus??55),0,100)/100}px`;
     view.style.top=`${(bounds.height-shh)/2}px`;
-    stage.style.display=isPhotoSeason&&!useUnified?'block':'none';
+    stage.style.display=isPhotoSeason&&!useUnified&&!usingCustom?'block':'none';
     const unifiedFx=el('.unifiedfx'),unifiedMap=el('.unified-map');
     unifiedFx.style.display=useUnified?'block':'none';
     if(useUnified){
@@ -519,11 +586,12 @@ class HASeasonsUniversalCard extends HTMLElement {
     view.querySelector('.frost-winter').style.display=winter?'block':'none';
     view.querySelector('.village-lights').style.opacity=this._config.night_lights===false?'0':(d.nightLight*(.35+.65*d.deepNight)).toFixed(3);
     view.querySelector('.frost-cover').style.opacity=this._config.snow_cover===false?'0':d.snowCover.toFixed(3);
+    const customSkyVisible=!usingCustom||this._config.custom_sky_objects!==false;
     const sun=el('.sun');const elev=d.solarElevation,az=d.azimuth??(d.p.hour*15+90);
     sun.style.left=`${clamp(12+(az-65)/230*76,8,92)}%`;sun.style.top=`${clamp(54-elev*1.5,8,59)}%`;
-    sun.style.opacity=(smoothstep(-4,3,elev)*(d.clouds==='overcast'?.05:d.clouds==='partly'?.23:.58)).toFixed(3);
-    const sh=el('.shadowTree');sh.style.opacity=(smoothstep(0,14,elev)*(d.clouds==='overcast'?.08:.52)).toFixed(3);sh.style.transform=`skewX(${clamp((180-az)*.22,-35,35)}deg) scaleX(${clamp(1.8-Math.max(0,elev)/65,.65,1.8)})`;
-    const moon=el('.moon');moon.style.opacity=(d.moonlight*(d.clouds==='overcast'?.04:1)).toFixed(3);
+    sun.style.opacity=customSkyVisible?(smoothstep(-4,3,elev)*(d.clouds==='overcast'?.05:d.clouds==='partly'?.23:.58)).toFixed(3):'0';
+    const sh=el('.shadowTree');sh.style.opacity=usingCustom?'0':(smoothstep(0,14,elev)*(d.clouds==='overcast'?.08:.52)).toFixed(3);sh.style.transform=`skewX(${clamp((180-az)*.22,-35,35)}deg) scaleX(${clamp(1.8-Math.max(0,elev)/65,.65,1.8)})`;
+    const moon=el('.moon');moon.style.opacity=customSkyVisible?(d.moonlight*(d.clouds==='overcast'?.04:1)).toFixed(3):'0';
     const phase=d.lunar;if(d.nightLight>.01)moonDraw(moon,phase.index);
     el('.clock').textContent=now.toLocaleTimeString('sk-SK',{timeZone:this._hass.config?.time_zone||undefined,hour:'2-digit',minute:'2-digit'});
     el('.date').textContent=now.toLocaleDateString('sk-SK',{timeZone:this._hass.config?.time_zone||undefined,weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -547,7 +615,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     el('[data-field="set"]').textContent=`🌇 ${fmtTime(this._hass,state(this._hass,'sun.sun')?.attributes?.next_setting)}`;
     el('[data-field="moon"]').textContent=`🌙 ${phase.label}${phase.estimate?' (odhad)':''}`;
     el('.extra').style.display=['weather','rise','moon'].some(f=>this._config[visible[f]]!==false)?'flex':'none';
-    const leafSway=clamp((d.wind+d.gust*.35)/25,.1,1.7);el('.leaves').style.opacity=this._config.leaf_animation!==false&&['autumn','spring','summer','easter','may'].includes(d.scene)?'.72':'0';for(const n of el('.leaves').children)n.style.setProperty('--speed',`${clamp(6-leafSway*2,1.7,7)}s`);
+    const leafSway=clamp((d.wind+d.gust*.35)/25,.1,1.7);el('.leaves').style.opacity=!usingCustom&&this._config.leaf_animation!==false&&['autumn','spring','summer','easter','may'].includes(d.scene)?'.72':'0';for(const n of el('.leaves').children)n.style.setProperty('--speed',`${clamp(6-leafSway*2,1.7,7)}s`);
   }
   _animate(){const tick=(tm)=>{if(!this._visible||!this._root)return;const canvas=this._root.querySelector('.weatherfx'),r=canvas.getBoundingClientRect();if(r.width&&r.height){const dpi=Math.min(1.6,devicePixelRatio||1),w=Math.round(r.width*dpi),h=Math.round(r.height*dpi);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}const ctx=canvas.getContext('2d');ctx.setTransform(dpi,0,0,dpi,0,0);ctx.clearRect(0,0,r.width,r.height);
       const d=this._data;if(d&&d.precipitation!=='none'&&this._config.precipitation_animation!==false){const amount=clamp(Math.round((d.precipitation==='rain'?22:17)+d.intensity*(d.precipitation==='rain'?190:125)),0,220),t=tm/1000,wind=clamp(d.wind/30,0,3);
@@ -578,7 +646,7 @@ const OPTIONS={
  scene:[['auto','Automaticky podľa roka'],['spring','Jar'],['summer','Leto'],['autumn','Jeseň'],['winter','Zima'],['christmas','Vianoce'],['easter','Veľká noc'],['may','Máj'],['memorial','Dušičky'],['nicholas','Mikuláš'],['newyear','Nový rok']],
  phase:[['auto','Automaticky podľa slnka'],['day','Deň'],['dawn','Svitanie'],['dusk','Súmrak'],['night','Noc']]
 };
-const OPTION_LABELS={show_waste:'Zobrazovať vývoz odpadu (ak existujú senzory)',show_clock:'Hodiny',show_date:'Dátum',show_temperature:'Vonkajšia teplota',show_heating:'Kúrenie',show_nameday:'Meniny',show_lights:'Svetlá',show_weather:'Stav počasia',show_sun:'Východ a západ slnka',show_moon:'Fáza Mesiaca',precipitation_animation:'Padajúci dážď / sneh',leaf_animation:'Pohyb lístia',night_lights:'Svetlá v dedine a kostolíku',pause_on_camera:'Nespúšťať šetrič pri otvorenej záložke Kamery',moonlight_effect:'Osvetlenie krajiny Mesiacom',snow_cover:'Snehová pokrývka a námraza podľa teploty (odhad)',unified_scene:'Jedna krajina pre všetky ročné obdobia (moje fotografie)',fog_effect:'Hmla podľa počasia a vlhkosti',season_colors:'Výrazné farby ročných období (jar, leto, jeseň)'};
+const OPTION_LABELS={custom_sky_objects:'Slnko a Mesiac na vlastnom obrázku',show_waste:'Zobrazovať vývoz odpadu (ak existujú senzory)',show_clock:'Hodiny',show_date:'Dátum',show_temperature:'Vonkajšia teplota',show_heating:'Kúrenie',show_nameday:'Meniny',show_lights:'Svetlá',show_weather:'Stav počasia',show_sun:'Východ a západ slnka',show_moon:'Fáza Mesiaca',precipitation_animation:'Padajúci dážď / sneh',leaf_animation:'Pohyb lístia',night_lights:'Svetlá v dedine a kostolíku',pause_on_camera:'Nespúšťať šetrič pri otvorenej záložke Kamery',moonlight_effect:'Osvetlenie krajiny Mesiacom',snow_cover:'Snehová pokrývka a námraza podľa teploty (odhad)',unified_scene:'Jedna krajina pre všetky ročné obdobia (moje fotografie)',fog_effect:'Hmla podľa počasia a vlhkosti',season_colors:'Výrazné farby ročných období (jar, leto, jeseň)'};
 const ENTITY_LABELS={weather:'Počasie (weather.*)',temperature:'Vonkajšia teplota',rain:'Intenzita dažďa',solar:'Slnečné žiarenie',wind:'Rýchlosť vetra',gust:'Nárazy vetra',humidity:'Vonkajšia vlhkosť (hmla)',dewpoint:'Rosný bod (hmla)',heating:'Kúrenie / termostat',nameday:'Meniny',moon:'Fáza Mesiaca',waste_municipal:'Komunálny odpad – dátum vývozu (voliteľné)',waste_recycling:'Separovaný odpad – dátum vývozu (voliteľné)',lights:'Svetlá – entity oddelené čiarkou'};
 function escapeHtml(t){return String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 class HASeasonsUniversalEditor extends HTMLElement{
@@ -605,17 +673,20 @@ class HASeasonsUniversalEditor extends HTMLElement{
  this._rendered=true;this._updateWeatherList();
  }
  _updateWeatherList(){const list=this.shadowRoot.querySelector('#seasons-entities');if(!list||!this._hass)return;const ids=Object.keys(this._hass.states||{}).filter(x=>/^(weather|sensor|switch|light|climate)\./.test(x)).sort();list.replaceChildren(...ids.map(id=>{const o=document.createElement('option');o.value=id;return o;}));}
- _onChanged(e){const node=e.target,k=node.dataset.prop,bo=node.dataset.bool,nu=node.dataset.number,en=node.dataset.entity;const next={...this._config};
- if(k)next[k]=node.value;
+ _onChanged(e){const node=e.target,k=node.dataset.prop,bo=node.dataset.bool,nu=node.dataset.number,en=node.dataset.entity,im=node.dataset.image;const next={...this._config};
+ if(im){if(im==='base')next.custom_image=node.value.trim();else{next.custom_images={...(next.custom_images||{})};const url=node.value.trim();if(url)next.custom_images[im]=url;else delete next.custom_images[im];}}
+ else if(k)next[k]=node.value;
  else if(bo)next[bo]=node.checked;
  else if(nu){
    next[nu]=nu==='idle_seconds'?clamp(Math.round(Number(node.value)||30),5,3600):
+     nu==='custom_season_strength'?clamp(Number(node.value)||0,0,1.2):
      nu==='image_focus'?clamp(Number(node.value),0,100):
      nu==='night_brightness'?clamp(Number(node.value)||1.1,.8,1.35):
      clamp(Number(node.value)||.48,.2,.9);
    if(nu==='glass_opacity')this.shadowRoot.querySelector('[data-opacity-text]').textContent=Math.round(next[nu]*100)+' %';
    if(nu==='image_focus')this.shadowRoot.querySelector('[data-focus-text]').textContent=Math.round(next[nu])+' %';
    if(nu==='night_brightness')this.shadowRoot.querySelector('[data-night-text]').textContent=Math.round(next[nu]*100)+' %';
+   if(nu==='custom_season_strength')this.shadowRoot.querySelector('[data-custom-strength-text]').textContent=Math.round(next[nu]*100)+' %';
  }
  else if(en){next.entities={...(next.entities||{})};const val=node.value.trim();if(!val)delete next.entities[en];else if(en==='lights')next.entities.lights=val.split(/[,;\n]+/).map(v=>v.trim()).filter(Boolean);else next.entities[en]=val;}
  this._config=next;this.dispatchEvent(new CustomEvent('config-changed',{detail:{config:next},bubbles:true,composed:true}));
