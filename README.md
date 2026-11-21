@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.3 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.3.1 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -34,6 +34,20 @@ Nové prepínače majú v existujúcich kartách predvolenú hodnotu **zapnuté*
 - Ak v Home Assistante chýba výška slnka, používa sa len orientačný časový odhad.
 
 Bežná konfigurácia sa **nemení**, stačí aktualizovať doplnok v Marketplace/HACS a obnoviť stránku (prípadne vymazať cache prehliadača).
+
+## Nové vo V1.3.1 – Kamery bez šetriča
+
+Pri otvorenom pop-upe `#kamery` alebo pohľade `/lovelace/kamery` sa celoplošný šetrič **automaticky pozastaví**. Po návrate na Domov alebo iný pohľad začne nových 30 sekúnd nečinnosti. Kamera sa tým nevypína ani neprerušuje.
+
+Nastavenie je **predvolene zapnuté** a je prístupné aj v grafickom editore karty. V YAML môžeš použiť:
+
+```yaml
+type: custom:ha-seasons-universal-card
+idle_seconds: 30
+pause_on_camera: true
+```
+
+Ak by si ho niekedy chcel vypnúť, nastav `pause_on_camera: false`. Táto funkcia rozpoznáva hash `#kamery`, `#kamera`, `#camera`, `#cameras` a rovnako pomenované Lovelace pohľady.
 
 ## Funkcie
 - Dátum, čas, vonkajšia teplota, kúrenie, meniny a počty zapnutých svetiel
