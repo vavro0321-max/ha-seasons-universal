@@ -40,7 +40,8 @@ hass.states['sun.sun']={state:'below_horizon',attributes:{elevation:-15,azimuth:
 const night=getInputs(hass,{scene:'auto'},date);
 assert(night.nightLight>0.99,'candles and tree lights fully visible after dusk');
 assert(source.includes("show_advent_wreath:true,show_christmas_tree:true"));
-assert(source.includes("tree.querySelector('.tree-lights').style.opacity=glow.toFixed(3)"));
+assert(source.includes("tree.querySelector('.tree-lights').style.opacity="),'Tree lighting is still controlled by Advent state');
+assert(source.includes("const glow=holiday.treeLights?d.nightLight:0;"),'Tree is allowed to glow only from Mikuláš at dusk/night');
 assert(source.includes('christmas-tree-lit.webp'),'real tree lights asset used');
 assert(source.includes('christmas-tree-unlit.webp'),'unlit tree asset used before 6 December');
 assert(source.includes('advent-wreath-unlit.webp'),'real Advent wreath asset used');
