@@ -28,3 +28,5 @@ jobs:
         run: node --check dist/ha-seasons-universal.js
       - name: Test weather and seasonal logic
         run: node test-logic.cjs
+      - name: Test sunrise sunset and night transitions
+        run: node test-sun-cycle.cjs
