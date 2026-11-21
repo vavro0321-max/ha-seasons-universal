@@ -49,4 +49,16 @@ const snow=getInputs(hass,config,date('2027-01-15T12:00:00Z'));
 assert(snow.snowCover>0&&snow.precipitation==='snow');
 states['weather.home'].state='sunny';
 assert.equal(getInputs(hass,config,date('2027-01-15T12:00:00Z')).precipitation,'none');
+// Regression: winter does not automatically mean snow when it is warm and dry.
+states['sensor.ws2900_v2_02_01_outdoor_temperature'].state='9';
+states['weather.home'].state='sunny';
+const warmWinter=getInputs(hass,config,date('2027-01-15T12:00:00Z'));
+assert.equal(warmWinter.scene,'winter');
+assert.equal(warmWinter.leafless,true);
+assert.equal(warmWinter.snowCover,0,'Warm winter without snow must leave the ground bare');
+assert.equal(warmWinter.precipitation,'none');
+states['sensor.ws2900_v2_02_01_outdoor_temperature'].state='-4';
+const coldButDry=getInputs(hass,config,date('2027-01-15T12:00:00Z'));
+assert(coldButDry.snowCover>0,'Cold weather may show decorative frost');
+assert.equal(coldButDry.precipitation,'none','Frost must not be presented as active snowfall');
 console.log('PASS shared source photograph, leafless late autumn and winter, fog and temperature snow');
