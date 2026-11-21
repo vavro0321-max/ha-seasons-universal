@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.7 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.7.1 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -12,32 +12,21 @@ Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení je
 
 ![Ukážka](docs/preview.jpg)
 
-## Nové vo V1.7 – Living World / živá dedina
+## Nové vo V1.7.1 – čistá krajina bez pohybujúcich sa postáv
 
-Prvá funkčná verzia simulácie života na schválenej krajine: malé animované postavy kráčajú po chodníku pri kostolíku, autá sa pohybujú po vzdialenej dedinskej ceste a po oblohe občas preletia vtáky. Nejde o reálnych ľudí ani kamerový prenos, ale simuláciu vykresľovanú v prehliadači tabletu.
+Na základe spätnej väzby bola funkcia Living World odstránená: ľudia a autá sa
+pohybovali cez budovy a nesprávne sa nezakrývali za prekážkami. Táto verzia
+**nevykresľuje ľudí, autá ani vtáky** a v grafickom editore už ich nastavenia
+nie sú. Nemusíš upravovať existujúci dashboard: aj keď v starom YAML zostali
+kľúče `living_world` alebo `living_density`, verzia V1.7.1 ich ignoruje.
 
-- Ráno a cez deň je viac chodcov a vtákov, večer pohybu ubúda. V noci nepoletujú vtáky, ľudia sú vzácni a občas prejde auto so svetlami.
-- Pri daždi, snehu a hustej hmle sa chodci objavujú menej často; pri zrážkach môžu mať dáždniky.
-- Trasy rešpektujú perspektívu schválenej panorámy 1536 × 864 vrátane režimov `cover` a `contain`.
-- Canvas kreslenie je obmedzené na približne 12 snímok/s. Po zatvorení šetriča sa zastaví; pri systémovom reduced-motion sa živá vrstva nevykresľuje.
-- Simulácia neposiela žiadne príkazy do Home Assistanta. Ak sa zobrazuje náhradná stará fotografia, vrstva sa vypne.
+Zachované zostáva celé pôvodné prostredie: päť sezónnych panorám (jar, leto,
+jeseň, zima so snehom a bez snehu), živé údaje Home Assistanta, slnko, Mesiac,
+súmrak, osvetlenie domov, oblačnosť, hmla, padajúci dážď/sneh, čas, kúrenie
+a pozastavenie šetriča pri otvorenej záložke Kamery.
 
-**Konfigurácia:**
-
-```yaml
-type: custom:ha-seasons-universal-card
-idle_seconds: 30
-source: auto
-living_world: true
-living_density: normal  # low | normal | high
-living_people: true
-living_cars: true
-living_birds: true
-```
-
-Funkcia je predvolene zapnutá. V grafickom editore je prepínač Živá dedina, nezávislé prepínače ľudí, áut a vtákov a nastavenie hustoty.
-
-**Obmedzenie:** Postavičky sú jednoduché malé Canvas kresby, nie realistické 3D modely. Trasy sú ručne prispôsobené fotografii a ich presnú polohu treba overiť na tablete.
+Pri aktualizácii v Marketplace použi **Obnoviť informácie → Preinštalovať**
+a obnov stránku na tablete, aby sa nenačítal starý JavaScript.
 
 ## Nové vo V1.6.1 – viditeľnejšia, ale stále nočná krajina
 
