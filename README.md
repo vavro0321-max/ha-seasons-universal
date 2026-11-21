@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.3.1 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.4 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -34,6 +34,29 @@ Nové prepínače majú v existujúcich kartách predvolenú hodnotu **zapnuté*
 - Ak v Home Assistante chýba výška slnka, používa sa len orientačný časový odhad.
 
 Bežná konfigurácia sa **nemení**, stačí aktualizovať doplnok v Marketplace/HACS a obnoviť stránku (prípadne vymazať cache prehliadača).
+
+## Nové vo V1.4 – ročné obdobia majú odlišnú krajinu
+
+Pri kontrole pôvodných podkladov sme našli chybu: fotografické obrázky pre **jar, leto a jeseň** mali takmer rovnaké zelené lístie, takže aj v novembri vyzerala dedina letne. Dátumový výber jesene fungoval, ale grafika nebola dostatočne jesenná.
+
+Oprava používa selektívnu úpravu farebnosti rastlín priamo v prehliadači, aby zostali zachované pôvodné hory, kostolík, cesta aj obloha. Pozadie sa pri prechode deň–noc stále nemení na inú fotografiu.
+
+- **Jar:** svieža svetlejšia zeleň a jemné kvety na strome.
+- **Leto:** sýta zelená tráva a listy.
+- **Jeseň:** počas septembra sa postupne objavuje zlaté lístie, v októbri a novembri prevládajú žlté, oranžové a hnedé odtiene aj na tráve.
+- **Zima:** odlišná zasnežená scéna, počasie a námraza zostávajú dynamické podľa doterajšej logiky.
+
+Nová voľba v grafickom editore **„Výrazné farby ročných období (jar, leto, jeseň)”** je zapnutá predvolene. Pri potrebe vypnutia použi `season_colors: false`. Pri prepínaní počiatočnej fotografie sa môže úprava farieb načítať s krátkym oneskorením (najmä na slabšom tablete), no pôvodný obrázok zostáva viditeľný.
+
+```yaml
+type: custom:ha-seasons-universal-card
+idle_seconds: 30
+source: auto
+scene: auto
+season_colors: true
+```
+
+Dňa **21. novembra 2026** musí `scene: auto` zvoliť **autumn**, bez ohľadu na to, či je deň alebo noc. Je to vizuálna sezónna úprava; skutočnú farbu lístia v okolí domu nemeriame.
 
 ## Nové vo V1.3.1 – Kamery bez šetriča
 
