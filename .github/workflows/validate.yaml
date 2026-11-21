@@ -1,0 +1,30 @@
+name: Validate HA Seasons Universal
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate-hacs:
+    name: HACS Marketplace plugin validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate repository for Dashboard/Plugin category
+        uses: hacs/action@main
+        with:
+          category: plugin
+
+  test-javascript:
+    name: JavaScript syntax and logic
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: node --check dist/ha-seasons-universal.js
+      - name: Test weather and seasonal logic
+        run: node test-logic.cjs
