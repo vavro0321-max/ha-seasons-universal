@@ -42,6 +42,8 @@ jobs:
         run: node test-night-weather.cjs
       - name: Test brighter night and editable exposure
         run: node test-night-brightness.cjs
+      - name: Test Living World villagers vehicles and birds
+        run: node test-living-world.cjs
       - name: Test Kamery tab pause and return
         run: node test-camera-tab.cjs
       - name: Test realistic seasonal colors and November autumn
