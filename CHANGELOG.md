@@ -1,5 +1,13 @@
 # Zmeny
 
+## 1.6.1 (2026-11-21)
+- Výraznejšie detaily nočnej krajiny, ale stále modrý nočný vzhľad
+- Jemnejšie nočné filtre a súmrakové osvetlenie zachovávajúce plynulé stmievanie
+- Nový posuvník `night_brightness` (80–135 %, predvolené 110 %) v grafickom editore
+- Denné osvetlenie a integrácia WS2900 zostali nedotknuté
+- Test `test-night-brightness.cjs` vrátane dňa, Mesiaca, oblačnosti a nastaviteľného nočného jasu
+
+
 ## 1.6.0 (2026-11-21)
 - Päť fotografických záberov z používateľom schváleného štvoročného obrázka: jar, leto, jeseň, zasnežená zima, teplá zima bez snehu
 - Obnovilo sa kvitnutie po celú jar, iba zelená koruna v lete a holé vetvy na jeseň a v zime
