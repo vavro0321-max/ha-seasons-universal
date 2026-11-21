@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.9.2 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.10.0 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,24 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Nové vo V1.10.0 – adventný veniec a stromček 🎄
+
+- Vianočné obdobie začína **automaticky prvou adventnou nedeľou** (v roku 2026 je to **29. november**) a končí **6. januára**.
+- **Adventný veniec** je v krajine od prvej adventnej nedele do 24. decembra. Každú nedeľu pribudne **jedna horiaca sviečka** (1, 2, 3, 4).
+- Cez deň ostanú sviečky nezapálené. **Plamienky uvidíš večer a v noci** podľa západu slnka cez `sun.sun`, s plynulým prechodom súmraku.
+- **Vianočný stromček** sa objaví už v prvú adventnú nedeľu bez svetiel. Na **Mikuláša (6. decembra)** sa prvýkrát večer rozsvieti a svieti každý ďalší večer až do **6. januára**.
+- Zobrazenie venca i stromčeka môžeš samostatne vypnúť v grafickom editore. Obe dekorácie fungujú aj s vlastnou fotografiou; nemenia polohu kostola, budov ani chodcov a neovládajú skutočné svetlá v domácnosti.
+- Na Silvestra a Nový rok zostáva pôvodný motív Nového roka. Po 6. januári sa program vráti k zimnej krajine.
+
+```yaml
+type: custom:ha-seasons-universal-card
+scene: auto
+show_advent_wreath: true
+show_christmas_tree: true
+```
+
+Po aktualizácii obnov stránku tabletu, aby sa načítal nový JavaScript.
 
 ## Nové vo V1.9.2 – rozdiel medzi oblakmi a skutočnou hmlou
 
