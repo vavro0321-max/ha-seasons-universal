@@ -1,5 +1,15 @@
 # Zmeny
 
+## 1.5.0 (2026-11-21)
+- Jeden spoločný fotografický záber pre všetky ročné obdobia, s vlastnou záložnou scénou ak obrázky chýbajú
+- Pôvodná fotografia a odvodená verzia s holými vetvami na neskorú jeseň / zimu
+- Jesenná tráva a stromy sa farbia do hneda, zimná krajina zostáva bez lístia
+- Statická hmla podľa predpovede a voliteľne podľa vonkajšej vlhkosti, rosného bodu a vetra
+- Nočné svetlá kostola a dediny, mesačné svetlo, sneh a zvyšok doterajšej logiky zachované
+- Grafické prepínače `unified_scene` a `fog_effect`, nastaviteľné entity vlhkosti a rosného bodu
+- Test `test-unified-landscape.cjs` pre obdobia, hmlu a sneh
+
+
 ## 1.4.0 (2026-11-21)
 - Opravené takmer identické zelené podklady pre jar, leto a jeseň
 - Selektívna zmena farby rastlín: jesenné zlaté a hnedé listy, sýte letné zelené a svieže jarné s jemnými kvetmi
