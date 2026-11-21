@@ -1,5 +1,17 @@
 # Zmeny
 
+## 1.9.1 (2026-11-21)
+- Čistejšie nebo bez umelého hmlistého efektu pri polooblačnom a zamračenom počasí.
+- Silnejšia hmla sa vykreslí predovšetkým pri `weather.* = fog`; odhad z vlhkosti je jemnejší.
+- Zachovaná konfigurovateľná fotografia z V1.9 a pôvodné funkcie Home Assistanta.
+
+## 1.9.0 (2026-11-21)
+- Voliteľná vlastná fotografia alebo samostatné fotografie pre jar, leto, jeseň, zasneženú a suchú zimu.
+- Sezónne farebné filtre a počasie na vlastnej fotografii, bez pevne zakreslených svetiel z pôvodnej dediny.
+- Grafický editor obrázkov, nastavenie intenzity sezónnych farieb a bezpečná náhradná fotografia.
+- Test `test-custom-backgrounds.cjs` pre vlastné fotografie.
+
+
 ## 1.8.0 (2026-11-21)
 - Voliteľný vývoz komunálneho a separovaného odpadu s automatickým rozpoznaním dátumových senzorov.
 - Termíny Dnes/Zajtra sú zvýraznené; neexistujúce alebo neplatné senzory nezobrazujú žiadnu sekciu.
