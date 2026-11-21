@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.5 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.6 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,38 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Nové vo V1.6 – štyri schválené fotografie + dynamické počasie
+
+Používame štvoricu používateľom schválených pohľadov na rovnakú dedinu s kostolíkom vľavo. Každý záber je uložený samostatne vo veľkosti **1536 × 864**: `universal-landscape-spring.webp`, `universal-landscape-summer.webp`, `universal-landscape-autumn.webp`, `universal-landscape-winter.webp`. Piaty, odvodený `universal-landscape-winter-dry.webp`, slúži pre **zimu bez snehu** pri teplom suchom počasí. Pôvodné súbory zostávajú ako záloha.
+
+- **Jar:** strom kvitne počas celej jari. **Leto:** zelený strom. **Jeseň:** holé vetvy. **Zima:** bez lístia, zasnežená alebo suchá podľa podmienok.
+- **Slnko:** vypočítané podľa `sun.sun` a jeho výšky; teplé svitanie a západ, plynulé zosvetľovanie/stmievanie. Poloha grafického slnka v panoráme je ilustračná.
+- **Počasie:** jasná, polooblačná a zamračená obloha, statické oblaky, hmla podľa `weather.fog` alebo vlhkosti/rosného bodu, dážď podľa intenzity a hlásené sneženie.
+- **Mesiac a noc:** mesačný svit podľa fázy a oblačnosti, hviezdy pri jasnej noci a postupne rozsvietené okná kostola/dediny.
+- **Sneh a námraza:** orientačný vzhľad podľa vonkajšej teploty a hláseného sneženia, bez tvrdenia, že ide o meranú vrstvu.
+- **Kamery:** šetrič sa pri otvorenom `#kamery` nespustí; po návrate sa 30 sekúnd odpočítava odznova.
+
+Nastavenie `unified_scene: true` sa ponecháva. **Nezapínať znovu starý šetrič** z karty `ha-seasons-background`. Po Marketplace aktualizácii obnov cache stránky na tablete.
+
+Ukážka YAML:
+
+```yaml
+type: custom:ha-seasons-universal-card
+idle_seconds: 30
+source: auto
+scene: auto
+phase: auto
+unified_scene: true
+image_fit: cover
+fog_effect: true
+snow_cover: true
+moonlight_effect: true
+night_lights: true
+pause_on_camera: true
+```
+
+**Poznámka:** sezónne fotografie sú podobne komponované, ale nie pixelovo totožné; pri zmene ročného obdobia sa môže mierne posunúť poloha detailov. Počas jedného dňa sa však fotografia nemení podľa svetla, mení sa len nasvietenie a počasie.
 
 ## Nové vo V1.3 – živá nočná krajina a sneh
 
@@ -186,7 +218,7 @@ entities:
 
 **Home Assistant Marketplace (2026.11+) / HACS:** Repo musí byť zverejnené vo vlastnom **verejnom GitHub repozitári**, napríklad `ha-seasons-universal`. V HA otvor **Nastavenia → Marketplace → Add from link**, zadaj jeho URL, nainštaluj Dashboard a vlož kartu cez grafické rozhranie. Po inštalácii Marketplace automaticky načíta modul z `/local/community/ha-seasons-universal/ha-seasons-universal.js`. Na starších verziách HA použite HACS → Custom repositories → Dashboard. **ZIP nie je zverejnený repozitár**.
 
-**Ručná inštalácia:** Skopíruj obsah `dist/` do `/config/www/ha-seasons-universal/`, pridaj Dashboard zdroj typu JavaScript Module `/local/ha-seasons-universal/ha-seasons-universal.js?v=1.5.0`, obnov stránku a pridaj manuálnu kartu.
+**Ručná inštalácia:** Skopíruj obsah `dist/` do `/config/www/ha-seasons-universal/`, pridaj Dashboard zdroj typu JavaScript Module `/local/ha-seasons-universal/ha-seasons-universal.js?v=1.6.0`, obnov stránku a pridaj manuálnu kartu.
 
 Test bez senzorov: `/local/ha-seasons-universal/TEST.html` (pri ručnej inštalácii). Test používa simulované hodnoty a nemení žiadnu entitu.
 

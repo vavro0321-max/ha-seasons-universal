@@ -1,5 +1,15 @@
 # Zmeny
 
+## 1.6.0 (2026-11-21)
+- Päť fotografických záberov z používateľom schváleného štvoročného obrázka: jar, leto, jeseň, zasnežená zima, teplá zima bez snehu
+- Obnovilo sa kvitnutie po celú jar, iba zelená koruna v lete a holé vetvy na jeseň a v zime
+- Zachované napojenie na Home Assistant: výška slnka, jas WS2900, mesačná fáza, počasie, statické oblaky, hmla, dážď/sneh
+- Prekalibrované pozície svetiel dediny a kostolíka a hmly pre nové fotografie
+- Predpripravené sezónne snímky už nepodliehajú ďalšiemu canvas prefarbovaniu
+- Zimná fotografia bez snehu pri teplom počasí, snežná pri snežení alebo výraznejšej simulovanej pokrývke
+- Aktualizované testy sezón a kontrola úplnosti všetkých piatich fotografií
+
+
 ## 1.5.0 (2026-11-21)
 - Audit hotfix: odstránená neodôvodnená snehová vrstva počas teplej suchej zimy; holý strom zostáva
 - Nový runtime test núdzového obrázka pri chýbajúcich WebP súboroch a kontrola povinných assetov

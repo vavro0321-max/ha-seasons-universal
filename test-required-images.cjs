@@ -2,13 +2,16 @@
 const fs=require('fs');
 const path=require('path');
 const REQUIRED=[
-  'dist/assets/universal-landscape.webp',
-  'dist/assets/universal-landscape-leafless.webp'
+ 'dist/assets/universal-landscape-spring.webp',
+ 'dist/assets/universal-landscape-summer.webp',
+ 'dist/assets/universal-landscape-autumn.webp',
+ 'dist/assets/universal-landscape-winter.webp',
+ 'dist/assets/universal-landscape-winter-dry.webp'
 ];
 let invalid=false;
 for(const f of REQUIRED){
   if(!fs.existsSync(f)){
-    console.error('::error file='+f+'::MISSING REQUIRED V1.5 LANDSCAPE. Upload both WebP files from the V1.5 images ZIP.');
+    console.error('::error file='+f+'::MISSING REQUIRED V1.6 LANDSCAPE. Upload both WebP files from the V1.6 images ZIP.');
     invalid=true;continue;
   }
   const b=fs.readFileSync(f);
@@ -30,6 +33,6 @@ for(const f of REQUIRED){
   }else console.log('OK '+f+' '+width+'x'+height+' '+b.length+' bytes');
 }
 if(invalid){
- console.error('V1.5 JavaScript tests can pass even if image files are missing. The dashboard will show old fallbacks until both images are uploaded.');
+ console.error('V1.6 JavaScript tests can pass even if image files are missing. The dashboard will show old fallbacks until all 5 seasonal images are uploaded.');
  process.exitCode=1;
-}else console.log('PASS both V1.5 photographic backgrounds present; visual appearance still needs human inspection.');
+}else console.log('PASS all 5 V1.6 photographic backgrounds present; visual appearance still needs human inspection.');

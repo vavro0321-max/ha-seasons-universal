@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.5.0 — moonlit scenery, village lights, clouds and temperature-dependent frost. */
-const VERSION='1.5.0';
+/* HA Seasons Universal 1.6.0 — approved spring/summer/autumn/winter panoramas + weather and solar cycle. */
+const VERSION='1.6.0';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -96,8 +96,9 @@ function getInputs(hass,config,now=new Date()){
   // Winter without freezing weather or reported snowfall is a BARE landscape,
   // not an automatically white one. This represents illustrative frost only,
   // not a measured physical snow depth.
+  const winterLike=['winter','christmas','nicholas','newyear'].includes(scene);
   const snowCover=clamp(
-    coldness*((scene==='winter'?.14:0)+(scene==='winter'?.65:scene==='autumn'||scene==='spring'?.58:.20))
+    coldness*((winterLike?.14:0)+(winterLike?.65:scene==='autumn'||scene==='spring'?.58:.20))
     +(reportedSnow?.17:0),0,.94);
   // Leafless from 10 November through winter; on cold October nights
   // leaves may fall earlier. Manual spring/season testing stays respected.
@@ -158,9 +159,18 @@ function recolorSeasonalPixels(data,width,height,scene,strength){
   }
   return pixels;
 }
-const UNIFIED_SCENE_FX="<svg class=\"unified-map\" viewBox=\"0 0 1536 864\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\">\n<defs>\n  <radialGradient id=\"usGlow\"><stop stop-color=\"#ffe7ad\" stop-opacity=\".94\"/><stop offset=\".16\" stop-color=\"#ffd17b\" stop-opacity=\".57\"/><stop offset=\"1\" stop-color=\"#ffbb66\" stop-opacity=\"0\"/></radialGradient>\n  <linearGradient id=\"usSnow\" x1=\"0\" x2=\"0\" y1=\"0\" y2=\"1\"><stop stop-color=\"#d9e8f6\" stop-opacity=\".05\"/><stop offset=\".35\" stop-color=\"#e5eef9\" stop-opacity=\".40\"/><stop offset=\"1\" stop-color=\"#e9f1fb\" stop-opacity=\".80\"/></linearGradient>\n  <radialGradient id=\"usFog\"><stop stop-color=\"#c6d5de\" stop-opacity=\".62\"/><stop offset=\".72\" stop-color=\"#c8d8e0\" stop-opacity=\".37\"/><stop offset=\"1\" stop-color=\"#ccdbe2\" stop-opacity=\"0\"/></radialGradient>\n</defs>\n<g class=\"us-snow\">\n <path fill=\"url(#usSnow)\" d=\"M0 572 Q310 602 620 572 Q900 597 1536 540 L1536 864 L0 864 Z\"/>\n <path fill=\"#f0f5fb\" opacity=\".16\" d=\"M0 678 Q415 706 840 686 T1536 654 L1536 864 L0 864 Z\"/>\n</g>\n<g class=\"us-fog\">\n <ellipse cx=\"854\" cy=\"510\" rx=\"750\" ry=\"108\" fill=\"url(#usFog)\"/>\n <ellipse cx=\"1210\" cy=\"575\" rx=\"620\" ry=\"112\" fill=\"url(#usFog)\"/>\n <ellipse cx=\"415\" cy=\"625\" rx=\"595\" ry=\"85\" fill=\"url(#usFog)\" opacity=\".73\"/>\n</g>\n<g class=\"us-lights\" fill=\"url(#usGlow)\">\n  <ellipse cx=\"382\" cy=\"250\" rx=\"35\" ry=\"43\"/><ellipse cx=\"414\" cy=\"304\" rx=\"28\" ry=\"36\"/>\n  <ellipse cx=\"302\" cy=\"478\" rx=\"40\" ry=\"29\"/><ellipse cx=\"460\" cy=\"504\" rx=\"33\" ry=\"34\"/>\n  <ellipse cx=\"838\" cy=\"532\" rx=\"35\" ry=\"28\"/><ellipse cx=\"921\" cy=\"555\" rx=\"31\" ry=\"24\"/>\n  <ellipse cx=\"989\" cy=\"543\" rx=\"27\" ry=\"24\"/><ellipse cx=\"1054\" cy=\"536\" rx=\"29\" ry=\"23\"/>\n  <ellipse cx=\"1134\" cy=\"551\" rx=\"28\" ry=\"23\"/><ellipse cx=\"1202\" cy=\"554\" rx=\"29\" ry=\"23\"/>\n  <ellipse cx=\"1265\" cy=\"544\" rx=\"24\" ry=\"20\"/><ellipse cx=\"1342\" cy=\"543\" rx=\"31\" ry=\"23\"/>\n</g>\n</svg>";
+const UNIFIED_SCENE_FX="<svg class=\"unified-map\" viewBox=\"0 0 1536 864\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\">\n<defs>\n <radialGradient id=\"usGlow\"><stop stop-color=\"#fff0b4\" stop-opacity=\".88\"/><stop offset=\".18\" stop-color=\"#ffd27b\" stop-opacity=\".46\"/><stop offset=\"1\" stop-color=\"#ffbd68\" stop-opacity=\"0\"/></radialGradient>\n <linearGradient id=\"usSnow\" x1=\"0\" x2=\"0\" y1=\"0\" y2=\"1\"><stop stop-color=\"#dceafb\" stop-opacity=\".02\"/><stop offset=\".52\" stop-color=\"#dfeaf5\" stop-opacity=\".26\"/><stop offset=\"1\" stop-color=\"#f1f6ff\" stop-opacity=\".67\"/></linearGradient>\n <radialGradient id=\"usFog\"><stop stop-color=\"#beced8\" stop-opacity=\".6\"/><stop offset=\".72\" stop-color=\"#cddce4\" stop-opacity=\".32\"/><stop offset=\"1\" stop-color=\"#ccdae1\" stop-opacity=\"0\"/></radialGradient>\n</defs>\n<g class=\"us-snow\"><path fill=\"url(#usSnow)\" d=\"M0 605 Q320 599 620 613 Q990 602 1536 610 L1536 864 L0 864 Z\"/><path fill=\"#f5f9ff\" opacity=\".11\" d=\"M0 754 Q520 755 930 745 T1536 760 L1536 864 L0 864 Z\"/></g>\n<g class=\"us-fog\"><ellipse cx=\"970\" cy=\"595\" rx=\"695\" ry=\"113\" fill=\"url(#usFog)\"/><ellipse cx=\"1180\" cy=\"662\" rx=\"610\" ry=\"115\" fill=\"url(#usFog)\"/><ellipse cx=\"462\" cy=\"644\" rx=\"480\" ry=\"92\" fill=\"url(#usFog)\" opacity=\".65\"/></g>\n<g class=\"us-lights\" fill=\"url(#usGlow)\">\n <ellipse cx=\"416\" cy=\"350\" rx=\"19\" ry=\"26\"/><ellipse cx=\"479\" cy=\"353\" rx=\"19\" ry=\"26\"/>\n <ellipse cx=\"328\" cy=\"579\" rx=\"19\" ry=\"27\"/><ellipse cx=\"513\" cy=\"635\" rx=\"23\" ry=\"32\"/>\n <ellipse cx=\"862\" cy=\"659\" rx=\"25\" ry=\"23\"/><ellipse cx=\"956\" cy=\"646\" rx=\"24\" ry=\"24\"/>\n <ellipse cx=\"1079\" cy=\"659\" rx=\"24\" ry=\"22\"/><ellipse cx=\"1147\" cy=\"676\" rx=\"29\" ry=\"24\"/>\n <ellipse cx=\"1232\" cy=\"663\" rx=\"26\" ry=\"25\"/><ellipse cx=\"1334\" cy=\"672\" rx=\"27\" ry=\"23\"/><ellipse cx=\"1438\" cy=\"662\" rx=\"29\" ry=\"24\"/>\n</g></svg>";
 const supportedScenes=['spring','summer','autumn','winter','christmas','easter','may','memorial','nicholas','newyear'];
-function unifiedAssetName(d){return d.leafless?'universal-landscape-leafless.webp':'universal-landscape.webp';}
+// These five assets are individually approved seasonal photographs from the
+// same four-panel village composition. They retain the church, valley and path.
+// Winter without snow uses a cool, leafless dry view instead of invented snow.
+function unifiedAssetName(d){
+  const scene=visualSeason(d.scene);
+  if(scene==='winter')return (d.precipitation==='snow'||d.snowCover>=.38)
+      ?'universal-landscape-winter.webp':'universal-landscape-winter-dry.webp';
+  if(['spring','summer','autumn'].includes(scene))return 'universal-landscape-'+scene+'.webp';
+  return 'universal-landscape-autumn.webp';
+}
 function assetName(d){
   // A single landscape stays mounted throughout the entire solar cycle. Switching
   // day/night pictures here causes visibly doubled trees, mountains and houses.
@@ -204,6 +214,11 @@ const OVERLAY_STYLE=`
 .skyshade{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(1,8,24,.92),rgba(3,15,33,.53) 34%,rgba(4,15,30,.1) 61%,transparent 78%);transition:opacity 6s ease;}
 .moonwash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse 76% 76% at 82% 25%,rgba(189,218,255,.22),rgba(123,173,231,.11) 48%,transparent 90%);mix-blend-mode:screen;transition:opacity 7s ease;}
 .cloudshade{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(68,83,109,.47) 0%,rgba(39,54,77,.24) 44%,transparent 82%);transition:opacity 6s ease;}
+.cloudbank{position:absolute;inset:0 0 47% 0;pointer-events:none;opacity:0;
+ background:radial-gradient(ellipse 45% 25% at 25% 27%,rgba(236,238,244,.56),transparent 100%),
+ radial-gradient(ellipse 49% 32% at 77% 43%,rgba(218,223,235,.59),transparent 100%),
+ radial-gradient(ellipse 62% 25% at 48% 78%,rgba(203,209,221,.48),transparent 100%);
+ filter:blur(25px);transition:opacity 8s ease;}
 .unifiedfx{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
 .unifiedfx .unified-map{position:absolute;max-width:none;max-height:none;overflow:visible}
 .unifiedfx .us-fog,.unifiedfx .us-lights,.unifiedfx .us-snow{transition:opacity 8s ease}
@@ -305,7 +320,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     if(this._cameraActive()){if(this._visible)this._close();this._last=Date.now();return;}
     if(this._visible){this._update();return;}if(document.hidden||this._editing()||!this._hass)return;
     if(Date.now()-this._last>=clamp(Number(this._config.idle_seconds)||30,5,3600)*1000)this._open();}
-  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo"></div><div class="tint"></div><div class="nightveil"></div><div class="skyshade"></div><div class="moonwash"></div><div class="cloudshade"></div><div class="warmth"></div><div class="stars"></div><div class="sceneryfx">${SCENE_SVG}</div><div class="unifiedfx">${UNIFIED_SCENE_FX}</div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas><div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
+  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo"></div><div class="cloudbank"></div><div class="tint"></div><div class="nightveil"></div><div class="skyshade"></div><div class="moonwash"></div><div class="cloudshade"></div><div class="warmth"></div><div class="stars"></div><div class="sceneryfx">${SCENE_SVG}</div><div class="unifiedfx">${UNIFIED_SCENE_FX}</div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas><div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
     document.body.appendChild(this._host);this._root=this._host.shadowRoot;this._lastImage=null;
     const leaves=this._root.querySelector('.leaves');for(let i=0;i<12;i++){const n=document.createElement('i');n.className='leaf';n.style.setProperty('--top',`${7+(i%5)*6}%`);n.style.setProperty('--left',`${2+(i*13)%32}%`);n.style.setProperty('--delay',`${-(i%7)*.5}s`);leaves.append(n);}
   }
@@ -317,7 +332,10 @@ class HASeasonsUniversalCard extends HTMLElement {
     const visual=visualSeason(d.scene);
     const scene=d.leafless&&visual==='autumn'?'late_autumn':visual;
     const shared=image.startsWith('universal-landscape');
-    const grading=this._config.season_colors!==false&&(['spring','summer','autumn'].includes(scene)||(shared&&['late_autumn','winter'].includes(scene)));
+    // New user-approved photos are already season-colored: never recolor them
+    // in Canvas, which made autumn leaves green/brown and distorted blossoms.
+    const precolored=/^universal-landscape-(spring|summer|autumn|winter|winter-dry)\.webp$/.test(image);
+    const grading=!precolored&&this._config.season_colors!==false&&(['spring','summer','autumn'].includes(scene)||(shared&&['late_autumn','winter'].includes(scene)));
     const weight=grading?(scene==='late_autumn'?.95:scene==='winter'?.83:seasonStrength(scene,d.p)):0;
     const key=image+'|'+scene+'|'+weight.toFixed(2)+'|'+grading;
     if(key===this._lastImage)return;
@@ -383,7 +401,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     picture.src=ASSETS+image;
   }
   _update(){if(!this._root||!this._hass)return;const d=getInputs(this._hass,this._config),now=new Date();this._data=d;const el=(s)=>this._root.querySelector(s);
-    const screen=el('.screen');screen.dataset.layout=['auto','compact','wide'].includes(this._config.layout)?this._config.layout:'auto';screen.dataset.style=this._config.style==='minimal'?'minimal':'glass';screen.style.setProperty('--glass-opacity',String(clamp(Number(this._config.glass_opacity??0.48),0.2,0.9)));screen.style.setProperty('--font-factor',String(({small:0.82,normal:1,large:1.15})[this._config.clock_size]||1));
+    const screen=el('.screen');screen.dataset.season=visualSeason(d.scene);screen.dataset.weather=d.weather;screen.dataset.layout=['auto','compact','wide'].includes(this._config.layout)?this._config.layout:'auto';screen.dataset.style=this._config.style==='minimal'?'minimal':'glass';screen.style.setProperty('--glass-opacity',String(clamp(Number(this._config.glass_opacity??0.48),0.2,0.9)));screen.style.setProperty('--font-factor',String(({small:0.82,normal:1,large:1.15})[this._config.clock_size]||1));
     const photo=el('.photo');photo.style.backgroundSize=this._config.image_fit==='contain'?'contain':'cover';photo.style.backgroundPosition=`${clamp(Number(this._config.image_focus??55),0,100)}% center`;
     const preferred=unifiedAssetName(d);
     const useUnified=this._config.unified_scene!==false&&!this._missingImages?.has(preferred);
@@ -395,6 +413,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     el('.skyshade').style.opacity=(d.nightLight*(d.clouds==='overcast'?.61:d.clouds==='partly'?.69:.82)).toFixed(3);
     el('.moonwash').style.opacity=(d.moonlight*.80).toFixed(3);
     el('.cloudshade').style.opacity=(d.nightLight*(d.clouds==='overcast'?.58:d.clouds==='partly'?.24:0)).toFixed(3);
+    el('.cloudbank').style.opacity=(d.clouds==='overcast'?.80:d.clouds==='partly'?.24:0).toFixed(3);
     el('.warmth').style.opacity=(d.warmth*.72).toFixed(3);
     el('.stars').style.opacity=(d.nightLight*(d.clouds==='overcast'?.015:d.clouds==='partly'?.18:.63)).toFixed(3);
     const isPhotoSeason=['spring','summer','autumn','winter'].includes(d.scene);
