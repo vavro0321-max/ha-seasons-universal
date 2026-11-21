@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.7.1 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.8 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,33 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Nové vo V1.8 – voliteľný vývoz odpadu a lepšia viditeľnosť v noci
+
+Šetrič **automaticky zobrazí upozornenie na najbližší vývoz komunálneho a separovaného odpadu, iba ak má Home Assistant príslušný platný senzor**. Bez týchto senzorov sa celý riadok automaticky skryje, takže doplnok funguje rovnako aj u iných používateľov.
+
+- Podporované formáty dátumových senzorov: `YYYY-MM-DD`, `DD.MM.YYYY`, aj dátum v atribúte `next_date` / `next_collection` a číselný počet dní.
+- Jeden alebo oba senzory môžu chýbať. Neplatné hodnoty `unknown` a `unavailable`, neplatné a staré dátumy sa nikdy nezobrazujú.
+- **DNES** a **ZAJTRA** sa zvýraznia teplejším rámikom, ďalšie vývozy zobrazia dátum a koľko dní zostáva.
+- Senzory sa zisťujú automaticky, najmä `sensor.najblizsi_komunalny_odpad` a `sensor.najblizsi_triedeny_zber`. V grafickom editore možno vybrať aj ľubovoľné vlastné senzory dátumu.
+- Nové nastavenie `show_waste: true` zapína vývoz iba tam, kde existujú údaje; `show_waste: false` ho skryje všade.
+- V noci sa viac rozoznajú hory, kostolík, domy a cesta: zjemnili sa tmavé vrstvy a nadvihli tmavé odtiene fotografie pomocou nočného kontrastu.
+- Výpočty polohy Slnka, denného jasu a plynulého stmievania sa nemenia. Použité sú stále rovnaké fotografie všetkých ročných období.
+
+Príklad pre Home Assistant s vlastnými senzormi:
+
+```yaml
+type: custom:ha-seasons-universal-card
+idle_seconds: 30
+source: auto
+show_waste: true
+night_brightness: 1.1
+entities:
+  waste_municipal: sensor.najblizsi_komunalny_odpad
+  waste_recycling: sensor.najblizsi_triedeny_zber
+```
+
+**Dôležité:** Nie je nutné pripájať tieto senzory, pokiaľ sú automaticky nájdené. Ak odpady v Home Assistante nemáš, nič nenastavuj – riadok sa nevytvorí. Funkcia iba zobrazuje termíny; neposiela oznámenia a nevytvára kalendár.
 
 ## Nové vo V1.7.1 – čistá krajina bez pohybujúcich sa postáv
 
