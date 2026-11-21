@@ -1,5 +1,13 @@
 # Zmeny
 
+## 1.10.5 (2026-11-22)
+- Zjednotená geometria fotografie, efektov aj adventných dekorácií; všetky vrstvy používajú identickú mierku a posun.
+- Responzívne priblíženie na výšku so súčasným zobrazením kostola a chodníka, bez nezávislého posunu dekorácií.
+- Bezpečný dolný okraj pri extrémne širokých mobiloch; bez odrezaného adventného venca.
+- Automatické opätovné prepočítanie pri rotácii alebo zmene rozmerov; bez úpravy konfigurácie používateľa.
+- Rozšírený regresný test pre 11 veľkostí displejov, oba režimy cover/contain a kontrolu presného súladu vrstiev.
+
+
 ## 1.10.4 (2026-11-22)
 - Realistické dekorácie prispôsobené tmavej nočnej krajine: nižší jas ihličia a vence, zachované teplé plamene a žiarovky.
 - Stromček je ukotvený hlbšie v tráve pri kostole; veniec sa presunul od plota na trávnatý okraj kľukatej cesty.
