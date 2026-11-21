@@ -660,6 +660,17 @@ class HASeasonsUniversalEditor extends HTMLElement{
  <div class="inline"><label class="field">Spustiť po (sekundy)<input data-number="idle_seconds" type="number" min="5" max="3600" step="5" value="${clamp(Number(c.idle_seconds)||30,5,3600)}"></label>${this._select('layout','Rozloženie')}</div><div class="inline">${this._select('style','Vzhľad panelov')}${this._select('clock_size','Veľkosť hodín')}</div>
  ${this._select('image_fit','Prispôsobenie fotografie')}<label class="field">Posun fotografie do strán <small data-focus-text>${clamp(Number(c.image_focus??55),0,100)} %</small><input data-number="image_focus" type="range" min="0" max="100" step="1" value="${clamp(Number(c.image_focus??55),0,100)}"></label>
  <label class="field">Priehľadnosť kariet <small data-opacity-text>${Math.round((Number(c.glass_opacity??.48))*100)} %</small><input data-number="glass_opacity" type="range" min="0.2" max="0.9" step="0.05" value="${Number(c.glass_opacity??.48)}"></label></section>
+ <section class="panel"><h3>Vlastná krajina / obrázky</h3>
+ <p>Vlož odkaz na obrázok. Napríklad súbor `/config/www/moja-krajina.jpg` je dostupný ako `/local/moja-krajina.jpg`. Bez vlastného obrázka zostane naša pôvodná dedina.</p>
+ <label class="field">Jeden obrázok pre celý rok<input data-image="base" value="${escapeHtml(c.custom_image||'')}" placeholder="/local/moja-krajina.jpg" spellcheck="false"></label>
+ <p>Ak chceš verné ročné obdobia, zadaj samostatné fotografie jari, leta, jesene a zimy. Nevyplnené obdobia použijú základný obrázok a farebnú sezónnu úpravu.</p>
+ <div class="inline">
+ ${[['spring','Jar 🌸'],['summer','Leto 🌿'],['autumn','Jeseň 🍂'],['winter','Zima ❄️'],['winter_dry','Zima bez snehu 🌫️']].map(([key,label])=>`<label class="field">${label}<input data-image="${key}" value="${escapeHtml(c.custom_images?.[key]||'')}" placeholder="/local/${key}.jpg" spellcheck="false"></label>`).join('')}
+ </div>
+ <label class="field">Sila sezónnych farieb pri jednej fotografii <small data-custom-strength-text>${Math.round(clamp(Number(c.custom_season_strength??.8),0,1.2)*100)} %</small>
+ <input data-number="custom_season_strength" type="range" min="0" max="1.2" step="0.1" value="${clamp(Number(c.custom_season_strength??.8),0,1.2)}"></label>
+ <small>Jedna fotografia mení sezónne farby, denný jas a počasie. Zelené listy sa však nedajú spoľahlivo automaticky odstrániť bez ďalšej fotografie alebo AI úpravy. Svoje varianty môžeš prezrieť cez voľbu Ročné obdobie nižšie.</small>
+ </section>
  <section class="panel"><h3>Krajina a počasie</h3><div class="inline">${this._select('source','Zdroj počasia')}${this._select('scene','Ročné obdobie / sviatok')}</div>${this._select('phase','Denná doba')}
  <label class="field">Jas nočnej krajiny <small data-night-text>${Math.round(clamp(Number(c.night_brightness??1.1),.8,1.35)*100)} %</small>
  <input data-number="night_brightness" type="range" min="0.8" max="1.35" step="0.05" value="${clamp(Number(c.night_brightness??1.1),.8,1.35)}"></label>
