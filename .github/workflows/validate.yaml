@@ -34,3 +34,5 @@ jobs:
         run: node test-night-weather.cjs
       - name: Test Kamery tab pause and return
         run: node test-camera-tab.cjs
+      - name: Test realistic seasonal colors and November autumn
+        run: node test-seasonal-colors.cjs
