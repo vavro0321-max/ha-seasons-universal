@@ -46,3 +46,5 @@ jobs:
         run: node test-seasonal-colors.cjs
       - name: Test unified landscape fog and leafless trees
         run: node test-unified-landscape.cjs
+      - name: Test missing photo fallback does not break dashboard
+        run: node test-image-fallback.cjs
