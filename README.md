@@ -67,13 +67,9 @@ Nové prepínače majú v existujúcich kartách predvolenú hodnotu **zapnuté*
 
 Bežná konfigurácia sa **nemení**, stačí aktualizovať doplnok v Marketplace/HACS a obnoviť stránku (prípadne vymazať cache prehliadača).
 
-## Stav V1.5: obidva podklady sú nahrané
+## Predchádzajúce vydanie V1.5
 
-Od 21. novembra 2026 sú obidva požadované WebP obrázky súčasťou `dist/assets/` priamo v repozitári. Kontrola **Required V1.5 photo assets present** overuje ich skutočnú prítomnosť, typ a rozlíšenie 1536 × 864. Po aktualizovaní karty v Home Assistant Marketplace/HACS a obnovení stránky sa načítajú tieto fotografie, nie staršie náhradné obrázky.
-
-**Vizuálna kontrola:** pripravený súbor s holým stromom ešte obsahuje zvyšky zelených listov a kvety na ľavej strane. Treba ho pred označením za finálny zimný podklad graficky doladiť. Samotné testy nedokážu potvrdiť reálnosť jesennej alebo zimnej krajiny.
-
-Zmeny v ročných obdobiach, hmla a sneh sú grafické simulácie podľa dátumu a dostupných senzorov; nie sú to zábery skutočného stavu prírody.
+Pôvodné dve fotografie `universal-landscape.webp` a `universal-landscape-leafless.webp` zostávajú v repozitári ako historické a záložné podklady. V1.6 používa päť nových samostatných sezónnych fotografií vyššie; pri zmene ročného obdobia sa prepne fotografia, nie poloha žiadnych Home Assistant ovládacích prvkov.
 
 ## Nové vo V1.5 – jedna spoločná krajina podľa dodanej fotografie
 
