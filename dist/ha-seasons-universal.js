@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.10.3 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.10.3';
+/* HA Seasons Universal 1.10.4 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.10.4';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -371,14 +371,23 @@ const OVERLAY_STYLE=`
 
 /* Holiday decorations are above the panorama, not attached to its buildings. */
 .holiday-decor{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
-.advent-wreath,.christmas-tree{position:absolute;display:none;filter:drop-shadow(0 6px 9px rgba(0,0,0,.48))}
+.advent-wreath,.christmas-tree{position:absolute;display:none;isolation:isolate;filter:none;--ground-glow:0}
 .advent-wreath{left:clamp(10px,3vw,45px);bottom:clamp(60px,12vh,120px);width:clamp(135px,18vw,230px)}
 .christmas-tree{right:clamp(12px,4vw,52px);bottom:clamp(54px,9vh,95px);width:clamp(100px,15vw,185px)}
-.advent-wreath img,.christmas-tree img{display:block;width:100%;height:auto;max-width:none;pointer-events:none;user-select:none}
-.christmas-tree .real-tree-lit{position:absolute;left:0;top:0;opacity:0;transition:opacity 2s ease}
+.advent-wreath img,.christmas-tree img{display:block;width:100%;height:auto;max-width:none;pointer-events:none;user-select:none;position:relative;z-index:1}
+.christmas-tree .real-tree-lit{position:absolute;left:0;top:0;opacity:0;z-index:2;transition:opacity 2s ease}
 .advent-wreath{isolation:isolate}
-.christmas-tree::before,.advent-wreath::before{content:'';position:absolute;left:12%;right:12%;bottom:-1%;height:8%;border-radius:50%;background:rgba(8,26,19,.45);filter:blur(5px);z-index:-1;}
-.advent-wreath .real-flame{position:absolute;opacity:0;width:12%;height:auto;max-width:none;filter:drop-shadow(0 0 5px rgba(255,185,64,.66));transition:opacity 2s ease}
+.christmas-tree::before,.advent-wreath::before{
+  content:'';position:absolute;left:9%;right:9%;bottom:-1%;height:14%;
+  border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,10,8,.73),rgba(0,13,9,.38) 48%,transparent 76%);
+  filter:blur(4px);transform:scaleY(.6);z-index:-1;
+}
+.christmas-tree::after,.advent-wreath::after{
+  content:'';position:absolute;left:-20%;right:-20%;bottom:-2%;height:20%;
+  border-radius:50%;background:radial-gradient(ellipse,rgba(255,184,79,.55),rgba(231,128,37,.16) 45%,transparent 75%);
+  filter:blur(9px);opacity:var(--ground-glow);z-index:-1;
+}
+.advent-wreath .real-flame{position:absolute;opacity:0;width:12%;height:auto;max-width:none;z-index:2;filter:drop-shadow(0 0 5px rgba(255,185,64,.45));transition:opacity 2s ease}
 .advent-wreath .flame-1{left:23%;top:-1%}
 .advent-wreath .flame-2{left:36%;top:-3%}
 .advent-wreath .flame-3{left:53%;top:3%}
@@ -443,11 +452,13 @@ function landscapeHolidayPlacement(bounds,imageFit='cover',imageFocus=55,useUnif
   const px=sourceWidth/1536,py=sourceHeight/864;
   const x=v=>ox+v*px*scale;
   const y=v=>oy+v*py*scale;
-  // A ~2 m Christmas tree is placed right of the church and left of the existing tree.
-  // The smaller wreath sits on the grass just beside the winding footpath.
-  const treeWidth=148*px*scale,wreathWidth=120*px*scale;
-  const treeGround={x:x(647),y:y(706)};
-  const wreathGround={x:x(550),y:y(752)};
+  // Match the hill contour in the user's actual test screenshot. The old
+  // tree base was too high and the wreath overlapped the foreground fence.
+  // Tree stands on the lawn by the church; wreath rests on the grassy
+  // RIGHT side of the winding path (and never on the wooden fence).
+  const treeWidth=148*px*scale,wreathWidth=112*px*scale;
+  const treeGround={x:x(647),y:y(732)};
+  const wreathGround={x:x(790),y:y(776)};
   const tree={left:treeGround.x-treeWidth*.5,top:treeGround.y-treeWidth*(137/120),width:treeWidth,groundY:treeGround.y};
   const wreath={left:wreathGround.x-wreathWidth*.5,top:wreathGround.y-wreathWidth*(93/174),width:wreathWidth,groundY:wreathGround.y};
   // A portrait crop may hide the church and project both landmark x positions
@@ -633,7 +644,19 @@ class HASeasonsUniversalCard extends HTMLElement {
       flame.style.opacity=(Number(flame.getAttribute('data-candle'))<=holiday.candles?d.nightLight:0).toFixed(3);
     }
     const glow=holiday.treeLights?d.nightLight:0;
-    tree.querySelector('.tree-lights').style.opacity=glow.toFixed(3);
+    // The photograph is much darker at night. Unfiltered tree/wreath cut-outs
+    // looked pasted on and overly bright. Match their ambient exposure while
+    // retaining the warm bulbs and candle flames as separate light sources.
+    const ambient=clamp(.59+.42*d.dayLight,.55,1.04);
+    const foliageFilter=`brightness(${ambient.toFixed(3)}) contrast(1.06) saturate(${(.77+.20*d.dayLight).toFixed(3)})`;
+    tree.querySelector('.real-tree-unlit').style.filter=foliageFilter;
+    wreath.querySelector('.real-wreath-base').style.filter=foliageFilter;
+    // The lit sprite already contains the whole tree, so blend it gently
+    // instead of replacing its darker nighttime silhouette with a bright one.
+    tree.querySelector('.tree-lights').style.filter=`brightness(${(.78+.10*d.dayLight).toFixed(3)}) saturate(.92)`;
+    tree.querySelector('.tree-lights').style.opacity=(glow*.58).toFixed(3);
+    tree.style.setProperty('--ground-glow',(glow*.30).toFixed(3));
+    wreath.style.setProperty('--ground-glow',(holiday.candles?d.nightLight*.20:0).toFixed(3));
     const isPhotoSeason=['spring','summer','autumn','winter'].includes(d.scene);
     const stage=el('.sceneryfx'),view=el('.scene-map'),bounds=el('.screen').getBoundingClientRect();
     const scale=(this._config.image_fit==='contain'?Math.min:Math.max)(bounds.width/1672,bounds.height/941);
