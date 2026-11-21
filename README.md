@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.4 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.5 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -34,6 +34,43 @@ Nové prepínače majú v existujúcich kartách predvolenú hodnotu **zapnuté*
 - Ak v Home Assistante chýba výška slnka, používa sa len orientačný časový odhad.
 
 Bežná konfigurácia sa **nemení**, stačí aktualizovať doplnok v Marketplace/HACS a obnoviť stránku (prípadne vymazať cache prehliadača).
+
+## Nové vo V1.5 – jedna spoločná krajina podľa dodanej fotografie
+
+Pôvodnú fotografiu s kostolíkom **naľavo**, dedinou, cestou a horami používame ako spoločné pozadie. Zdrojová fotografia `dist/assets/universal-landscape.webp` je pre jar, leto a skorú jeseň; pixelovo podobná odvodená verzia `dist/assets/universal-landscape-leafless.webp` odstráni lístie od 10. novembra a v zime. Poloha kostolíka, hôr a domov zostáva zachovaná.
+
+Doplnok ďalej používa plynulý deň/noc, mesačný svit, oblačnosť, teplotne odhadovanú námrazu a sneh, nočné svetlá a pozastavenie šetriča na `#kamery`. Teraz pribudla:
+- statická hmla podľa `weather.fog`; voliteľne orientačný výpočet z vysokej vonkajšej vlhkosti, rosného bodu a slabého vetra
+- suchšia hnedá neskoro-jesenná tráva a zimná vegetácia
+- letné/jarné/jesenné farby z tej istej fotografie
+
+**Dôležité:** Vlastné fotografie sú súčasťou samostatného ZIP balíka pripraveného v ChatGPT. **Kým do verejného repozitára nenahráš oba súbory do `dist/assets/`, použije sa pôvodné záložné pozadie.** Keď sa súbory nahrajú, šetrič ich začne používať po preinštalovaní cez Marketplace.
+
+Priame nahratie do repozitára (treba byť prihlásený):
+<https://github.com/vavro0321-max/ha-seasons-universal/upload/main/dist/assets>
+
+Nastavenia v YAML (všetko je už štandardne zapnuté):
+
+```yaml
+type: custom:ha-seasons-universal-card
+idle_seconds: 30
+source: auto
+scene: auto
+unified_scene: true
+fog_effect: true
+season_colors: true
+night_lights: true
+moonlight_effect: true
+snow_cover: true
+pause_on_camera: true
+entities:
+  weather: weather.forecast_cierne_11
+  temperature: sensor.ws2900_v2_02_01_outdoor_temperature
+  humidity: sensor.ws2900_v2_02_01_humidity
+  dewpoint: sensor.ws2900_v2_02_01_dewpoint
+```
+
+Poznámka: hmla a snehová vrstva založené na senzoroch sú vizuálne odhady, nie fyzické meranie hmly či výšky snehu.
 
 ## Nové vo V1.4 – ročné obdobia majú odlišnú krajinu
 
