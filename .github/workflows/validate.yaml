@@ -46,6 +46,8 @@ jobs:
         run: node test-waste-display.cjs
       - name: Test personal backgrounds and all four seasons
         run: node test-custom-backgrounds.cjs
+      - name: Test clear scenery without artificial haze
+        run: node test-clear-scenery.cjs
       - name: Test Kamery tab pause and return
         run: node test-camera-tab.cjs
       - name: Test realistic seasonal colors and November autumn
