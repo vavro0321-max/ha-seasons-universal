@@ -41,4 +41,14 @@ const night=getInputs(hass,{scene:'auto'},date);
 assert(night.nightLight>0.99,'candles and tree lights fully visible after dusk');
 assert(source.includes("show_advent_wreath:true,show_christmas_tree:true"));
 assert(source.includes("tree.querySelector('.tree-lights').style.opacity=glow.toFixed(3)"));
+assert(source.includes('christmas-tree-lit.webp'),'real tree lights asset used');
+assert(source.includes('christmas-tree-unlit.webp'),'unlit tree asset used before 6 December');
+assert(source.includes('advent-wreath-unlit.webp'),'real Advent wreath asset used');
+assert(source.includes('advent-candle-flame.webp'),'real candle flame asset used');
+assert(source.includes("tree.style.left=(ox+480*px*imageScale)+'px'"),
+  'tree stays next to church rather than floating over roof');
+assert(source.includes("wreath.style.left=(ox+505*px*imageScale)+'px'"),
+  'wreath stays next to the winding path');
+assert(!source.includes('viewBox=\\\"0 0 230 160\\\"'),
+  'cartoon wreath SVG must not return');
 console.log('PASS Advent calendar, candle counts, St Nicholas tree, local day/night and config (14 dates)');

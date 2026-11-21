@@ -1,5 +1,11 @@
 # Zmeny
 
+## 1.10.2 (2026-11-22)
+- Nahradené kreslené SVG ikony fotorealistickým stromčekom a adventným vencom v transparentných WebP obrázkoch.
+- Opravené ukotvenie dekorácií: stromček hneď napravo od kostola, veniec vedľa cesty a stromčeka.
+- Samostatný rozsvietený a zhasnutý stromček, realistické sviečky s postupným zapaľovaním po nedeliach.
+- Test súborov a umiestnenia, pôvodná logika adventného kalendára zachovaná.
+
 ## 1.10.1 (2026-11-21)
 - Zmenšený adventný veniec a vianočný stromček, aby mierka zodpovedala dedine na pôvodnej fotografii.
 - Na vstavaných sezónnych fotografiách je stromček medzi existujúcim stromom a kostolom, bližšie ku kostolu; veniec stojí v tráve neďaleko stromčeka a chodníka.
