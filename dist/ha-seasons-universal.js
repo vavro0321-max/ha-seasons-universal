@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.9.0 — personal backgrounds with adaptive seasonal styling. */
-const VERSION='1.9.0';
+/* HA Seasons Universal 1.9.1 — clearer sky, weather-gated fog and personal backgrounds. */
+const VERSION='1.9.1';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -324,7 +324,7 @@ const OVERLAY_STYLE=`
  background:radial-gradient(ellipse 45% 25% at 25% 27%,rgba(236,238,244,.56),transparent 100%),
  radial-gradient(ellipse 49% 32% at 77% 43%,rgba(218,223,235,.59),transparent 100%),
  radial-gradient(ellipse 62% 25% at 48% 78%,rgba(203,209,221,.48),transparent 100%);
- filter:blur(25px);transition:opacity 8s ease;}
+ filter:blur(7px);transition:opacity 8s ease;}
 .unifiedfx{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
 .unifiedfx .unified-map{position:absolute;max-width:none;max-height:none;overflow:visible}
 .unifiedfx .us-fog,.unifiedfx .us-lights,.unifiedfx .us-snow{transition:opacity 8s ease}
@@ -545,7 +545,7 @@ class HASeasonsUniversalCard extends HTMLElement {
       coat.style.opacity=usingCustom&&custom.graded&&this._config.season_colors!==false?
         String(clamp(Number(this._config.custom_season_strength??.8),0,1.2)): '0';
       frost.style.opacity=usingCustom&&this._config.snow_cover!==false?(d.snowCover*.70).toFixed(3):'0';
-      fog.style.opacity=usingCustom?(d.fogLevel*.65).toFixed(3):'0';
+      fog.style.opacity=usingCustom?(d.fogLevel*(d.weather==='fog'?.58:.14)).toFixed(3):'0';
     }
     const saturation=(d.clouds==='overcast'?.85:1.05)*(.82+.18*d.dayLight);
     // Soft gamma-like shadow lift reveals church, mountains and village at night
@@ -556,7 +556,8 @@ class HASeasonsUniversalCard extends HTMLElement {
     el('.skyshade').style.opacity=(d.nightLight*(d.clouds==='overcast'?.32:d.clouds==='partly'?.38:.43)).toFixed(3);
     el('.moonwash').style.opacity=(d.moonlight*.96).toFixed(3);
     el('.cloudshade').style.opacity=(d.nightLight*(d.clouds==='overcast'?.38:d.clouds==='partly'?.18:0)).toFixed(3);
-    el('.cloudbank').style.opacity=(d.clouds==='overcast'?.80:d.clouds==='partly'?.24:0).toFixed(3);
+    // Clouds belong in the sky, not as a white mist over the entire landscape.
+    el('.cloudbank').style.opacity=(d.clouds==='overcast'?.25:d.clouds==='partly'?.07:0).toFixed(3);
     el('.warmth').style.opacity=(d.warmth*.72).toFixed(3);
     el('.stars').style.opacity=(d.nightLight*(d.clouds==='overcast'?.015:d.clouds==='partly'?.18:.63)).toFixed(3);
     const isPhotoSeason=['spring','summer','autumn','winter'].includes(d.scene);
@@ -576,7 +577,9 @@ class HASeasonsUniversalCard extends HTMLElement {
       unifiedMap.style.left=`${(bounds.width-ww)*clamp(Number(this._config.image_focus??55),0,100)/100}px`;
       unifiedMap.style.top=`${(bounds.height-hh)/2}px`;
       unifiedMap.querySelector('.us-lights').style.opacity=this._config.night_lights===false?'0':(d.nightLight*(.35+.65*d.deepNight)).toFixed(3);
-      unifiedMap.querySelector('.us-fog').style.opacity=d.fogLevel.toFixed(3);
+      // Strong mist only when the weather integration explicitly reports fog;
+      // humidity/dew-point estimates use a subtle valley haze, not a white veil.
+      unifiedMap.querySelector('.us-fog').style.opacity=(d.fogLevel*(d.weather==='fog'?.83:.22)).toFixed(3);
       unifiedMap.querySelector('.us-snow').style.opacity=this._config.snow_cover===false?'0':d.snowCover.toFixed(3);
     }
     const winter=d.scene==='winter';
