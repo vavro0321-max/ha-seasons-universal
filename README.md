@@ -35,9 +35,9 @@ Nové prepínače majú v existujúcich kartách predvolenú hodnotu **zapnuté*
 
 Bežná konfigurácia sa **nemení**, stačí aktualizovať doplnok v Marketplace/HACS a obnoviť stránku (prípadne vymazať cache prehliadača).
 
-## Stav V1.5: podklady je potrebné dokončiť
+## Stav V1.5: obidva podklady sú nahrané
 
-**Nie je to ešte úplné verejné vydanie s novou fotografiou.** V repozitári je kód V1.5, ale zatiaľ chýbajú dva povinné WebP obrázky: `dist/assets/universal-landscape.webp` a `dist/assets/universal-landscape-leafless.webp`. Automatická kontrola **Required V1.5 photo assets present** bude oprávnene červená, kým sa obe fotografie nenahrajú. Ostatné testy JavaScriptu môžu byť zelené nezávisle od chýbajúcich obrázkov. Aktuálny fallback zobrazuje staršiu krajinu.
+Od 21. novembra 2026 sú obidva požadované WebP obrázky súčasťou `dist/assets/` priamo v repozitári. Kontrola **Required V1.5 photo assets present** overuje ich skutočnú prítomnosť, typ a rozlíšenie 1536 × 864. Po aktualizovaní karty v Home Assistant Marketplace/HACS a obnovení stránky sa načítajú tieto fotografie, nie staršie náhradné obrázky.
 
 **Vizuálna kontrola:** pripravený súbor s holým stromom ešte obsahuje zvyšky zelených listov a kvety na ľavej strane. Treba ho pred označením za finálny zimný podklad graficky doladiť. Samotné testy nedokážu potvrdiť reálnosť jesennej alebo zimnej krajiny.
 
@@ -52,10 +52,7 @@ Doplnok ďalej používa plynulý deň/noc, mesačný svit, oblačnosť, teplotn
 - suchšia hnedá neskoro-jesenná tráva a zimná vegetácia
 - letné/jarné/jesenné farby z tej istej fotografie
 
-**Dôležité:** Vlastné fotografie sú súčasťou samostatného ZIP balíka pripraveného v ChatGPT. **Kým do verejného repozitára nenahráš oba súbory do `dist/assets/`, použije sa pôvodné záložné pozadie.** Keď sa súbory nahrajú, šetrič ich začne používať po preinštalovaní cez Marketplace.
-
-Priame nahratie do repozitára (treba byť prihlásený):
-<https://github.com/vavro0321-max/ha-seasons-universal/upload/main/dist/assets>
+**Oba obrázky sú už nahrané** priamo na GitHub a po preinštalovaní cez Marketplace sa použije nové spoločné pozadie. Ak sa po aktualizácii stále ukazuje staré pozadie, obnov stránku tabletu a jej vyrovnávaciu pamäť.
 
 Nastavenia v YAML (všetko je už štandardne zapnuté):
 
