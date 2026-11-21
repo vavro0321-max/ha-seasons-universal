@@ -1,5 +1,12 @@
 # Zmeny
 
+## 1.3.1 (2026-11-21)
+- Šetrič sa nespúšťa pri otvorenom pop-upe Kamery (`#kamery`) ani v pomenovanom pohľade kamier
+- Po návrate z kamier sa 30-sekundové odpočítavanie nečinnosti spustí odznova
+- Voliteľné nastavenie `pause_on_camera: true` a prepínač v grafickom editore
+- Test `test-camera-tab.cjs` v GitHub Actions
+
+
 ## 1.3.0 (2026-11-21)
 - Realistickejšia jasná, polooblačná a zamračená noc s primeranou viditeľnosťou krajiny
 - Mesačné osvetlenie podľa fázy Mesiaca a oblačnosti, s plynulým ranným a večerným prechodom
