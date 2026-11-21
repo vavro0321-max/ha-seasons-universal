@@ -1,0 +1,18 @@
+HA Seasons Universal V1.1 – inštalácia
+
+RUČNE
+1. Obsah priečinka dist/ skopíruj do /config/www/ha-seasons-universal/
+2. V Nastavenia → Dashboardy → Zdroje pridaj JavaScript Module:
+   /local/ha-seasons-universal/ha-seasons-universal.js?v=1.1.0
+3. Obnov stránku.
+4. V ľubovoľnom svojom dashborde klikni Upraviť → Pridať kartu → HA Seasons Universal.
+5. V grafickom editore vyber čas, vzhľad, údaje a zdroj počasia.
+
+MARKETPLACE / HACS
+1. Vytvor samostatný verejný GitHub repozitár s obsahom tohto balíka.
+2. Marketplace (HA 2026.11+): Nastavenia → Marketplace → Add from link → URL repozitára.
+3. Nainštaluj položku typu Dashboard. Resource bude spravovať Marketplace.
+4. Pridaj kartu s typom custom:ha-seasons-universal-card pomocou grafického editora.
+
+POZOR: Ak už máš V8.7 na tom istom dashboarde, odstráň starú kartu šetriča, aby nebežali dva.
+Nezamieňaj /local/ha-seasons-universal/ a /local/community/ha-seasons-universal/: prvé je ručná inštalácia, druhé cez Marketplace.

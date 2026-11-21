@@ -1,19 +1,35 @@
-# HA Seasons Universal – celoplošný šetrič pre Home Assistant
+# HA Seasons Universal V1.1 – celoplošný šetrič Home Assistanta
 
-Samostatný šetrič, ktorý sa spustí nad vlastným dashboardom po nastavenej nečinnosti. Podporuje lokálnu meteostanicu aj online počasie, ročné obdobia, sviatky, dážď/sneh, hodiny a grafický editor. Responzívny vzhľad je vhodný na tablety na šírku aj na výšku.
+Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
-## Stav publikovania
+![Ukážka](docs/preview.jpg)
 
-**Dôležité:** V tomto repozitári zatiaľ nie je kompletná inštalácia. Grafické súbory a JavaScript treba nahrať spolu s celým priečinkom `dist/`. Do tej doby ho **neinštaluj cez Marketplace/HACS**.
+## Funkcie
+- Dátum, čas, vonkajšia teplota, kúrenie, meniny a počty zapnutých svetiel
+- Jar, leto, jeseň, zima; Veľká noc, máj, Dušičky, Mikuláš, Vianoce, Nový rok
+- Deň, svitanie, západ slnka, noc; Mesiac podľa senzora, inak označený približný výpočet
+- Jasno, polooblačno, zamračené; dážď a sneh s pokojnou animáciou
+- Dva zdroje počasia: lokálna meteostanica alebo entita `weather.*` z internetovej služby
+- **Jedna fotografia v jednej chvíli** (žiadne prekrývanie dvoch krajín)
+- Pri automatickej detekcii sa použijú dostupné entity; chýbajúce informácie sa zobrazia ako `—`
 
-Kompletný balík **V1.1.0** je pripravený. V konverzácii ChatGPT je dostupný ZIP **HA_Seasons_V1_1_NAHRAJ_NA_GITHUB.zip**. Obsahuje spúšťací súbor `SPUSTI_NAHRATIE_GITHUB.bat`, ktorý po rozbalení na Windows a potvrdení prihlásenia do GitHubu skopíruje všetky súbory do tohto repozitára.
+## Grafický editor v Home Assistante (nové vo V1.1)
 
-Po nahratí je inštalácia pre Home Assistant 2026.11+ cez **Nastavenia → Marketplace → Add from link** s URL:
-`https://github.com/vavro0321-max/ha-seasons-universal`.
+Po inštalácii otvor **Upraviť dashboard → Pridať kartu → HA Seasons Universal**, potom prejdi do **grafického editora karty**. Nastavíš bez YAML:
 
-### Použitie po inštalácii
+- spustenie po 5–3600 sekundách;
+- rozloženie **Automaticky / Kompaktné / Široké**;
+- sklenený alebo minimalistický štýl, veľkosť hodín, priehľadnosť a posun/orez obrázka;
+- zdroj počasia **automaticky / meteostanica / online**;
+- automatické či manuálne ročné obdobie a čas dňa;
+- zapnutie/vypnutie jednotlivých informačných polí a animácií;
+- konkrétne entity počasia, senzorov, kúrenia a svetiel.
 
-Pridaj na svoj dashboard kartu **HA Seasons Universal** cez grafický editor alebo cez YAML:
+Grafika sa automaticky preusporiada podľa orientácie tabletu **na šírku aj na výšku**, s menšími prvkami na nízkych a úzkych displejoch. Používa jediný obrázok krajiny; na tablete môžu byť krajné časti pri pomere strán `cover` orezané, ale nie zdvojené.
+
+### Pridanie do akéhokoľvek dashboardu
+
+Do dashboardu vlož **jednu manuálnu kartu** (môže byť na konci ľubovoľného zobrazenia):
 
 ```yaml
 type: custom:ha-seasons-universal-card
@@ -21,6 +37,61 @@ idle_seconds: 30
 source: auto
 ```
 
-Bez lokálnej meteostanice môžeš zvoliť `source: online`. Pôvodný dashboard sa nemení.
+Šetrič neprepisuje existujúci `background:`. Karta má len 1 px výšky a ovláda celoplošné zobrazenie. Je aktívna len na pohľade dashboardu, ktorý kartu obsahuje.
 
-*Projekt je nezávislý dashboardový plugin, nie oficiálna integrácia Home Assistanta.*
+### Pre druhý HA bez meteostanice
+
+```yaml
+type: custom:ha-seasons-universal-card
+idle_seconds: 30
+source: online
+entities:
+  weather: weather.forecast_home
+```
+
+Vymeniť `weather.forecast_home` za skutočnú entitu zo svojho Home Assistanta. Pri `source: auto` si vyhľadá dostupnú entitu `weather.*` a, ak existujú, aj lokálne senzory. `source: online` miestne senzory ignoruje.
+
+### Voliteľná presná konfigurácia
+
+```yaml
+type: custom:ha-seasons-universal-card
+idle_seconds: 30
+source: station
+entities:
+  weather: weather.forecast_cierne_11
+  temperature: sensor.ws2900_v2_02_01_outdoor_temperature
+  rain: sensor.ws2900_v2_02_01_rain_rate
+  solar: sensor.ws2900_v2_02_01_solar_radiation
+  wind: sensor.ws2900_v2_02_01_wind_speed
+  gust: sensor.ws2900_v2_02_01_wind_gust
+  heating: switch.thermostat_switch
+  nameday: sensor.meniny_dnes
+  moon: sensor.moon_faza
+  lights:
+    - light.led_spodok_kuchyna
+    - switch.stromcek
+```
+
+## Inštalácia
+
+**Home Assistant Marketplace (2026.11+) / HACS:** Repo musí byť zverejnené vo vlastnom **verejnom GitHub repozitári**, napríklad `ha-seasons-universal`. V HA otvor **Nastavenia → Marketplace → Add from link**, zadaj jeho URL, nainštaluj Dashboard a vlož kartu cez grafické rozhranie. Po inštalácii Marketplace automaticky načíta modul z `/local/community/ha-seasons-universal/ha-seasons-universal.js`. Na starších verziách HA použite HACS → Custom repositories → Dashboard. **ZIP nie je zverejnený repozitár**.
+
+**Ručná inštalácia:** Skopíruj obsah `dist/` do `/config/www/ha-seasons-universal/`, pridaj Dashboard zdroj typu JavaScript Module `/local/ha-seasons-universal/ha-seasons-universal.js?v=1.1.0`, obnov stránku a pridaj manuálnu kartu.
+
+Test bez senzorov: `/local/ha-seasons-universal/TEST.html` (pri ručnej inštalácii). Test používa simulované hodnoty a nemení žiadnu entitu.
+
+## Poznámky
+
+- Zrážkový senzor WS2900 vie zaznamenať dážď, nie padajúci sneh. Sneženie bez samostatného senzora je iba odhad podľa entity počasia.
+- Bez stanice intenzita dažďa nie je miestne meranie; ide o orientačný efekt podľa `weather.*`.
+- Šetrič nedokáže rozsvietiť vypnutú fyzickú obrazovku tabletu.
+- Fotografie niektorých špeciálnych sviatočných scén sú zatiaľ staršie kreslené SVG. Na ich spracovanie sa používa **jediný** obraz, nie skladanie dvoch panorám.
+- V prípade akýchkoľvek problémov stačí odstrániť túto jednu kartu a JS resource; pôvodný dashboard zostáva bez zmeny.
+
+## Technické poznámky
+
+- Jedna karta na jeden Lovelace pohľad je odporúčaný spôsob použitia. Šetrič nevytvára globálnu automatizáciu na všetkých dashboardoch.
+- Grafický editor volá štandardné `getConfigElement()` a `config-changed`; konfigurácia sa ukladá do dashboardu.
+- Jediné externé údaje číta z existujúcich entít Home Assistanta; modul sám nevyžaduje ani neodosiela údaje na vlastný server.
+- Na zariadeniach s redukovanými animáciami systém vypne pohyb lístia.
+- Ak sa šetrič nespúšťa, skontroluj režim úprav dashboardu, aktívny pohľad, stav načítania JS a to, či obrazovka neprešla do fyzického režimu spánku.
