@@ -32,6 +32,19 @@ for(const f of REQUIRED){
     invalid=true;
   }else console.log('OK '+f+' '+width+'x'+height+' '+b.length+' bytes');
 }
+// Christmas overlays must be actual raster images, never placeholders or empty files.
+for(const f of [
+ 'dist/assets/christmas-tree-lit.webp',
+ 'dist/assets/christmas-tree-unlit.webp',
+ 'dist/assets/advent-wreath-unlit.webp',
+ 'dist/assets/advent-candle-flame.webp'
+]){
+  if(!fs.existsSync(f)){console.error('::error file='+f+'::Missing realistic Advent image');invalid=true;continue;}
+  const b=fs.readFileSync(f);
+  if(b.length<500||b.toString('ascii',0,4)!=='RIFF'||b.toString('ascii',8,12)!=='WEBP'){
+    console.error('::error file='+f+'::Invalid holiday WebP raster');invalid=true;
+  }else console.log('OK '+f+' '+b.length+' bytes');
+}
 if(invalid){
  console.error('V1.6 JavaScript tests can pass even if image files are missing. The dashboard will show old fallbacks until all 5 seasonal images are uploaded.');
  process.exitCode=1;
