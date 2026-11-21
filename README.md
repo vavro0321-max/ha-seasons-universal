@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.10.0 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.10.1 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,12 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Nové vo V1.10.1 – realistickejšie umiestnenie pri kostole
+
+Dekorácie už neležia v dvoch protiľahlých rohoch obrazovky. Na vstavanom pozadí s kostolíkom je **menší stromček umiestnený vľavo pri kostole, medzi kostolom a existujúcim stromom**. **Adventný veniec je zmenšený a položený do trávy pri kľukatej cestičke**, bližšie ku stromčeku. Mierka a poloha sa upravujú podľa toho, ako je sezónna fotografia na obrazovke orezaná. Kostol, dedina a hory sa nijako nepremaľovávajú.
+
+Pri používateľských vlastných fotografiách je poloha kostola neznáma, preto zostáva univerzálne rozloženie v rohoch. Dátumy sviečok a rozsvietenia stromčeka sa nemenia.
 
 ## Nové vo V1.10.0 – adventný veniec a stromček 🎄
 
