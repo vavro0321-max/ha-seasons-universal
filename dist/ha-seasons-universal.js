@@ -550,7 +550,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     const saturation=(d.clouds==='overcast'?.85:1.05)*(.82+.18*d.dayLight);
     // Soft gamma-like shadow lift reveals church, mountains and village at night
     // while sunlight, solar elevation, seasonal photos and day brightness stay unchanged.
-    const nightContrast=1-.25*d.nightLight;
+    const nightContrast=1-.07*d.nightLight;
     photo.style.filter=`brightness(${d.brightness.toFixed(3)}) contrast(${nightContrast.toFixed(3)}) saturate(${saturation.toFixed(3)}) sepia(${(d.warmth*.17).toFixed(3)}) hue-rotate(${(-d.warmth*10).toFixed(1)}deg)`;
     el('.nightveil').style.opacity=(d.nightLight*(.06+.08*d.deepNight)).toFixed(3);
     el('.skyshade').style.opacity=(d.nightLight*(d.clouds==='overcast'?.32:d.clouds==='partly'?.38:.43)).toFixed(3);
