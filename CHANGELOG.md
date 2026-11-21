@@ -1,5 +1,12 @@
 # Zmeny
 
+## 1.7.1 (2026-11-21)
+- Odstránená simulácia Living World: animovaní chodci, autá a vtáky už neprechádzajú cez budovy.
+- Obnovený čistý kód V1.6.1 so zachovaním počasia, sezón, nočného jasu, hmly, snehu, Slnka, Mesiaca a pozastavenia šetriča pri Kamerách.
+- Z grafického editora odstránené voľby `living_world`, `living_density`, `living_people`, `living_cars` a `living_birds`.
+- Odstránený test Living World z GitHub Actions; staré parametre v YAML sú ignorované.
+
+
 ## 1.7.0 (2026-11-21)
 - Živá dedina s animovanými chodcami, autami a vtákmi.
 - Denný režim a počasie prispôsobujú hustotu pohybu; v noci sú vtáky vypnuté.
