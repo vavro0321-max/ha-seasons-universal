@@ -1,5 +1,13 @@
 # Zmeny
 
+## 1.10.4 (2026-11-22)
+- Realistické dekorácie prispôsobené tmavej nočnej krajine: nižší jas ihličia a vence, zachované teplé plamene a žiarovky.
+- Stromček je ukotvený hlbšie v tráve pri kostole; veniec sa presunul od plota na trávnatý okraj kľukatej cesty.
+- Pridané jemné kontaktné tiene a svetelný nádych na zemi, bez zásahu do základnej fotografie.
+- Testy aktualizované pre nové referenčné súradnice a dynamické nasvietenie.
+- Adventné dátumy, zapálenie sviečok a rozsvietenie stromčeka na Mikuláša zostávajú bez zmeny.
+
+
 ## 1.10.3 (2026-11-22)
 - Oprava vizuálneho testu: stromček vo verzii 1.10.2 visel pred vstupom do kostola a veniec bol príliš vysoko a veľký.
 - Teraz sa oba realistické obrázkové objekty umiestňujú podľa **miesta dotyku so zemou**, nie podľa horného rohu obrázka. Menší stromček stojí v tráve napravo od kostola; veniec leží bližšie ku chodníku.
