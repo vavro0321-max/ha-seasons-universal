@@ -1,5 +1,13 @@
 # Zmeny
 
+## 1.10.0 (2026-11-21)
+- Vianočný motív sa automaticky začína prvou adventnou nedeľou, ktorá sa každý rok vypočíta podľa kalendára.
+- Adventný veniec viditeľný od prvej adventnej nedele do 24. decembra; pri každej ďalšej adventnej nedeli pribudne jeden plamienok, maximálne štyri.
+- Plamienky sviečok sa zobrazujú iba pri zotmení a v noci podľa slnečnej výšky (sun.sun); vo dne sú sviečky nezapálené.
+- Vianočný stromček je od začiatku adventu nesvietiaci, od 6. decembra večer sa automaticky rozsvecuje až do 6. januára.
+- Oba prvky možno samostatne vypnúť v grafickom editore alebo cez YAML; zachované vlastné fotografie a ostatné efekty.
+- Test `test-advent.cjs` pokrýva roky 2026–2028, kalendár, prechod dňa a noci.
+
 ## 1.9.2 (2026-11-21)
 - Hmla sa zobrazuje **výhradne** pri stave `weather.* = fog` alebo `mist`.
 - Zamračené / polooblačné / jasno / dážď / sneh už nikdy automaticky nepridávajú hmlu z vlhkosti či rosného bodu.
