@@ -255,6 +255,9 @@ function livingCreateWorld(d,cfg={},rng=Math.random){
   const limits=livingLimits(d,cfg);
   if(limits.person&&d?.p?.hour>=6&&d?.p?.hour<21)livingSpawn(world,'person',rng);
   if(limits.bird)livingSpawn(world,'bird',rng);
+  // A distant vehicle is visible immediately in the evening/night demo;
+  // after it exits, new cars appear at naturally spaced random intervals.
+  if(limits.car&&(d?.p?.hour>=18||rng()<.22))livingSpawn(world,'car',rng);
   return world;
 }
 function livingStep(world,dt,d,cfg={},rng=Math.random){
