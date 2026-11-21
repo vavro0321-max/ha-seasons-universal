@@ -1,5 +1,14 @@
 # Zmeny
 
+## 1.3.0 (2026-11-21)
+- Realistickejšia jasná, polooblačná a zamračená noc s primeranou viditeľnosťou krajiny
+- Mesačné osvetlenie podľa fázy Mesiaca a oblačnosti, s plynulým ranným a večerným prechodom
+- Rozsvietené okná kostolíka a dediny prispôsobené polohám na sezónnych fotografiách
+- Jemná vizuálna námraza a snehová pokrývka podľa teploty (iba grafický odhad)
+- Sneženie iba pri hlásenom snežení
+- Nové grafické prepínače a test test-night-weather.cjs
+
+
 ## 1.2.0 (2026-11-21)
 - Súvislé osvetlenie krajiny podľa výšky Slnka v sun.sun počas dňa, súmraku aj celej noci
 - Hlboká noc je tmavšia než večer a pred svitaním sa automaticky zosvetľuje
