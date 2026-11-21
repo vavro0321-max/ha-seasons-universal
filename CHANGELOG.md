@@ -1,5 +1,13 @@
 # Zmeny
 
+## 1.4.0 (2026-11-21)
+- Opravené takmer identické zelené podklady pre jar, leto a jeseň
+- Selektívna zmena farby rastlín: jesenné zlaté a hnedé listy, sýte letné zelené a svieže jarné s jemnými kvetmi
+- Zachovaná jediná fotografia bez skokov medzi denným a nočným zobrazením
+- Overený novembrový výber scény a nový test `test-seasonal-colors.cjs`
+- Prepínač `season_colors` v grafickom editore, štandardne zapnutý
+
+
 ## 1.3.1 (2026-11-21)
 - Šetrič sa nespúšťa pri otvorenom pop-upe Kamery (`#kamery`) ani v pomenovanom pohľade kamier
 - Po návrate z kamier sa 30-sekundové odpočítavanie nečinnosti spustí odznova
