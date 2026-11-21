@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.8 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.9.1 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,41 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## V1.9.1 – vlastná fotografia, štyri sezóny a čistejšie nebo
+
+Používateľ si môže bez zásahu do JavaScriptu vybrať **vlastný obrázok** ako celoročné pozadie alebo nastaviť vlastné obrázky pre **jar, leto, jeseň a zimu**, prípadne zimu bez snehu. Obrázky sú zadávané cez grafický editor karty ako odkazy na miestne fotografie, napríklad `/local/moja-krajina.jpg`, alebo na HTTPS obrázky. Na Home Assistante patrí súbor `moja-krajina.jpg` do `/config/www/`.
+
+**Dôležité obmedzenie:** Pri jednej vlastnej fotografii vie karta automaticky upravovať farby podľa ročného obdobia, svetlo Slnka a Mesiaca, dážď, sneh a hmlu. Nedokáže však vierohodne odstrániť listy zo stromu alebo vytvoriť fotorealistickú snehovú pokrývku z ľubovoľnej letnej fotografie. Pre skutočne presný vzhľad sú potrebné vlastné fotografie jednotlivých období.
+
+Efekty fixné pre našu dedinu – osvetlené okná budov, pozície pôvodného tieňa stromu a ďalšie lokálne prvky – sa pri ľubovoľnom cudzom obrázku skryjú, aby nesvietili na nesprávnych miestach. Slnko a Mesiac ostávajú voliteľné. Používateľ môže intenzitu sezónneho zafarbenia nastaviť v grafickom editore. Ak je vlastná fotografia nedostupná, doplnok sa vráti k pôvodnému pozadiu.
+
+Pri vylepšení V1.9.1 sú **rozmazané cloud vrstvy slabšie**, aby čiastočne zamračená obloha nepôsobila ako hmla. Odhadovaná hmla z vlhkosti/rosného bodu sa kreslí len jemne; výrazná je hlavne vtedy, keď entita `weather.*` priamo hlási `fog`. Časť prirodzeného oparu, ktorá je natrvalo na fotografii, zostáva súčasťou samotného obrázka.
+
+Príklad základného nastavenia:
+
+```yaml
+type: custom:ha-seasons-universal-card
+idle_seconds: 30
+source: auto
+custom_image: /local/moja-krajina.jpg
+custom_season_strength: 0.8
+fog_effect: true
+```
+
+Príklad so štyrmi reálnymi ročnými obdobiami:
+
+```yaml
+type: custom:ha-seasons-universal-card
+custom_images:
+  spring: /local/jar.jpg
+  summer: /local/leto.jpg
+  autumn: /local/jesen.jpg
+  winter: /local/zima.jpg
+  winter_dry: /local/zima-bez-snehu.jpg
+```
+
+Všetky vlastné fotografie sú voliteľné. Ak nie sú nastavené, zostáva pôvodná krajina s kostolíkom. Ak chceš hmlovú vrstvu úplne odstrániť, použi `fog_effect: false`. Dátum, denná/noc, počasie a ročné obdobia pokračujú bez zmeny.
 
 ## Nové vo V1.8 – voliteľný vývoz odpadu a lepšia viditeľnosť v noci
 
