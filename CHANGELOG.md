@@ -1,5 +1,12 @@
 # Zmeny
 
+## 1.9.2 (2026-11-21)
+- Hmla sa zobrazuje **výhradne** pri stave `weather.* = fog` alebo `mist`.
+- Zamračené / polooblačné / jasno / dážď / sneh už nikdy automaticky nepridávajú hmlu z vlhkosti či rosného bodu.
+- Oblaky sú obmedzené na hornú časť oblohy; intenzity jasného, polooblačného a zamračeného počasia sa odlišujú bez zahmlenia dediny.
+- Upravené testy `test-clear-scenery.cjs` a `test-unified-landscape.cjs`; zachované nočné osvetlenie, sezóny, vývoz odpadu a vlastné fotografie.
+
+
 ## 1.9.1 (2026-11-21)
 - Čistejšie nebo bez umelého hmlistého efektu pri polooblačnom a zamračenom počasí.
 - Silnejšia hmla sa vykreslí predovšetkým pri `weather.* = fog`; odhad z vlhkosti je jemnejší.
