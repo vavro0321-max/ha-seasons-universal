@@ -1,5 +1,12 @@
 # Zmeny
 
+## 1.10.1 (2026-11-21)
+- Zmenšený adventný veniec a vianočný stromček, aby mierka zodpovedala dedine na pôvodnej fotografii.
+- Na vstavaných sezónnych fotografiách je stromček medzi existujúcim stromom a kostolom, bližšie ku kostolu; veniec stojí v tráve neďaleko stromčeka a chodníka.
+- Pozície sú viazané na súradnice fotografie (1536 × 864) a rešpektujú orez obrázka, jeho posun, orientáciu a režim `contain`/`cover`.
+- Pri vlastnej fotografii zostáva univerzálne rozloženie v rohoch, pretože umiestnenie kostola a cesty nie je známe.
+- Adventný kalendár a zapaľovanie sviečok sa nemenia.
+
 ## 1.10.0 (2026-11-21)
 - Vianočný motív sa automaticky začína prvou adventnou nedeľou, ktorá sa každý rok vypočíta podľa kalendára.
 - Adventný veniec viditeľný od prvej adventnej nedele do 24. decembra; pri každej ďalšej adventnej nedeli pribudne jeden plamienok, maximálne štyri.
