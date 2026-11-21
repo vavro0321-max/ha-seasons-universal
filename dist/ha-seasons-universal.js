@@ -623,7 +623,7 @@ class HASeasonsUniversalCard extends HTMLElement {
       tree.style.right='auto';
       tree.style.bottom='auto';
       wreath.style.left=(ox+285*px*imageScale)+'px';
-      wreath.style.top=(oy+608*py*imageScale)+'px';
+      wreath.style.top=(oy+590*py*imageScale)+'px';
       wreath.style.width=(145*px*imageScale)+'px';
       wreath.style.right='auto';
       wreath.style.bottom='auto';
