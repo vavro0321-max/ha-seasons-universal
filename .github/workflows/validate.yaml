@@ -20,7 +20,7 @@ jobs:
           category: plugin
 
   validate-image-assets:
-    name: Required V1.5 photo assets present
+    name: Required V1.6 seasonal photos present
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
