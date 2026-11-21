@@ -23,7 +23,7 @@ jobs:
     name: Required V1.5 photo assets present
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Validate both shared landscape WebP images
         run: node test-required-images.cjs
 
@@ -31,7 +31,7 @@ jobs:
     name: JavaScript syntax and logic
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check JavaScript syntax
         run: node --check dist/ha-seasons-universal.js
       - name: Test weather and seasonal logic
