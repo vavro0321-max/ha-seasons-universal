@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.6 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.6.1 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,23 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Nové vo V1.6.1 – viditeľnejšia, ale stále nočná krajina
+
+- V noci sú kostolík, dedina, cesta a hory lepšie viditeľné. Modrastá nočná atmosféra zostáva zachovaná.
+- Jasná noc pri splne je svetlejšia než polooblačná alebo zamračená noc.
+- Silné tmavé filtre boli zmiernené a prechod súmrak → noc → svitanie je plynulý.
+- **Denný jas sa nemení**, naďalej závisí od výšky Slnka a (ak je dostupná) meteostanice WS2900.
+- V grafickom editore karty pribudol posuvník **Jas nočnej krajiny**. Predvolená hodnota je **110 %**, prípustný rozsah je **80–135 %**. Hodnota je násobiteľ nočného osvetlenia, nie fyzického jasu displeja.
+
+```yaml
+type: custom:ha-seasons-universal-card
+idle_seconds: 30
+source: auto
+night_brightness: 1.1  # predvolené; pre jasnejšiu noc skúste 1.2 alebo 1.25
+```
+
+Na existujúcom dashboarde sa nová predvolená hodnota zapne automaticky bez úpravy YAML. Po aktualizácii modulu obnov stránku na tablete.
 
 ## Nové vo V1.6 – štyri schválené fotografie + dynamické počasie
 
