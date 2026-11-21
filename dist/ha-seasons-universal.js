@@ -1,9 +1,9 @@
-/* HA Seasons Universal 1.9.1 — clearer sky, weather-gated fog and personal backgrounds. */
-const VERSION='1.9.1';
+/* HA Seasons Universal 1.9.2 — fog only on reported fog/mist; clear, partly cloudy and overcast stay distinct. */
+const VERSION='1.9.2';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
-const knownWeather=['sunny','clear-night','partlycloudy','cloudy','rainy','pouring','lightning-rainy','snowy','snowy-rainy','fog','hail','lightning','windy','windy-variant','exceptional'];
+const knownWeather=['sunny','clear-night','partlycloudy','cloudy','rainy','pouring','lightning-rainy','snowy','snowy-rainy','fog','mist','hail','lightning','windy','windy-variant','exceptional'];
 const MOONS=['new_moon','waxing_crescent','first_quarter','waxing_gibbous','full_moon','waning_gibbous','last_quarter','waning_crescent'];
 const MOON_SK=['Nov','Dorastajúci kosáčik','Prvá štvrť','Dorastajúci Mesiac','Spln','Ubúdajúci Mesiac','Posledná štvrť','Ubúdajúci kosáčik'];
 function localParts(now,timeZone){
@@ -51,10 +51,11 @@ function getInputs(hass,config,now=new Date()){
   const humidity=numberFor(hass,humidityId)??safeNumber(wo?.attributes?.humidity);
   const dewpoint=toCelsius(numberFor(hass,dewpointId),unitFor(hass,dewpointId));
   const dewGap=temperature!==null&&dewpoint!==null?temperature-dewpoint:null;
-  // Prefer a direct weather.fog signal. Only estimate fog with near-saturated,
-  // nearly windless air; never infer fog from low temperature alone.
-  const fogEstimate=humidity!==null&&humidity>=94&&dewGap!==null&&dewGap<=1.4&&(wind===null||wind<9);
-  const fogLevel=config.fog_effect===false?0:wx==='fog'?.83:(fogEstimate?clamp(.30+(humidity-94)*.045+Math.max(0,1.4-dewGap)*.11,.25,.68):0);
+  // Fog is a weather condition, not a synonym for overcast skies or humid air.
+  // Even 100% humidity / near-zero dewpoint gap does not trigger white fog.
+  // Only a weather entity that explicitly reports fog or mist may show it.
+  const reportedFog=wx==='fog'||wx==='mist';
+  const fogLevel=config.fog_effect===false?0:(reportedFog?.87:0);
   const weatherValid=wx!=='unavailable';
   const rainWeather=['rainy','pouring','lightning-rainy'].includes(wx);
   let precipitation='none',intensity=0,estimated=false;
@@ -62,7 +63,7 @@ function getInputs(hass,config,now=new Date()){
     precipitation='snow';intensity=wx==='snowy-rainy'?0.36:0.49;estimated=true;
   }else if(rain!==null&&rain>0.025){precipitation='rain';intensity=clamp(Math.log1p(rain)/Math.log1p(22),0.05,1);}
   else if(rain===null&&rainWeather){precipitation='rain';intensity=wx==='pouring'?0.85:0.34;estimated=true;}
-  let clouds=wx==='partlycloudy'||wx==='windy-variant'?'partly':wx==='cloudy'||wx==='fog'||['rainy','pouring','lightning-rainy','snowy','snowy-rainy','hail'].includes(wx)?'overcast':'clear';
+  let clouds=wx==='partlycloudy'||wx==='windy-variant'?'partly':wx==='cloudy'||reportedFog||['rainy','pouring','lightning-rainy','snowy','snowy-rainy','hail'].includes(wx)?'overcast':'clear';
   if(!weatherValid&&solar!==null&&elevation!==null&&elevation>10){const expected=Math.max(150,900*Math.sin(elevation*Math.PI/180)),ratio=solar/expected;clouds=ratio<.30?'overcast':ratio<.67?'partly':'clear';}
   if(precipitation!=='none')clouds='overcast';
   const scene=config.scene&&config.scene!=='auto'?config.scene:seasonAt(p);
@@ -319,12 +320,12 @@ const OVERLAY_STYLE=`
 .nightveil{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(2,9,35,.26) 0%,rgba(4,12,34,.17) 45%,rgba(0,3,19,.24) 100%);transition:opacity 6s ease;}
 .skyshade{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(1,8,24,.92),rgba(3,15,33,.53) 34%,rgba(4,15,30,.1) 61%,transparent 78%);transition:opacity 6s ease;}
 .moonwash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse 76% 76% at 82% 25%,rgba(189,218,255,.22),rgba(123,173,231,.11) 48%,transparent 90%);mix-blend-mode:screen;transition:opacity 7s ease;}
-.cloudshade{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(68,83,109,.47) 0%,rgba(39,54,77,.24) 44%,transparent 82%);transition:opacity 6s ease;}
-.cloudbank{position:absolute;inset:0 0 47% 0;pointer-events:none;opacity:0;
- background:radial-gradient(ellipse 45% 25% at 25% 27%,rgba(236,238,244,.56),transparent 100%),
- radial-gradient(ellipse 49% 32% at 77% 43%,rgba(218,223,235,.59),transparent 100%),
- radial-gradient(ellipse 62% 25% at 48% 78%,rgba(203,209,221,.48),transparent 100%);
- filter:blur(7px);transition:opacity 8s ease;}
+.cloudshade{position:absolute;inset:0 0 64% 0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(25,38,65,.46) 0%,rgba(45,62,82,.15) 68%,transparent 100%);transition:opacity 6s ease;}
+.cloudbank{position:absolute;inset:0 0 72% 0;pointer-events:none;opacity:0;
+ background:radial-gradient(ellipse 31% 38% at 18% 30%,rgba(176,188,205,.50),transparent 100%),
+ radial-gradient(ellipse 36% 34% at 71% 31%,rgba(179,192,208,.46),transparent 100%),
+ radial-gradient(ellipse 45% 24% at 43% 72%,rgba(155,174,193,.26),transparent 100%);
+ filter:blur(2px);transition:opacity 8s ease;}
 .unifiedfx{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
 .unifiedfx .unified-map{position:absolute;max-width:none;max-height:none;overflow:visible}
 .unifiedfx .us-fog,.unifiedfx .us-lights,.unifiedfx .us-snow{transition:opacity 8s ease}
@@ -545,9 +546,9 @@ class HASeasonsUniversalCard extends HTMLElement {
       coat.style.opacity=usingCustom&&custom.graded&&this._config.season_colors!==false?
         String(clamp(Number(this._config.custom_season_strength??.8),0,1.2)): '0';
       frost.style.opacity=usingCustom&&this._config.snow_cover!==false?(d.snowCover*.70).toFixed(3):'0';
-      fog.style.opacity=usingCustom?(d.fogLevel*(d.weather==='fog'?.58:.14)).toFixed(3):'0';
+      fog.style.opacity=usingCustom?d.fogLevel.toFixed(3):'0';
     }
-    const saturation=(d.clouds==='overcast'?.85:1.05)*(.82+.18*d.dayLight);
+    const saturation=(d.clouds==='overcast'?.97:d.clouds==='partly'?1.02:1.07)*(.90+.10*d.dayLight);
     // Soft gamma-like shadow lift reveals church, mountains and village at night
     // while sunlight, solar elevation, seasonal photos and day brightness stay unchanged.
     const nightContrast=1-.07*d.nightLight;
@@ -555,9 +556,9 @@ class HASeasonsUniversalCard extends HTMLElement {
     el('.nightveil').style.opacity=(d.nightLight*(.06+.08*d.deepNight)).toFixed(3);
     el('.skyshade').style.opacity=(d.nightLight*(d.clouds==='overcast'?.32:d.clouds==='partly'?.38:.43)).toFixed(3);
     el('.moonwash').style.opacity=(d.moonlight*.96).toFixed(3);
-    el('.cloudshade').style.opacity=(d.nightLight*(d.clouds==='overcast'?.38:d.clouds==='partly'?.18:0)).toFixed(3);
-    // Clouds belong in the sky, not as a white mist over the entire landscape.
-    el('.cloudbank').style.opacity=(d.clouds==='overcast'?.25:d.clouds==='partly'?.07:0).toFixed(3);
+    el('.cloudshade').style.opacity=(d.nightLight*(d.clouds==='overcast'?.27:d.clouds==='partly'?.10:0)).toFixed(3);
+    // Add distinct cloud coverage in the SKY only; overcast must never paint fog over buildings.
+    el('.cloudbank').style.opacity=(d.clouds==='overcast'?.34:d.clouds==='partly'?.13:0).toFixed(3);
     el('.warmth').style.opacity=(d.warmth*.72).toFixed(3);
     el('.stars').style.opacity=(d.nightLight*(d.clouds==='overcast'?.015:d.clouds==='partly'?.18:.63)).toFixed(3);
     const isPhotoSeason=['spring','summer','autumn','winter'].includes(d.scene);
@@ -577,9 +578,8 @@ class HASeasonsUniversalCard extends HTMLElement {
       unifiedMap.style.left=`${(bounds.width-ww)*clamp(Number(this._config.image_focus??55),0,100)/100}px`;
       unifiedMap.style.top=`${(bounds.height-hh)/2}px`;
       unifiedMap.querySelector('.us-lights').style.opacity=this._config.night_lights===false?'0':(d.nightLight*(.35+.65*d.deepNight)).toFixed(3);
-      // Strong mist only when the weather integration explicitly reports fog;
-      // humidity/dew-point estimates use a subtle valley haze, not a white veil.
-      unifiedMap.querySelector('.us-fog').style.opacity=(d.fogLevel*(d.weather==='fog'?.83:.22)).toFixed(3);
+      // Never add any mist on sunny, partly cloudy, cloudy or rainy days.
+      unifiedMap.querySelector('.us-fog').style.opacity=d.fogLevel.toFixed(3);
       unifiedMap.querySelector('.us-snow').style.opacity=this._config.snow_cover===false?'0':d.snowCover.toFixed(3);
     }
     const winter=d.scene==='winter';
@@ -612,7 +612,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     const visible={clock:'show_clock',date:'show_date',temperature:'show_temperature',heating:'show_heating',nameday:'show_nameday',lighting:'show_lights',weather:'show_weather',rise:'show_sun',set:'show_sun',moon:'show_moon'};
     for(const [field,opt] of Object.entries(visible)){const target=el(field==='clock'?'.clock':field==='date'?'.date':`[data-field="${field}"]`);const box=field==='temperature'||field==='heating'||field==='nameday'||field==='lighting'?target?.closest('.status'):target;if(box)box.style.display=this._config[opt]===false?'none':'';}
     el('.statusbar').style.display=['temperature','heating','nameday','lighting'].some(f=>this._config[visible[f]]!==false)?'grid':'none';
-    const wdesc={sunny:'Jasno',partlycloudy:'Polooblačno',cloudy:'Zamračené',rainy:'Dážď',pouring:'Silný dážď',snowy:'Sneženie','snowy-rainy':'Sneh s dažďom',fog:'Hmla','clear-night':'Jasná noc'};
+    const wdesc={sunny:'Jasno',partlycloudy:'Polooblačno',cloudy:'Zamračené',rainy:'Dážď',pouring:'Silný dážď',snowy:'Sneženie','snowy-rainy':'Sneh s dažďom',fog:'Hmla',mist:'Hmla','clear-night':'Jasná noc'};
     el('[data-field="weather"]').textContent=`🌦️ ${wdesc[d.weather]|| (d.weather==='unavailable'?'Počasie nedostupné':d.weather)}${d.estimated?' (odhad)':''}`;
     el('[data-field="rise"]').textContent=`🌅 ${fmtTime(this._hass,state(this._hass,'sun.sun')?.attributes?.next_rising)}`;
     el('[data-field="set"]').textContent=`🌇 ${fmtTime(this._hass,state(this._hass,'sun.sun')?.attributes?.next_setting)}`;
@@ -649,7 +649,7 @@ const OPTIONS={
  scene:[['auto','Automaticky podľa roka'],['spring','Jar'],['summer','Leto'],['autumn','Jeseň'],['winter','Zima'],['christmas','Vianoce'],['easter','Veľká noc'],['may','Máj'],['memorial','Dušičky'],['nicholas','Mikuláš'],['newyear','Nový rok']],
  phase:[['auto','Automaticky podľa slnka'],['day','Deň'],['dawn','Svitanie'],['dusk','Súmrak'],['night','Noc']]
 };
-const OPTION_LABELS={custom_sky_objects:'Slnko a Mesiac na vlastnom obrázku',show_waste:'Zobrazovať vývoz odpadu (ak existujú senzory)',show_clock:'Hodiny',show_date:'Dátum',show_temperature:'Vonkajšia teplota',show_heating:'Kúrenie',show_nameday:'Meniny',show_lights:'Svetlá',show_weather:'Stav počasia',show_sun:'Východ a západ slnka',show_moon:'Fáza Mesiaca',precipitation_animation:'Padajúci dážď / sneh',leaf_animation:'Pohyb lístia',night_lights:'Svetlá v dedine a kostolíku',pause_on_camera:'Nespúšťať šetrič pri otvorenej záložke Kamery',moonlight_effect:'Osvetlenie krajiny Mesiacom',snow_cover:'Snehová pokrývka a námraza podľa teploty (odhad)',unified_scene:'Jedna krajina pre všetky ročné obdobia (moje fotografie)',fog_effect:'Hmla podľa počasia a vlhkosti',season_colors:'Výrazné farby ročných období (jar, leto, jeseň)'};
+const OPTION_LABELS={custom_sky_objects:'Slnko a Mesiac na vlastnom obrázku',show_waste:'Zobrazovať vývoz odpadu (ak existujú senzory)',show_clock:'Hodiny',show_date:'Dátum',show_temperature:'Vonkajšia teplota',show_heating:'Kúrenie',show_nameday:'Meniny',show_lights:'Svetlá',show_weather:'Stav počasia',show_sun:'Východ a západ slnka',show_moon:'Fáza Mesiaca',precipitation_animation:'Padajúci dážď / sneh',leaf_animation:'Pohyb lístia',night_lights:'Svetlá v dedine a kostolíku',pause_on_camera:'Nespúšťať šetrič pri otvorenej záložke Kamery',moonlight_effect:'Osvetlenie krajiny Mesiacom',snow_cover:'Snehová pokrývka a námraza podľa teploty (odhad)',unified_scene:'Jedna krajina pre všetky ročné obdobia (moje fotografie)',fog_effect:'Hmla iba pri hlásení fog / mist',season_colors:'Výrazné farby ročných období (jar, leto, jeseň)'};
 const ENTITY_LABELS={weather:'Počasie (weather.*)',temperature:'Vonkajšia teplota',rain:'Intenzita dažďa',solar:'Slnečné žiarenie',wind:'Rýchlosť vetra',gust:'Nárazy vetra',humidity:'Vonkajšia vlhkosť (hmla)',dewpoint:'Rosný bod (hmla)',heating:'Kúrenie / termostat',nameday:'Meniny',moon:'Fáza Mesiaca',waste_municipal:'Komunálny odpad – dátum vývozu (voliteľné)',waste_recycling:'Separovaný odpad – dátum vývozu (voliteľné)',lights:'Svetlá – entity oddelené čiarkou'};
 function escapeHtml(t){return String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 class HASeasonsUniversalEditor extends HTMLElement{
