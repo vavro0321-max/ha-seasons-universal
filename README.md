@@ -89,7 +89,7 @@ Oprava používa selektívnu úpravu farebnosti rastlín priamo v prehliadači, 
 - **Jar:** svieža svetlejšia zeleň a jemné kvety na strome.
 - **Leto:** sýta zelená tráva a listy.
 - **Jeseň:** počas septembra sa postupne objavuje zlaté lístie, v októbri a novembri prevládajú žlté, oranžové a hnedé odtiene aj na tráve.
-- **Zima:** odlišná zasnežená scéna, počasie a námraza zostávajú dynamické podľa doterajšej logiky.
+- **Zima:** holý strom aj bez snehu; pri teplom suchom počasí je zem bez snehového efektu. Pri mraze sa môže zobraziť ilustračná námraza a pri hlásenom snežení padajúci sneh. Skutočnú snehovú pokrývku program nemeria.
 
 Nová voľba v grafickom editore **„Výrazné farby ročných období (jar, leto, jeseň)”** je zapnutá predvolene. Pri potrebe vypnutia použi `season_colors: false`. Pri prepínaní počiatočnej fotografie sa môže úprava farieb načítať s krátkym oneskorením (najmä na slabšom tablete), no pôvodný obrázok zostáva viditeľný.
 
