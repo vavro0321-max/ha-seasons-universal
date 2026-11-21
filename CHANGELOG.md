@@ -1,5 +1,14 @@
 # Zmeny
 
+## 1.8.0 (2026-11-21)
+- Voliteľný vývoz komunálneho a separovaného odpadu s automatickým rozpoznaním dátumových senzorov.
+- Termíny Dnes/Zajtra sú zvýraznené; neexistujúce alebo neplatné senzory nezobrazujú žiadnu sekciu.
+- Podpora vlastných entít `waste_municipal` a `waste_recycling` a prepínača `show_waste` v grafickom editore.
+- Nočná fotografia je viditeľnejšia vďaka šetrnejšiemu kontrastu a slabším tmavým vrstvám.
+- Zachované plynulé svitanie/západ, počasie, ročné obdobia, Mesiac, šetrič Kamery a bez pohyblivých chodcov a áut.
+- Nový test `test-waste-display.cjs` pre senzory, dátumy, absentujúce hodnoty a nočný kontrast.
+
+
 ## 1.7.1 (2026-11-21)
 - Odstránená simulácia Living World: animovaní chodci, autá a vtáky už neprechádzajú cez budovy.
 - Obnovený čistý kód V1.6.1 so zachovaním počasia, sezón, nočného jasu, hmly, snehu, Slnka, Mesiaca a pozastavenia šetriča pri Kamerách.
