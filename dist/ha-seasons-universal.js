@@ -311,7 +311,24 @@ class HASeasonsUniversalCard extends HTMLElement {
     const cache=this._seasonCache??(this._seasonCache=new Map());
     if(cache.has(key)){photo.style.backgroundImage=cache.get(key);return;}
     photo.style.backgroundImage=original;
-    if(!grading)return;
+    // Verify the optional photos exist in this HACS installation; if not, the
+    // previous built-in scene remains available until the user uploads images.
+    const fallback=()=>{
+      if(!this._root||this._root!==root||this._imageToken!==token)return;
+      if(image.startsWith('universal-landscape')){
+        (this._missingImages??(this._missingImages=new Set())).add(image);
+        this._lastImage=null;
+        this._setSeasonPhoto(assetName(d),d);
+      }
+    };
+    if(!grading){
+      if(!image.startsWith('universal-landscape'))return;
+      const probe=new Image();
+      probe.onload=()=>{if(this._root===root&&this._imageToken===token){cache.set(key,original);photo.style.backgroundImage=original;}};
+      probe.onerror=fallback;
+      probe.src=ASSETS+image;
+      return;
+    }
     const picture=new Image();
     picture.onload=()=>{
       if(!this._root||this._root!==root||this._imageToken!==token)return;
@@ -346,7 +363,7 @@ class HASeasonsUniversalCard extends HTMLElement {
         console.warn('HA Seasons: sezónne zafarbenie nie je dostupné',error);
       }
     };
-    picture.onerror=()=>{if(this._root===root&&this._imageToken===token)photo.style.backgroundImage=original;};
+    picture.onerror=()=>{fallback();if(this._root===root&&this._imageToken===token)photo.style.backgroundImage=original;};
     picture.src=ASSETS+image;
   }
   _update(){if(!this._root||!this._hass)return;const d=getInputs(this._hass,this._config),now=new Date();this._data=d;const el=(s)=>this._root.querySelector(s);
