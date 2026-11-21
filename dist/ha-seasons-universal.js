@@ -120,7 +120,7 @@ function seasonStrength(scene,p){
   return scene==='summer'?.86:0;
 }
 function recolorSeasonalPixels(data,width,height,scene,strength){
-  if(!['spring','summer','autumn'].includes(scene))return data;
+  if(!['spring','summer','autumn','late_autumn','winter'].includes(scene))return data;
   const pixels=data,scale=clamp(strength,0,1);
   for(let i=0;i<pixels.length;i+=4){
     const red=pixels[i],green=pixels[i+1],blue=pixels[i+2];
@@ -129,7 +129,15 @@ function recolorSeasonalPixels(data,width,height,scene,strength){
     const vegetation=clamp((green-blue-12)/52,0,1)*clamp((green-red*.66-4)/45,0,1);
     if(vegetation<.025)continue;
     const a=vegetation*scale;
-    if(scene==='autumn'){
+    if(scene==='late_autumn'){
+      pixels[i]=red+(150-red)*a*.34;
+      pixels[i+1]=green*(1-.50*a);
+      pixels[i+2]=blue*(1-.23*a);
+    }else if(scene==='winter'){
+      pixels[i]=red+(166-red)*a*.30;
+      pixels[i+1]=green*(1-.45*a);
+      pixels[i+2]=blue+(142-blue)*a*.16;
+    }else if(scene==='autumn'){
       pixels[i]=red+(230-red)*a*.58;
       pixels[i+1]=green*(1-.39*a)+12*a;
       pixels[i+2]=blue*(1-.24*a);
@@ -301,9 +309,11 @@ class HASeasonsUniversalCard extends HTMLElement {
   _close(){this._visible=false;if(this._raf)cancelAnimationFrame(this._raf);this._raf=null;this._host?.remove();this._host=null;this._root=null;}
   _setSeasonPhoto(image,d){
     const photo=this._root?.querySelector('.photo');if(!photo)return;
-    const scene=visualSeason(d.scene);
-    const grading=this._config.season_colors!==false&&['spring','summer','autumn'].includes(scene);
-    const weight=grading?seasonStrength(scene,d.p):0;
+    const visual=visualSeason(d.scene);
+    const scene=d.leafless&&visual==='autumn'?'late_autumn':visual;
+    const shared=image.startsWith('universal-landscape');
+    const grading=this._config.season_colors!==false&&(['spring','summer','autumn'].includes(scene)||(shared&&['late_autumn','winter'].includes(scene)));
+    const weight=grading?(scene==='late_autumn'?.95:scene==='winter'?.83:seasonStrength(scene,d.p)):0;
     const key=image+'|'+scene+'|'+weight.toFixed(2)+'|'+grading;
     if(key===this._lastImage)return;
     this._lastImage=key;
