@@ -40,16 +40,17 @@ hass.states['sun.sun']={state:'below_horizon',attributes:{elevation:-15,azimuth:
 const night=getInputs(hass,{scene:'auto'},date);
 assert(night.nightLight>0.99,'candles and tree lights fully visible after dusk');
 assert(source.includes("show_advent_wreath:true,show_christmas_tree:true"));
-assert(source.includes("tree.querySelector('.tree-lights').style.opacity=glow.toFixed(3)"));
+assert(source.includes("tree.querySelector('.tree-lights').style.opacity="),'Tree lighting is still controlled by Advent state');
+assert(source.includes("const glow=holiday.treeLights?d.nightLight:0;"),'Tree is allowed to glow only from Mikuláš at dusk/night');
 assert(source.includes('christmas-tree-lit.webp'),'real tree lights asset used');
 assert(source.includes('christmas-tree-unlit.webp'),'unlit tree asset used before 6 December');
 assert(source.includes('advent-wreath-unlit.webp'),'real Advent wreath asset used');
 assert(source.includes('advent-candle-flame.webp'),'real candle flame asset used');
 // Check geometry rather than a fragile exact source-code string.
 const positions=ctx.fn.landscapeHolidayPlacement({width:1536,height:864},'cover',55,true);
-assert.equal(positions.tree.groundY,706,'Tree must stand on church lawn');
-assert.equal(positions.wreath.groundY,752,'Wreath must rest beside foreground path');
-assert(positions.tree.left>positions.wreath.left,'Tree is right of wreath, beside church');
+assert.equal(positions.tree.groundY,732,'Tree must touch the church lawn');
+assert.equal(positions.wreath.groundY,776,'Wreath must rest on grass beside the path');
+assert(positions.wreath.left>positions.tree.left,'Wreath is on the path-side grass, away from foreground fence');
 assert(!source.includes('viewBox=\\\"0 0 230 160\\\"'),
   'cartoon wreath SVG must not return');
 console.log('PASS Advent calendar, candle counts, St Nicholas tree, local day/night and config (14 dates)');

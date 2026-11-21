@@ -7,10 +7,10 @@ vm.createContext(ctx);
 vm.runInContext(source+'\nglobalThis.geometry=landscapeHolidayPlacement;',ctx);
 const get=ctx.geometry;
 const native=get({width:1536,height:864},'cover',55,true);
-assert(Math.abs(native.tree.groundY-706)<.01,'Tree base must meet the lawn');
-assert(Math.abs(native.wreath.groundY-752)<.01,'Wreath base must rest next to path');
+assert(Math.abs(native.tree.groundY-732)<.01,'Tree base must meet the lawn');
+assert(Math.abs(native.wreath.groundY-776)<.01,'Wreath base must rest next to path');
 assert(native.tree.left>560&&native.tree.left<600,'Tree stands immediately right of church');
-assert(native.wreath.left<native.tree.left,'Wreath should be closer to the path');
+assert(native.wreath.left>native.tree.left,'Wreath should be right of the tree, clear of foreground fence');
 for(const dims of [[1536,864],[1373,648],[780,360],[648,1373],[360,800]]){
  for(const fit of ['cover','contain']){
   const box={width:dims[0],height:dims[1]},pos=get(box,fit,55,true);
@@ -26,4 +26,8 @@ for(const dims of [[1536,864],[1373,648],[780,360],[648,1373],[360,800]]){
 }
 assert(raw.includes("this._config.show_advent_wreath===false"),'Wreath switch preserved');
 assert(raw.includes("this._config.show_christmas_tree===false"),'Tree switch preserved');
-console.log('PASS: 1.10.3 photo-grounded holiday decorations in wide, cropped and portrait layouts');
+assert(raw.includes("tree.querySelector('.real-tree-unlit').style.filter=foliageFilter"),'Real tree receives night exposure correction');
+assert(raw.includes("wreath.querySelector('.real-wreath-base').style.filter=foliageFilter"),'Real wreath receives night exposure correction');
+assert(raw.includes("tree.style.setProperty('--ground-glow'"),'Tree casts subtle illumination on ground');
+assert(raw.includes("wreath.style.setProperty('--ground-glow'"),'Wreath casts subtle illumination on ground');
+console.log('PASS: 1.10.4 grounded and naturally lit holiday decorations in wide, cropped and portrait layouts');
