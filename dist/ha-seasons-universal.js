@@ -85,7 +85,7 @@ function getInputs(hass,config,now=new Date()){
   // than a cloudy one, but landscape features remain discernible in both.
   const solarRatio=solar!==null&&solarElevation>0?clamp(solar/Math.max(150,900*Math.sin(solarElevation*Math.PI/180)),0,1.5):null;
   const cloudFactor=clouds==='overcast'?.80:clouds==='partly'?.93:1.04;
-  const solarBoost=solarRatio===null?0:clamp((solarRatio-.55)*.14,-.07,.11)*dayLight;
+  const solarBoost=solarRatio===null?0:clamp((solarRatio-.55)*.14,-.07,.11)*dayLight*smoothstep(3,16,solarElevation);
   const daylightBrightness=(.50+.54*dayLight)*cloudFactor+solarBoost;
   // Keep dusk, full-moon and cloudy nights distinguishable while preserving village detail.
   // The user may adjust only the night exposure; daylight remains unchanged.
