@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.2 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.3 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,17 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Nové vo V1.3 – živá nočná krajina a sneh
+
+- Jasná, polooblačná a zamračená noc majú odlišné osvetlenie a oblohu.
+- Fáza Mesiaca a oblačnosť ovplyvňujú mesačné svetlo: pri splne a jasnej noci je krajina svetlejšia. Bez senzora Mesiaca sa fáza odhaduje.
+- Okná domov a kostolíka sa po zotmení jemne rozsvietia, bez prepínania alebo zdvojenia fotografie.
+- Plynulá simulovaná námraza/snehová pokrývka sa mení podľa vonkajšej teploty. **Nie je to meranie skutočnej snehovej pokrývky**; na to treba samostatný senzor alebo spoľahlivé údaje o stave snehu.
+- Padajúci sneh sa zobrazí len pri hlásenom snežení; mráz sám nespúšťa sneženie.
+- V grafickom editore sú tri nové prepínače: svetlá v dedine, mesačné osvetlenie a snehová pokrývka.
+
+Nové prepínače majú v existujúcich kartách predvolenú hodnotu **zapnuté**, takže **YAML nemusíš meniť**. Aktualizuj doplnok cez Marketplace/HACS a obnov cache stránky na tablete.
 
 ## Nové vo V1.2 – plynulý deň, noc a svitanie
 
@@ -96,7 +107,7 @@ entities:
 
 **Home Assistant Marketplace (2026.11+) / HACS:** Repo musí byť zverejnené vo vlastnom **verejnom GitHub repozitári**, napríklad `ha-seasons-universal`. V HA otvor **Nastavenia → Marketplace → Add from link**, zadaj jeho URL, nainštaluj Dashboard a vlož kartu cez grafické rozhranie. Po inštalácii Marketplace automaticky načíta modul z `/local/community/ha-seasons-universal/ha-seasons-universal.js`. Na starších verziách HA použite HACS → Custom repositories → Dashboard. **ZIP nie je zverejnený repozitár**.
 
-**Ručná inštalácia:** Skopíruj obsah `dist/` do `/config/www/ha-seasons-universal/`, pridaj Dashboard zdroj typu JavaScript Module `/local/ha-seasons-universal/ha-seasons-universal.js?v=1.2.0`, obnov stránku a pridaj manuálnu kartu.
+**Ručná inštalácia:** Skopíruj obsah `dist/` do `/config/www/ha-seasons-universal/`, pridaj Dashboard zdroj typu JavaScript Module `/local/ha-seasons-universal/ha-seasons-universal.js?v=1.3.0`, obnov stránku a pridaj manuálnu kartu.
 
 Test bez senzorov: `/local/ha-seasons-universal/TEST.html` (pri ručnej inštalácii). Test používa simulované hodnoty a nemení žiadnu entitu.
 
