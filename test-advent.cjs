@@ -3,7 +3,7 @@ let source=fs.readFileSync(__dirname+'/dist/ha-seasons-universal.js','utf8');
 source=source.replace("const ASSETS=new URL('./assets/',import.meta.url).href;","const ASSETS='/assets/';");
 const ctx={window:{customCards:[]},customElements:{get:()=>undefined,define:()=>{}},HTMLElement:class{},Date,Intl,URL,Math,console,devicePixelRatio:1};
 vm.createContext(ctx);
-vm.runInContext(source+'\nglobalThis.fn={adventStartUtc,holidayDecorAt,seasonAt,getInputs};',ctx);
+vm.runInContext(source+'\nglobalThis.fn={adventStartUtc,holidayDecorAt,seasonAt,getInputs,landscapeHolidayPlacement};',ctx);
 const {adventStartUtc,holidayDecorAt,seasonAt,getInputs}=ctx.fn;
 assert.equal(new Date(adventStartUtc(2026)).toISOString().slice(0,10),'2026-11-29');
 assert.equal(new Date(adventStartUtc(2027)).toISOString().slice(0,10),'2027-11-28');
@@ -45,10 +45,11 @@ assert(source.includes('christmas-tree-lit.webp'),'real tree lights asset used')
 assert(source.includes('christmas-tree-unlit.webp'),'unlit tree asset used before 6 December');
 assert(source.includes('advent-wreath-unlit.webp'),'real Advent wreath asset used');
 assert(source.includes('advent-candle-flame.webp'),'real candle flame asset used');
-assert(source.includes("tree.style.left=(ox+480*px*imageScale)+'px'"),
-  'tree stays next to church rather than floating over roof');
-assert(source.includes("wreath.style.left=(ox+505*px*imageScale)+'px'"),
-  'wreath stays next to the winding path');
+// Check geometry rather than a fragile exact source-code string.
+const positions=ctx.fn.landscapeHolidayPlacement({width:1536,height:864},'cover',55,true);
+assert.equal(positions.tree.groundY,706,'Tree must stand on church lawn');
+assert.equal(positions.wreath.groundY,752,'Wreath must rest beside foreground path');
+assert(positions.tree.left>positions.wreath.left,'Tree is right of wreath, beside church');
 assert(!source.includes('viewBox=\\\"0 0 230 160\\\"'),
   'cartoon wreath SVG must not return');
 console.log('PASS Advent calendar, candle counts, St Nicholas tree, local day/night and config (14 dates)');

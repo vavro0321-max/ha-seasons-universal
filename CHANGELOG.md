@@ -1,5 +1,13 @@
 # Zmeny
 
+## 1.10.3 (2026-11-22)
+- Oprava vizuálneho testu: stromček vo verzii 1.10.2 visel pred vstupom do kostola a veniec bol príliš vysoko a veľký.
+- Teraz sa oba realistické obrázkové objekty umiestňujú podľa **miesta dotyku so zemou**, nie podľa horného rohu obrázka. Menší stromček stojí v tráve napravo od kostola; veniec leží bližšie ku chodníku.
+- Dekorácie zostávajú na správnom mieste aj pri rôznom pomere strán, posune pozadia a zobrazení na výšku.
+- Jemné kontaktné tiene pomáhajú vizuálne ukotviť objekty. Pomocný text na návrat po 9 sekundách zmizne, samotný dotyk na návrat stále funguje.
+- Nový test `test-holiday-placement.cjs` overuje polohu dekorácií v širokom aj úzkom režime. Adventný kalendár a existujúce nastavenia sa nemenia.
+
+
 ## 1.10.2 (2026-11-22)
 - Nahradené kreslené SVG ikony fotorealistickým stromčekom a adventným vencom v transparentných WebP obrázkoch.
 - Opravené ukotvenie dekorácií: stromček hneď napravo od kostola, veniec vedľa cesty a stromčeka.

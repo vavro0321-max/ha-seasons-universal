@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.10.2 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.10.2';
+/* HA Seasons Universal 1.10.3 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.10.3';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -377,6 +377,7 @@ const OVERLAY_STYLE=`
 .advent-wreath img,.christmas-tree img{display:block;width:100%;height:auto;max-width:none;pointer-events:none;user-select:none}
 .christmas-tree .real-tree-lit{position:absolute;left:0;top:0;opacity:0;transition:opacity 2s ease}
 .advent-wreath{isolation:isolate}
+.christmas-tree::before,.advent-wreath::before{content:'';position:absolute;left:12%;right:12%;bottom:-1%;height:8%;border-radius:50%;background:rgba(8,26,19,.45);filter:blur(5px);z-index:-1;}
 .advent-wreath .real-flame{position:absolute;opacity:0;width:12%;height:auto;max-width:none;filter:drop-shadow(0 0 5px rgba(255,185,64,.66));transition:opacity 2s ease}
 .advent-wreath .flame-1{left:23%;top:-1%}
 .advent-wreath .flame-2{left:36%;top:-3%}
@@ -385,7 +386,8 @@ const OVERLAY_STYLE=`
 @media(orientation:portrait){.advent-wreath{left:2vw;bottom:clamp(62px,10vh,110px);width:clamp(105px,28vw,190px)}.christmas-tree{right:2vw;bottom:clamp(58px,9vh,100px);width:clamp(84px,25vw,152px)}}
 @media(max-height:550px) and (orientation:landscape){.advent-wreath{bottom:42px;width:clamp(96px,14vw,150px)}.christmas-tree{bottom:35px;width:clamp(80px,10vw,120px)}}
 @media(prefers-reduced-motion:reduce){.advent-wreath .real-flame,.christmas-tree .real-tree-lit{transition:none}}
-.tap{position:absolute;bottom:max(3%,env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(5,20,38,.68);border:1px solid #a8bbd144;border-radius:22px;padding:10px 20px;font-size:clamp(12px,2vw,15px);white-space:nowrap;z-index:4}
+@keyframes holidayHintFade{0%,45%{opacity:1}100%{opacity:0}}
+.tap{animation:holidayHintFade 9s ease forwards;pointer-events:none;position:absolute;bottom:max(3%,env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(5,20,38,.68);border:1px solid #a8bbd144;border-radius:22px;padding:10px 20px;font-size:clamp(12px,2vw,15px);white-space:nowrap;z-index:4}
 @media (max-width:650px){.information{top:4%}.clock{font-size:clamp(46px,12vh,80px)}.statusbar{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:10px}.status{min-height:70px;padding:7px 4px}.status b{font-size:16px}.extra{font-size:11px;gap:6px}.tap{bottom:3%}}
 /* Auto tablet layout: landscape uses four columns; portrait uses two without changing dashboard. */
 @media (orientation:portrait){
@@ -429,6 +431,37 @@ const OVERLAY_STYLE=`
 @media (prefers-reduced-motion:reduce){.leaf{animation:none}.sun,.shadowTree{transition:none}}
 
 `;
+// Decoration positions are grounded by the feet/base of each actual image.
+// Reference landmark coordinates use the unified 1536x864 winter photo.
+function landscapeHolidayPlacement(bounds,imageFit='cover',imageFocus=55,useUnified=true){
+  const sourceWidth=useUnified?1536:1672,sourceHeight=useUnified?864:941;
+  const scale=(imageFit==='contain'?Math.min:Math.max)(
+    bounds.width/sourceWidth,bounds.height/sourceHeight);
+  const focus=clamp(Number(imageFocus)||0,0,100)/100;
+  const ox=(bounds.width-sourceWidth*scale)*focus;
+  const oy=(bounds.height-sourceHeight*scale)/2;
+  const px=sourceWidth/1536,py=sourceHeight/864;
+  const x=v=>ox+v*px*scale;
+  const y=v=>oy+v*py*scale;
+  // A ~2 m Christmas tree is placed right of the church and left of the existing tree.
+  // The smaller wreath sits on the grass just beside the winding footpath.
+  const treeWidth=148*px*scale,wreathWidth=120*px*scale;
+  const treeGround={x:x(647),y:y(706)};
+  const wreathGround={x:x(550),y:y(752)};
+  const tree={left:treeGround.x-treeWidth*.5,top:treeGround.y-treeWidth*(137/120),width:treeWidth,groundY:treeGround.y};
+  const wreath={left:wreathGround.x-wreathWidth*.5,top:wreathGround.y-wreathWidth*(93/174),width:wreathWidth,groundY:wreathGround.y};
+  // A portrait crop may hide the church and project both landmark x positions
+  // outside the screen. Shift the pair together into view without changing
+  // their scale, relative positions or bottom contact with the ground.
+  const minX=Math.min(tree.left,wreath.left);
+  const maxX=Math.max(tree.left+tree.width,wreath.left+wreath.width);
+  if(minX<8||maxX>bounds.width-8){
+    const shift=(bounds.width-(maxX-minX))*.5-minX;
+    tree.left+=shift;
+    wreath.left+=shift;
+  }
+  return {tree,wreath};
+}
 const HOLIDAY_DECOR="<div class=\"holiday-decor\"><div class=\"advent-wreath\" aria-hidden=\"true\"><img class=\"real-wreath-base\" src=\"__ASSET__advent-wreath-unlit.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-1\" data-candle=\"1\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-2\" data-candle=\"2\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-3\" data-candle=\"3\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-4\" data-candle=\"4\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"></div><div class=\"christmas-tree\" aria-hidden=\"true\"><img class=\"real-tree-unlit\" src=\"__ASSET__christmas-tree-unlit.webp\" alt=\"\" draggable=\"false\"><img class=\"real-tree-lit tree-lights\" src=\"__ASSET__christmas-tree-lit.webp\" alt=\"\" draggable=\"false\"></div></div>".replaceAll('__ASSET__',ASSETS);
 const SCENE_SVG='<svg class="scene-map" viewBox="0 0 1672 941" aria-hidden="true" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">\n <defs><filter id="haWindowBlur" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="5"/></filter><linearGradient id="haSnowFall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7fcff" stop-opacity="0"/><stop offset=".25" stop-color="#f7fcff" stop-opacity=".09"/><stop offset="1" stop-color="#ecf6ff" stop-opacity=".56"/></linearGradient></defs>\n <g class="frost-cover" opacity="0"><g class="frost-normal"><path d="M0 690 C190 717 415 750 710 759 C950 764 1120 739 1270 751 C1400 773 1565 802 1672 823 L1672 941 L0 941 Z" fill="url(#haSnowFall)"/><path d="M0 804 C240 815 400 833 638 822 M0 865 C300 870 530 884 704 856 M1435 810 C1545 800 1613 818 1672 839" fill="none" stroke="#e9f9ff" stroke-width="14" opacity=".30"/></g><g class="frost-winter"><path d="M0 665 C220 690 412 713 635 722 C930 733 1090 694 1290 709 C1440 715 1565 744 1672 750 L1672 941 L0 941 Z" fill="url(#haSnowFall)"/></g></g>\n <g class="village-lights" opacity="0"><g class="lights-normal"><ellipse cx="1427" cy="655" rx="11.6" ry="14.3" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1427" cy="655" rx="3.4" ry="5.1" fill="#ffe4a7"/><ellipse cx="1467" cy="657" rx="11.6" ry="14.3" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1467" cy="657" rx="3.4" ry="5.1" fill="#ffe4a7"/><ellipse cx="1504" cy="657" rx="10.9" ry="13.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1504" cy="657" rx="3.2" ry="4.8" fill="#ffe4a7"/><ellipse cx="1573" cy="657" rx="10.9" ry="13.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1573" cy="657" rx="3.2" ry="4.8" fill="#ffe4a7"/><ellipse cx="1427" cy="522" rx="8.5" ry="10.5" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1427" cy="522" rx="2.5" ry="3.8" fill="#ffe4a7"/><ellipse cx="1456" cy="531" rx="8.5" ry="10.5" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1456" cy="531" rx="2.5" ry="3.8" fill="#ffe4a7"/><ellipse cx="1361" cy="682" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1361" cy="682" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1319" cy="647" rx="7.5" ry="9.2" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1319" cy="647" rx="2.2" ry="3.3" fill="#ffe4a7"/><ellipse cx="1356" cy="648" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1356" cy="648" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="527" cy="685" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="525.6" y="683.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="549" cy="680" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="547.6" y="678.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="569" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="567.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="609" cy="685" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="607.6" y="683.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="640" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="638.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="667" cy="677" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="665.6" y="675.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="779" cy="681" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="777.6" y="679.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="803" cy="676" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="801.6" y="674.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="834" cy="681" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="832.6" y="679.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="861" cy="667" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="859.6" y="665.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="897" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="895.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="922" cy="673" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="920.6" y="671.5" width="2.8" height="3" fill="#ffd790"/></g><g class="lights-winter"><ellipse cx="1438" cy="594" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1438" cy="594" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1473" cy="595" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1473" cy="595" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1515" cy="597" rx="9.9" ry="12.2" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1515" cy="597" rx="2.9" ry="4.3" fill="#ffe4a7"/><ellipse cx="1575" cy="596" rx="10.2" ry="12.6" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1575" cy="596" rx="3.0" ry="4.5" fill="#ffe4a7"/><ellipse cx="1429" cy="420" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1429" cy="420" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="1344" cy="608" rx="9.5" ry="11.8" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1344" cy="608" rx="2.8" ry="4.2" fill="#ffe4a7"/><ellipse cx="1303" cy="584" rx="7.1" ry="8.8" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1303" cy="584" rx="2.1" ry="3.2" fill="#ffe4a7"/><ellipse cx="1385" cy="587" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1385" cy="587" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="496" cy="631" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="494.6" y="629.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="532" cy="624" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="530.6" y="622.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="563" cy="624" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="561.6" y="622.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="582" cy="620" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="580.6" y="618.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="773" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="771.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="807" cy="613" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="805.6" y="611.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="837" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="835.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="883" cy="608" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="881.6" y="606.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="927" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="925.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="961" cy="619" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="959.6" y="617.5" width="2.8" height="3" fill="#ffd790"/></g></g>\n</svg>';
 class HASeasonsUniversalCard extends HTMLElement {
@@ -609,31 +642,20 @@ class HASeasonsUniversalCard extends HTMLElement {
     view.style.left=`${(bounds.width-sw)*clamp(Number(this._config.image_focus??55),0,100)/100}px`;
     view.style.top=`${(bounds.height-shh)/2}px`;
     stage.style.display=isPhotoSeason&&!useUnified&&!usingCustom?'block':'none';
-    // Anchor decorations to the actual landscape, not to the screen corners.
-    // 1536x864 photo landmark positions: realistic Christmas tree just to the
-    // RIGHT of the church, between church and existing tree; wreath near the winding path.
-    // Always transform photo coordinates with the same crop/focus rules as the image.
-    // Arbitrary custom images retain generic positions because their landmarks vary.
+    // Position the BASE of each ornament on the terrain, never floating above it.
+    // This stays aligned if the tablet crops, focuses or resizes the photograph.
     if(!usingCustom){
-      const baseWidth=useUnified?1536:1672,baseHeight=useUnified?864:941;
-      const imageScale=(this._config.image_fit==='contain'?Math.min:Math.max)(
-        bounds.width/baseWidth,bounds.height/baseHeight);
-      const ox=(bounds.width-baseWidth*imageScale)*clamp(Number(this._config.image_focus??55),0,100)/100;
-      const oy=(bounds.height-baseHeight*imageScale)/2;
-      const px=baseWidth/1536,py=baseHeight/864;
-      // Smaller perspective: approximately 2-3 m tree against a much larger church.
-      tree.style.left=(ox+480*px*imageScale)+'px';
-      tree.style.top=(oy+427*py*imageScale)+'px';
-      tree.style.width=(155*px*imageScale)+'px';
-      tree.style.right='auto';
-      tree.style.bottom='auto';
-      wreath.style.left=(ox+505*px*imageScale)+'px';
-      wreath.style.top=(oy+659*py*imageScale)+'px';
-      wreath.style.width=(160*px*imageScale)+'px';
-      wreath.style.right='auto';
-      wreath.style.bottom='auto';
+      const positions=landscapeHolidayPlacement(
+        bounds,this._config.image_fit,this._config.image_focus??55,useUnified);
+      for(const [element,position] of [[tree,positions.tree],[wreath,positions.wreath]]){
+        element.style.left=position.left+'px';
+        element.style.top=position.top+'px';
+        element.style.width=position.width+'px';
+        element.style.right='auto';
+        element.style.bottom='auto';
+      }
     }else{
-      // No assumptions about the location of a church on an arbitrary custom photo.
+      // Custom user photos have different church/path positions; retain generic layout.
       tree.style.left='auto';tree.style.top='auto';tree.style.right='clamp(12px,4vw,52px)';
       tree.style.bottom='clamp(54px,9vh,95px)';tree.style.width='clamp(100px,15vw,185px)';
       wreath.style.left='clamp(10px,3vw,45px)';wreath.style.top='auto';
