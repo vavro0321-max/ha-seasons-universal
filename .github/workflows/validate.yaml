@@ -19,6 +19,14 @@ jobs:
         with:
           category: plugin
 
+  validate-image-assets:
+    name: Required V1.5 photo assets present
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate both shared landscape WebP images
+        run: node test-required-images.cjs
+
   test-javascript:
     name: JavaScript syntax and logic
     runs-on: ubuntu-latest
