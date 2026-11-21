@@ -36,3 +36,5 @@ jobs:
         run: node test-camera-tab.cjs
       - name: Test realistic seasonal colors and November autumn
         run: node test-seasonal-colors.cjs
+      - name: Test unified landscape fog and leafless trees
+        run: node test-unified-landscape.cjs
