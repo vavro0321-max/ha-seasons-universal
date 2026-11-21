@@ -57,5 +57,5 @@ card.setConfig({idle_seconds:30,source:'auto'});
 assert.equal(card._config.show_waste,true);
 assert(!code.includes('livingPaintActor')&&!code.includes('canvas class="livingfx"'),'No unwanted people/cars overlay');
 assert(code.includes('contrast(')&&code.includes('nightContrast.toFixed(3)'),'Night visibility must lift deep shadows');
-assert(code.includes('const nightContrast=1-.25*d.nightLight;'),'Contrast only applied at night');
+assert(code.includes('const nightContrast=1-.07*d.nightLight;'),'Night contrast stays close to natural levels to avoid washed-out haze');
 console.log('PASS optional municipal/recycling pickup, valid local dates, missing sensors, UI and improved night visibility');
