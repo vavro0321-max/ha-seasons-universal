@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.6.1 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.7 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,33 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Nové vo V1.7 – Living World / živá dedina
+
+Prvá funkčná verzia simulácie života na schválenej krajine: malé animované postavy kráčajú po chodníku pri kostolíku, autá sa pohybujú po vzdialenej dedinskej ceste a po oblohe občas preletia vtáky. Nejde o reálnych ľudí ani kamerový prenos, ale simuláciu vykresľovanú v prehliadači tabletu.
+
+- Ráno a cez deň je viac chodcov a vtákov, večer pohybu ubúda. V noci nepoletujú vtáky, ľudia sú vzácni a občas prejde auto so svetlami.
+- Pri daždi, snehu a hustej hmle sa chodci objavujú menej často; pri zrážkach môžu mať dáždniky.
+- Trasy rešpektujú perspektívu schválenej panorámy 1536 × 864 vrátane režimov `cover` a `contain`.
+- Canvas kreslenie je obmedzené na približne 12 snímok/s. Po zatvorení šetriča sa zastaví; pri systémovom reduced-motion sa živá vrstva nevykresľuje.
+- Simulácia neposiela žiadne príkazy do Home Assistanta. Ak sa zobrazuje náhradná stará fotografia, vrstva sa vypne.
+
+**Konfigurácia:**
+
+```yaml
+type: custom:ha-seasons-universal-card
+idle_seconds: 30
+source: auto
+living_world: true
+living_density: normal  # low | normal | high
+living_people: true
+living_cars: true
+living_birds: true
+```
+
+Funkcia je predvolene zapnutá. V grafickom editore je prepínač Živá dedina, nezávislé prepínače ľudí, áut a vtákov a nastavenie hustoty.
+
+**Obmedzenie:** Postavičky sú jednoduché malé Canvas kresby, nie realistické 3D modely. Trasy sú ručne prispôsobené fotografii a ich presnú polohu treba overiť na tablete.
 
 ## Nové vo V1.6.1 – viditeľnejšia, ale stále nočná krajina
 
