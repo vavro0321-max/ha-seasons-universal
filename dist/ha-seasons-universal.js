@@ -93,7 +93,12 @@ function getInputs(hass,config,now=new Date()){
   // NOT a measured depth of real snow on the ground. No falling snow unless reported.
   const coldness=temperature===null?0:1-smoothstep(-7,2.5,temperature);
   const reportedSnow=precipitation==='snow';
-  const snowCover=temperature===null?(scene==='winter'?.20:0):clamp((scene==='winter'?.14:0)+coldness*(scene==='winter'?.65:scene==='autumn'||scene==='spring'?.58:.20)+(reportedSnow?.17:0),0,.94);
+  // Winter without freezing weather or reported snowfall is a BARE landscape,
+  // not an automatically white one. This represents illustrative frost only,
+  // not a measured physical snow depth.
+  const snowCover=clamp(
+    coldness*((scene==='winter'?.14:0)+(scene==='winter'?.65:scene==='autumn'||scene==='spring'?.58:.20))
+    +(reportedSnow?.17:0),0,.94);
   // Leafless from 10 November through winter; on cold October nights
   // leaves may fall earlier. Manual spring/season testing stays respected.
   const leafless=['winter','christmas','nicholas','newyear'].includes(scene) ||
