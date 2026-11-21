@@ -1,5 +1,14 @@
 # Zmeny
 
+## 1.7.0 (2026-11-21)
+- Živá dedina s animovanými chodcami, autami a vtákmi.
+- Denný režim a počasie prispôsobujú hustotu pohybu; v noci sú vtáky vypnuté.
+- Perspektívne trasy mapované na schválené fotografie 1536 × 864.
+- Úsporné vykresľovanie: živá vrstva približne 12 FPS a zastavenie po ukončení šetriča.
+- Nové nastavenia `living_world`, `living_density`, `living_people`, `living_cars`, `living_birds` v editore.
+- Nový test `test-living-world.cjs` v GitHub Actions.
+
+
 ## 1.6.1 (2026-11-21)
 - Výraznejšie detaily nočnej krajiny, ale stále modrý nočný vzhľad
 - Jemnejšie nočné filtre a súmrakové osvetlenie zachovávajúce plynulé stmievanie
