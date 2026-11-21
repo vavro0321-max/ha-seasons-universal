@@ -91,7 +91,11 @@ function getInputs(hass,config,now=new Date()){
   // The user may adjust only the night exposure; daylight remains unchanged.
   const nightExposure=clamp(Number(config.night_brightness??1.1)||1.1,.8,1.35);
   const nightBrightness=(.40+.12*(1-deepNight))*(clouds==='overcast'?.94:clouds==='partly'?.985:1)*nightExposure+moonlight*(.045+.09*deepNight);
-  const brightness=clamp(daylightBrightness*(1-nightLight)+nightBrightness*nightLight,.22,1.17);
+  // Blue-hour ambient light bridges sunset and sunrise; night exposure alone
+  // must not make deep night brighter than the nearby twilight.
+  const twilightGlow=.08*(1-smoothstep(-1,4,solarElevation))*smoothstep(-8,-1,solarElevation)
+    +.135*smoothstep(-15,-6,solarElevation)*(1-smoothstep(-6,-1,solarElevation));
+  const brightness=clamp(daylightBrightness*(1-nightLight)+nightBrightness*nightLight+twilightGlow,.22,1.17);
   // Visual frost is an estimate based on temperature, season and snow reports; it is
   // NOT a measured depth of real snow on the ground. No falling snow unless reported.
   const coldness=temperature===null?0:1-smoothstep(-7,2.5,temperature);
