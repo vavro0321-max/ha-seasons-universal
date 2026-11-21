@@ -1,6 +1,8 @@
 # Zmeny
 
 ## 1.5.0 (2026-11-21)
+- Audit hotfix: odstránená neodôvodnená snehová vrstva počas teplej suchej zimy; holý strom zostáva
+- Nový runtime test núdzového obrázka pri chýbajúcich WebP súboroch a kontrola povinných assetov
 - Jeden spoločný fotografický záber pre všetky ročné obdobia, s vlastnou záložnou scénou ak obrázky chýbajú
 - Pôvodná fotografia a odvodená verzia s holými vetvami na neskorú jeseň / zimu
 - Jesenná tráva a stromy sa farbia do hneda, zimná krajina zostáva bez lístia
