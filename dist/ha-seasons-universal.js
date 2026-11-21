@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.2.0 — smooth solar day / night cycle with one continuous landscape. */
-const VERSION='1.2.0';
+/* HA Seasons Universal 1.3.0 — moonlit scenery, village lights, clouds and temperature-dependent frost. */
+const VERSION='1.3.0';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -59,7 +59,8 @@ function getInputs(hass,config,now=new Date()){
   const scene=config.scene&&config.scene!=='auto'?config.scene:seasonAt(p);
   const phase=config.phase&&config.phase!=='auto'?config.phase:(elevation!==null?(elevation<=-6?'night':elevation<10?(sun?.attributes?.rising?'dawn':'dusk'):'day'):(sun?.state==='below_horizon'?'night':p.hour<8?'dawn':p.hour>=17?'dusk':'day'));
   const isNight=phase==='night';
-  // Use Home Assistant's solar elevation; estimate from local time only if sun.sun lacks it.
+  // Solar elevation is continuous from dawn through sunset and throughout the night.
+  // Use the HA sun.sun elevation; only fall back to a time-of-day estimate when it is missing.
   const manual=config.phase&&config.phase!=='auto';
   const solarElevation=manual?({day:22,dawn:1,dusk:1,night:-24}[config.phase]??0):
     (elevation!==null?elevation:(sun?.state==='below_horizon'?-19:(p.hour<9||p.hour>=16?4:20)));
@@ -67,15 +68,29 @@ function getInputs(hass,config,now=new Date()){
   const nightLight=1-smoothstep(-13,-2,solarElevation);
   const deepNight=1-smoothstep(-65,-12,solarElevation);
   const warmth=smoothstep(-8,-1,solarElevation)*(1-smoothstep(4,16,solarElevation));
+  const lunar=moonPhase(hass,cfg.moon,now);
+  const illuminated=(1-Math.cos(lunar.index*Math.PI/4))/2; // new moon 0, full moon 1
+  const moonTransmission=clouds==='clear'?1:clouds==='partly'?.48:.06;
+  const moonlight=config.moonlight_effect===false?0:nightLight*moonTransmission*(.12+.88*illuminated);
+  // Twilight has more ambient light than midnight. A moonlit clear night is brighter
+  // than a cloudy one, but landscape features remain discernible in both.
   const solarRatio=solar!==null&&solarElevation>0?clamp(solar/Math.max(150,900*Math.sin(solarElevation*Math.PI/180)),0,1.5):null;
   const cloudFactor=clouds==='overcast'?.80:clouds==='partly'?.93:1.04;
   const solarBoost=solarRatio===null?0:clamp((solarRatio-.55)*.14,-.07,.11)*dayLight;
-  const brightness=clamp((.16+.88*dayLight)*cloudFactor*(1-.23*deepNight)+solarBoost,.11,1.17);
-  return {p,wId,weather:wx,temperature,rain,solar,wind:wind??0,gust:gust??0,scene,phase,isNight,clouds,precipitation,intensity,estimated,brightness,elevation,azimuth,solarElevation,dayLight,nightLight,deepNight,warmth};
+  const daylightBrightness=(.50+.54*dayLight)*cloudFactor+solarBoost;
+  const nightBrightness=(.30+.12*(1-deepNight))*(clouds==='overcast'?.94:1)+moonlight*(.035+.10*deepNight);
+  const brightness=clamp(daylightBrightness*(1-nightLight)+nightBrightness*nightLight,.22,1.17);
+  // Visual frost is an estimate based on temperature, season and snow reports; it is
+  // NOT a measured depth of real snow on the ground. No falling snow unless reported.
+  const coldness=temperature===null?0:1-smoothstep(-7,2.5,temperature);
+  const reportedSnow=precipitation==='snow';
+  const snowCover=temperature===null?(scene==='winter'?.20:0):clamp((scene==='winter'?.14:0)+coldness*(scene==='winter'?.65:scene==='autumn'||scene==='spring'?.58:.20)+(reportedSnow?.17:0),0,.94);
+  return {p,wId,weather:wx,temperature,rain,solar,wind:wind??0,gust:gust??0,scene,phase,isNight,clouds,precipitation,intensity,estimated,brightness,elevation,azimuth,solarElevation,dayLight,nightLight,deepNight,warmth,lunar,moonlight,snowCover};
 }
 const supportedScenes=['spring','summer','autumn','winter','christmas','easter','may','memorial','nicholas','newyear'];
 function assetName(d){
-  // Keep a single landscape through dusk, midnight and dawn: no doubled scenery.
+  // A single landscape stays mounted throughout the entire solar cycle. Switching
+  // day/night pictures here causes visibly doubled trees, mountains and houses.
   const scene=d.scene;
   const mapDay={spring:'spring-full-v81',summer:'summer-full-v81',autumn:'autumn-full-v81',winter:'winter-full-v81'};
   if(mapDay[scene]){const base=mapDay[scene];return `${base}${d.clouds==='partly'?'-partly':d.clouds==='overcast'?'-overcast':''}.webp`;}
@@ -112,13 +127,18 @@ const OVERLAY_STYLE=`
 .screen{position:fixed;inset:0;width:100vw;width:100dvw;height:100vh;height:100dvh;overflow:hidden;background:#081729;touch-action:manipulation;user-select:none;cursor:pointer;--glass-opacity:.48;--font-factor:1;isolation:isolate}
 .photo{position:absolute;inset:0;background-size:cover;background-position:center center;background-repeat:no-repeat;transition:filter 5s ease,background-image .5s linear}
 .tint{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,rgba(3,13,30,.17),rgba(6,17,37,.03) 45%,rgba(1,11,24,.30));}
-.nightveil{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(2,9,35,.48) 0%,rgba(4,12,34,.35) 45%,rgba(0,3,19,.62) 100%);transition:opacity 5s ease;}
+.nightveil{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(2,9,35,.30) 0%,rgba(4,12,34,.24) 45%,rgba(0,3,19,.38) 100%);transition:opacity 6s ease;}
+.moonwash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse 76% 76% at 82% 25%,rgba(189,218,255,.22),rgba(123,173,231,.11) 48%,transparent 90%);mix-blend-mode:screen;transition:opacity 7s ease;}
+.cloudshade{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(68,83,109,.47) 0%,rgba(39,54,77,.24) 44%,transparent 82%);transition:opacity 6s ease;}
+.sceneryfx{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+.sceneryfx svg{position:absolute;max-width:none;max-height:none;overflow:visible;transition:opacity 6s ease;}
+.sceneryfx .village-lights,.sceneryfx .frost-cover{transition:opacity 8s ease}
 .warmth{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(255,133,41,.19),rgba(255,115,31,.26) 36%,rgba(255,169,62,.09) 63%,transparent 95%);mix-blend-mode:screen;transition:opacity 5s ease;}
 .stars{position:absolute;inset:0 0 56% 0;pointer-events:none;opacity:0;transition:opacity 6s ease;background-image:radial-gradient(circle at 8% 15%,#fff 0 1px,transparent 1.7px),radial-gradient(circle at 25% 38%,#fff 0 .7px,transparent 1.5px),radial-gradient(circle at 42% 12%,#fff 0 1px,transparent 1.7px),radial-gradient(circle at 58% 30%,#fff 0 .8px,transparent 1.5px),radial-gradient(circle at 76% 11%,#fff 0 1px,transparent 1.7px),radial-gradient(circle at 91% 39%,#fff 0 .7px,transparent 1.5px),radial-gradient(circle at 68% 54%,#fff 0 1px,transparent 1.7px),radial-gradient(circle at 35% 65%,#fff 0 .8px,transparent 1.5px);background-repeat:no-repeat;}
 .weatherfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .shadowTree{position:absolute;bottom:9%;left:7%;height:5%;width:30%;background:radial-gradient(ellipse,rgba(12,20,24,.30),transparent 75%);filter:blur(10px);transform-origin:0% 50%;transition:transform 8s linear,opacity 2s;pointer-events:none}
 .sun{position:absolute;width:clamp(46px,7vh,90px);height:clamp(46px,7vh,90px);border-radius:50%;background:radial-gradient(circle,#fff9d7 0%,#ffcd72 38%,#ffcc7955 62%,transparent 78%);filter:drop-shadow(0 0 18px #ffcf7b);transform:translate(-50%,-50%);opacity:.75;transition:left 12s linear,top 12s linear,opacity 3s;pointer-events:none;mix-blend-mode:screen}
-.moon{position:absolute;top:8%;right:12%;width:clamp(55px,9vh,96px);opacity:0;transition:opacity 5s ease;filter:drop-shadow(0 0 14px rgba(235,239,255,.38));pointer-events:none}
+.moon{position:absolute;top:8%;right:12%;width:clamp(55px,9vh,96px);opacity:0;transition:opacity 5s ease;filter:drop-shadow(0 0 14px rgba(235,239,255,.38));pointer-events:none;z-index:1}
 .leaves{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:.68}
 .leaf{position:absolute;width:7px;height:3px;border-radius:100% 2px;background:rgba(228,176,90,.22);animation:sway var(--speed) ease-in-out infinite alternate;top:var(--top);left:var(--left);transform-origin:20px 30px;animation-delay:var(--delay)}
 @keyframes sway{from{transform:rotate(-9deg) translateX(-1px)}to{transform:rotate(9deg) translateX(2px)}}
@@ -173,9 +193,10 @@ const OVERLAY_STYLE=`
 @media (prefers-reduced-motion:reduce){.leaf{animation:none}.sun,.shadowTree{transition:none}}
 
 `;
+const SCENE_SVG='<svg class="scene-map" viewBox="0 0 1672 941" aria-hidden="true" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">\n <defs><filter id="haWindowBlur" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="5"/></filter><linearGradient id="haSnowFall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7fcff" stop-opacity=".4"/><stop offset="1" stop-color="#ecf6ff" stop-opacity=".82"/></linearGradient></defs>\n <g class="frost-cover" opacity="0"><g class="frost-normal"><path d="M0 690 C190 717 415 750 710 759 C950 764 1120 739 1270 751 C1400 773 1565 802 1672 823 L1672 941 L0 941 Z" fill="url(#haSnowFall)"/><path d="M0 700 C230 708 450 692 632 696 C950 703 1170 690 1240 684 L1170 738 C980 751 660 736 436 749 C214 737 93 726 0 723Z" fill="#edf7ff" opacity=".30"/><path d="M0 804 C240 815 400 833 638 822 M0 865 C300 870 530 884 704 856 M1435 810 C1545 800 1613 818 1672 839" fill="none" stroke="#e9f9ff" stroke-width="14" opacity=".30"/><path d="M1075 768 Q1185 839 1303 941 L1450 941 Q1275 818 1216 759Z" fill="#2c3c4d" opacity=".62"/></g><g class="frost-winter"><path d="M0 665 C220 690 412 713 635 722 C930 733 1090 694 1290 709 C1440 715 1565 744 1672 750 L1672 941 L0 941 Z" fill="url(#haSnowFall)"/><path d="M985 720 Q1112 804 1228 941 L1460 941 Q1308 800 1154 713Z" fill="#465362" opacity=".24"/></g></g>\n <g class="village-lights" opacity="0"><g class="lights-normal"><ellipse cx="1427" cy="655" rx="11.6" ry="14.3" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1427" cy="655" rx="3.4" ry="5.1" fill="#ffe4a7"/><ellipse cx="1467" cy="657" rx="11.6" ry="14.3" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1467" cy="657" rx="3.4" ry="5.1" fill="#ffe4a7"/><ellipse cx="1504" cy="657" rx="10.9" ry="13.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1504" cy="657" rx="3.2" ry="4.8" fill="#ffe4a7"/><ellipse cx="1573" cy="657" rx="10.9" ry="13.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1573" cy="657" rx="3.2" ry="4.8" fill="#ffe4a7"/><ellipse cx="1427" cy="522" rx="8.5" ry="10.5" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1427" cy="522" rx="2.5" ry="3.8" fill="#ffe4a7"/><ellipse cx="1456" cy="531" rx="8.5" ry="10.5" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1456" cy="531" rx="2.5" ry="3.8" fill="#ffe4a7"/><ellipse cx="1361" cy="682" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1361" cy="682" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1319" cy="647" rx="7.5" ry="9.2" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1319" cy="647" rx="2.2" ry="3.3" fill="#ffe4a7"/><ellipse cx="1356" cy="648" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1356" cy="648" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="527" cy="685" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="525.6" y="683.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="549" cy="680" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="547.6" y="678.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="569" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="567.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="609" cy="685" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="607.6" y="683.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="640" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="638.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="667" cy="677" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="665.6" y="675.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="779" cy="681" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="777.6" y="679.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="803" cy="676" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="801.6" y="674.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="834" cy="681" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="832.6" y="679.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="861" cy="667" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="859.6" y="665.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="897" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="895.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="922" cy="673" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="920.6" y="671.5" width="2.8" height="3" fill="#ffd790"/></g><g class="lights-winter"><ellipse cx="1438" cy="594" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1438" cy="594" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1473" cy="595" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1473" cy="595" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1515" cy="597" rx="9.9" ry="12.2" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1515" cy="597" rx="2.9" ry="4.3" fill="#ffe4a7"/><ellipse cx="1575" cy="596" rx="10.2" ry="12.6" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1575" cy="596" rx="3.0" ry="4.5" fill="#ffe4a7"/><ellipse cx="1429" cy="420" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1429" cy="420" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="1344" cy="608" rx="9.5" ry="11.8" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1344" cy="608" rx="2.8" ry="4.2" fill="#ffe4a7"/><ellipse cx="1303" cy="584" rx="7.1" ry="8.8" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1303" cy="584" rx="2.1" ry="3.2" fill="#ffe4a7"/><ellipse cx="1385" cy="587" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1385" cy="587" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="496" cy="631" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="494.6" y="629.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="532" cy="624" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="530.6" y="622.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="563" cy="624" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="561.6" y="622.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="582" cy="620" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="580.6" y="618.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="773" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="771.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="807" cy="613" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="805.6" y="611.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="837" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="835.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="883" cy="608" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="881.6" y="606.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="927" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="925.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="961" cy="619" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="959.6" y="617.5" width="2.8" height="3" fill="#ffd790"/></g></g>\n</svg>';
 class HASeasonsUniversalCard extends HTMLElement {
   constructor(){super();this.attachShadow({mode:'open'}).innerHTML=`<style>${STYLE}</style><div id="anchor" aria-hidden="true"></div>`;this._config={idle_seconds:30,source:'auto',layout:'auto',style:'glass'};this._last=Date.now();this._weather=null;this._onActivity=this._onActivity.bind(this);this._onKey=this._onKey.bind(this);this._onTick=this._onTick.bind(this);}
-  setConfig(config){if(config&&typeof config!=='object')throw new Error('Konfigurácia musí byť objekt');this._config={idle_seconds:30,source:'auto',scene:'auto',layout:'auto',style:'glass',show_clock:true,show_date:true,show_temperature:true,show_heating:true,show_nameday:true,show_lights:true,show_weather:true,show_sun:true,show_moon:true,precipitation_animation:true,leaf_animation:true,...config};this._last=Date.now();}
+  setConfig(config){if(config&&typeof config!=='object')throw new Error('Konfigurácia musí byť objekt');this._config={idle_seconds:30,source:'auto',scene:'auto',layout:'auto',style:'glass',show_clock:true,show_date:true,show_temperature:true,show_heating:true,show_nameday:true,show_lights:true,show_weather:true,show_sun:true,show_moon:true,precipitation_animation:true,leaf_animation:true,night_lights:true,moonlight_effect:true,snow_cover:true,...config};this._last=Date.now();}
   set hass(value){this._hass=value;if(this._visible)this._update();}
   getCardSize(){return 1;}
   static getStubConfig(){return {idle_seconds:30,source:'auto',layout:'auto'};}
@@ -187,7 +208,7 @@ class HASeasonsUniversalCard extends HTMLElement {
   _editing(){return document.querySelector('hui-root')?.editMode||this.closest('hui-card')?.closest('hui-card-edit-mode')||window.location.search.includes('edit=1');}
   _onTick(){if(!this.isConnected)return;if(this._visible){this._update();return;}if(document.hidden||this._editing()||!this._hass)return;
     if(Date.now()-this._last>=clamp(Number(this._config.idle_seconds)||30,5,3600)*1000)this._open();}
-  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo"></div><div class="tint"></div><div class="nightveil"></div><div class="warmth"></div><div class="stars"></div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas><div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
+  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo"></div><div class="tint"></div><div class="nightveil"></div><div class="moonwash"></div><div class="cloudshade"></div><div class="warmth"></div><div class="stars"></div><div class="sceneryfx">${SCENE_SVG}</div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas><div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
     document.body.appendChild(this._host);this._root=this._host.shadowRoot;this._lastImage=null;
     const leaves=this._root.querySelector('.leaves');for(let i=0;i<12;i++){const n=document.createElement('i');n.className='leaf';n.style.setProperty('--top',`${7+(i%5)*6}%`);n.style.setProperty('--left',`${2+(i*13)%32}%`);n.style.setProperty('--delay',`${-(i%7)*.5}s`);leaves.append(n);}
   }
@@ -200,15 +221,32 @@ class HASeasonsUniversalCard extends HTMLElement {
     const image=assetName(d);if(this._lastImage!==image){el('.photo').style.backgroundImage=`url("${ASSETS+image}")`;this._lastImage=image;}
     const saturation=(d.clouds==='overcast'?.80:1.04)*(.70+.30*d.dayLight);
     photo.style.filter=`brightness(${d.brightness.toFixed(3)}) saturate(${saturation.toFixed(3)}) sepia(${(d.warmth*.17).toFixed(3)}) hue-rotate(${(-d.warmth*10).toFixed(1)}deg)`;
-    el('.nightveil').style.opacity=(d.nightLight*(.46+.30*d.deepNight)).toFixed(3);
+    el('.nightveil').style.opacity=(d.nightLight*(.15+.19*d.deepNight)).toFixed(3);
+    el('.moonwash').style.opacity=(d.moonlight*.80).toFixed(3);
+    el('.cloudshade').style.opacity=(d.nightLight*(d.clouds==='overcast'?.58:d.clouds==='partly'?.24:0)).toFixed(3);
     el('.warmth').style.opacity=(d.warmth*.72).toFixed(3);
-    el('.stars').style.opacity=(d.nightLight*(d.clouds==='overcast'?.05:d.clouds==='partly'?.28:.63)).toFixed(3);
+    el('.stars').style.opacity=(d.nightLight*(d.clouds==='overcast'?.015:d.clouds==='partly'?.18:.63)).toFixed(3);
+    const isPhotoSeason=['spring','summer','autumn','winter'].includes(d.scene);
+    const stage=el('.sceneryfx'),view=el('.scene-map'),bounds=el('.screen').getBoundingClientRect();
+    const scale=(this._config.image_fit==='contain'?Math.min:Math.max)(bounds.width/1672,bounds.height/941);
+    const sw=1672*scale,shh=941*scale;
+    view.style.width=`${sw}px`;view.style.height=`${shh}px`;
+    view.style.left=`${(bounds.width-sw)*clamp(Number(this._config.image_focus??55),0,100)/100}px`;
+    view.style.top=`${(bounds.height-shh)/2}px`;
+    stage.style.display=isPhotoSeason?'block':'none';
+    const winter=d.scene==='winter';
+    view.querySelector('.lights-normal').style.display=winter?'none':'block';
+    view.querySelector('.lights-winter').style.display=winter?'block':'none';
+    view.querySelector('.frost-normal').style.display=winter?'none':'block';
+    view.querySelector('.frost-winter').style.display=winter?'block':'none';
+    view.querySelector('.village-lights').style.opacity=this._config.night_lights===false?'0':(d.nightLight*(.35+.65*d.deepNight)).toFixed(3);
+    view.querySelector('.frost-cover').style.opacity=this._config.snow_cover===false?'0':d.snowCover.toFixed(3);
     const sun=el('.sun');const elev=d.solarElevation,az=d.azimuth??(d.p.hour*15+90);
     sun.style.left=`${clamp(12+(az-65)/230*76,8,92)}%`;sun.style.top=`${clamp(54-elev*1.5,8,59)}%`;
     sun.style.opacity=(smoothstep(-4,3,elev)*(d.clouds==='overcast'?.05:d.clouds==='partly'?.23:.58)).toFixed(3);
     const sh=el('.shadowTree');sh.style.opacity=(smoothstep(0,14,elev)*(d.clouds==='overcast'?.08:.52)).toFixed(3);sh.style.transform=`skewX(${clamp((180-az)*.22,-35,35)}deg) scaleX(${clamp(1.8-Math.max(0,elev)/65,.65,1.8)})`;
-    const moon=el('.moon');moon.style.opacity=(d.nightLight*(d.clouds==='overcast'?.08:.86)).toFixed(3);
-    const phase=moonPhase(this._hass,this._config.entities?.moon,now);if(d.nightLight>.01)moonDraw(moon,phase.index);
+    const moon=el('.moon');moon.style.opacity=(d.moonlight*(d.clouds==='overcast'?.04:1)).toFixed(3);
+    const phase=d.lunar;if(d.nightLight>.01)moonDraw(moon,phase.index);
     el('.clock').textContent=now.toLocaleTimeString('sk-SK',{timeZone:this._hass.config?.time_zone||undefined,hour:'2-digit',minute:'2-digit'});
     el('.date').textContent=now.toLocaleDateString('sk-SK',{timeZone:this._hass.config?.time_zone||undefined,weekday:'long',day:'numeric',month:'long',year:'numeric'});
     const values=cardReadings(this._hass,this._config,d);for(const [key,v] of Object.entries(values)){el(`[data-field="${key}"]`).textContent=v;}
@@ -252,7 +290,7 @@ const OPTIONS={
  scene:[['auto','Automaticky podľa roka'],['spring','Jar'],['summer','Leto'],['autumn','Jeseň'],['winter','Zima'],['christmas','Vianoce'],['easter','Veľká noc'],['may','Máj'],['memorial','Dušičky'],['nicholas','Mikuláš'],['newyear','Nový rok']],
  phase:[['auto','Automaticky podľa slnka'],['day','Deň'],['dawn','Svitanie'],['dusk','Súmrak'],['night','Noc']]
 };
-const OPTION_LABELS={show_clock:'Hodiny',show_date:'Dátum',show_temperature:'Vonkajšia teplota',show_heating:'Kúrenie',show_nameday:'Meniny',show_lights:'Svetlá',show_weather:'Stav počasia',show_sun:'Východ a západ slnka',show_moon:'Fáza Mesiaca',precipitation_animation:'Padajúci dážď / sneh',leaf_animation:'Pohyb lístia'};
+const OPTION_LABELS={show_clock:'Hodiny',show_date:'Dátum',show_temperature:'Vonkajšia teplota',show_heating:'Kúrenie',show_nameday:'Meniny',show_lights:'Svetlá',show_weather:'Stav počasia',show_sun:'Východ a západ slnka',show_moon:'Fáza Mesiaca',precipitation_animation:'Padajúci dážď / sneh',leaf_animation:'Pohyb lístia',night_lights:'Svetlá v dedine a kostolíku',moonlight_effect:'Osvetlenie krajiny Mesiacom',snow_cover:'Snehová pokrývka a námraza podľa teploty (odhad)'};
 const ENTITY_LABELS={weather:'Počasie (weather.*)',temperature:'Vonkajšia teplota',rain:'Intenzita dažďa',solar:'Slnečné žiarenie',wind:'Rýchlosť vetra',gust:'Nárazy vetra',heating:'Kúrenie / termostat',nameday:'Meniny',moon:'Fáza Mesiaca',lights:'Svetlá – entity oddelené čiarkou'};
 function escapeHtml(t){return String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 class HASeasonsUniversalEditor extends HTMLElement{
