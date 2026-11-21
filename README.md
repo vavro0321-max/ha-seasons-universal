@@ -35,6 +35,14 @@ Nové prepínače majú v existujúcich kartách predvolenú hodnotu **zapnuté*
 
 Bežná konfigurácia sa **nemení**, stačí aktualizovať doplnok v Marketplace/HACS a obnoviť stránku (prípadne vymazať cache prehliadača).
 
+## Stav V1.5: podklady je potrebné dokončiť
+
+**Nie je to ešte úplné verejné vydanie s novou fotografiou.** V repozitári je kód V1.5, ale zatiaľ chýbajú dva povinné WebP obrázky: `dist/assets/universal-landscape.webp` a `dist/assets/universal-landscape-leafless.webp`. Automatická kontrola **Required V1.5 photo assets present** bude oprávnene červená, kým sa obe fotografie nenahrajú. Ostatné testy JavaScriptu môžu byť zelené nezávisle od chýbajúcich obrázkov. Aktuálny fallback zobrazuje staršiu krajinu.
+
+**Vizuálna kontrola:** pripravený súbor s holým stromom ešte obsahuje zvyšky zelených listov a kvety na ľavej strane. Treba ho pred označením za finálny zimný podklad graficky doladiť. Samotné testy nedokážu potvrdiť reálnosť jesennej alebo zimnej krajiny.
+
+Zmeny v ročných obdobiach, hmla a sneh sú grafické simulácie podľa dátumu a dostupných senzorov; nie sú to zábery skutočného stavu prírody.
+
 ## Nové vo V1.5 – jedna spoločná krajina podľa dodanej fotografie
 
 Pôvodnú fotografiu s kostolíkom **naľavo**, dedinou, cestou a horami používame ako spoločné pozadie. Zdrojová fotografia `dist/assets/universal-landscape.webp` je pre jar, leto a skorú jeseň; pixelovo podobná odvodená verzia `dist/assets/universal-landscape-leafless.webp` odstráni lístie od 10. novembra a v zime. Poloha kostolíka, hôr a domov zostáva zachovaná.
@@ -181,7 +189,7 @@ entities:
 
 **Home Assistant Marketplace (2026.11+) / HACS:** Repo musí byť zverejnené vo vlastnom **verejnom GitHub repozitári**, napríklad `ha-seasons-universal`. V HA otvor **Nastavenia → Marketplace → Add from link**, zadaj jeho URL, nainštaluj Dashboard a vlož kartu cez grafické rozhranie. Po inštalácii Marketplace automaticky načíta modul z `/local/community/ha-seasons-universal/ha-seasons-universal.js`. Na starších verziách HA použite HACS → Custom repositories → Dashboard. **ZIP nie je zverejnený repozitár**.
 
-**Ručná inštalácia:** Skopíruj obsah `dist/` do `/config/www/ha-seasons-universal/`, pridaj Dashboard zdroj typu JavaScript Module `/local/ha-seasons-universal/ha-seasons-universal.js?v=1.3.0`, obnov stránku a pridaj manuálnu kartu.
+**Ručná inštalácia:** Skopíruj obsah `dist/` do `/config/www/ha-seasons-universal/`, pridaj Dashboard zdroj typu JavaScript Module `/local/ha-seasons-universal/ha-seasons-universal.js?v=1.5.0`, obnov stránku a pridaj manuálnu kartu.
 
 Test bez senzorov: `/local/ha-seasons-universal/TEST.html` (pri ručnej inštalácii). Test používa simulované hodnoty a nemení žiadnu entitu.
 
