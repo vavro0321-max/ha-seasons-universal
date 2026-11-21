@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.10.0 — Advent wreath and Christmas tree. */
-const VERSION='1.10.0';
+/* HA Seasons Universal 1.10.1 — Holiday decorations anchored to the church and path. */
+const VERSION='1.10.1';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -604,6 +604,37 @@ class HASeasonsUniversalCard extends HTMLElement {
     view.style.left=`${(bounds.width-sw)*clamp(Number(this._config.image_focus??55),0,100)/100}px`;
     view.style.top=`${(bounds.height-shh)/2}px`;
     stage.style.display=isPhotoSeason&&!useUnified&&!usingCustom?'block':'none';
+    // Anchor decorations to the actual landscape, not to the screen corners.
+    // 1536x864 photo landmark positions: Christmas tree beside the church, between
+    // the existing flowering tree and the church; wreath on grass beside the path.
+    // Transform image-space coordinates using the same crop/focus rules as the photo.
+    // Custom user photos retain the flexible default corner arrangement.
+    if(!usingCustom){
+      const baseWidth=useUnified?1536:1672,baseHeight=useUnified?864:941;
+      const imageScale=(this._config.image_fit==='contain'?Math.min:Math.max)(
+        bounds.width/baseWidth,bounds.height/baseHeight);
+      const ox=(bounds.width-baseWidth*imageScale)*clamp(Number(this._config.image_focus??55),0,100)/100;
+      const oy=(bounds.height-baseHeight*imageScale)/2;
+      const px=baseWidth/1536,py=baseHeight/864;
+      // Smaller perspective: approximately 2-3 m tree against a much larger church.
+      tree.style.left=(ox+149*px*imageScale)+'px';
+      tree.style.top=(oy+408*py*imageScale)+'px';
+      tree.style.width=(108*px*imageScale)+'px';
+      tree.style.right='auto';
+      tree.style.bottom='auto';
+      wreath.style.left=(ox+285*px*imageScale)+'px';
+      wreath.style.top=(oy+608*py*imageScale)+'px';
+      wreath.style.width=(145*px*imageScale)+'px';
+      wreath.style.right='auto';
+      wreath.style.bottom='auto';
+    }else{
+      // No assumptions about the location of a church on an arbitrary custom photo.
+      tree.style.left='auto';tree.style.top='auto';tree.style.right='clamp(12px,4vw,52px)';
+      tree.style.bottom='clamp(54px,9vh,95px)';tree.style.width='clamp(100px,15vw,185px)';
+      wreath.style.left='clamp(10px,3vw,45px)';wreath.style.top='auto';
+      wreath.style.right='auto';wreath.style.bottom='clamp(60px,12vh,120px)';
+      wreath.style.width='clamp(135px,18vw,230px)';
+    }
     const unifiedFx=el('.unifiedfx'),unifiedMap=el('.unified-map');
     unifiedFx.style.display=useUnified?'block':'none';
     if(useUnified){
