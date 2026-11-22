@@ -38,6 +38,8 @@ jobs:
         run: node test-logic.cjs
       - name: Test WS2900 and online weather reconciliation
         run: node test-weather-sources.cjs
+      - name: Test seasonal winter photo versus actual live snowfall
+        run: node test-winter-scene-vs-snowfall.cjs
       - name: Test Advent wreath, Sunday candles and Christmas tree
         run: node test-advent.cjs
       - name: Test realistic holiday placement on the ground
