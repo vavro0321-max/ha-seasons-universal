@@ -630,7 +630,7 @@ function landscapeHolidayPlacement(bounds,imageFit='cover',imageFocus=55,useUnif
   const wreath={left:wreathGround.x-wreathWidth*.5,top:wreathGround.y-wreathWidth*(93/174),width:wreathWidth,groundY:wreathGround.y};
   return {tree,wreath,photo};
 }
-const HOLIDAY_DECOR="<div class=\"holiday-decor\"><div class=\"advent-wreath\" aria-hidden=\"true\"><img class=\"real-wreath-base\" src=\"__ASSET__advent-wreath-unlit.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-1\" data-candle=\"1\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-2\" data-candle=\"2\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-3\" data-candle=\"3\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-4\" data-candle=\"4\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"></div><div class=\"christmas-tree\" aria-hidden=\"true\"><img class=\"real-tree-unlit\" src=\"__ASSET__christmas-tree-unlit.webp\" alt=\"\" draggable=\"false\"><img class=\"real-tree-lit tree-lights\" src=\"__ASSET__christmas-tree-lit.webp\" alt=\"\" draggable=\"false\"></div></div>".replaceAll('__ASSET__',ASSETS);
+const HOLIDAY_DECOR="<div class=\"holiday-decor\"><div class=\"advent-wreath\" aria-hidden=\"true\"><img class=\"real-wreath-base\" src=\"__ASSET__advent-wreath-unlit.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-1\" data-candle=\"1\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-2\" data-candle=\"2\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-3\" data-candle=\"3\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-4\" data-candle=\"4\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"></div><div class=\"christmas-tree\" aria-hidden=\"true\"><img class=\"real-tree-unlit\" src=\"__ASSET__christmas-tree-unlit.webp\" alt=\"\" draggable=\"false\"><img class=\"real-tree-lit tree-lights\" src=\"__ASSET__christmas-tree-lit.webp\" alt=\"\" draggable=\"false\"></div></div>".replace(/__ASSET__([a-z0-9.-]+)/gi,(_,name)=>ASSETS+name+'?v='+VERSION);
 const HOLIDAY_COMPOSITED=HOLIDAY_DECOR.replace(
   '<div class="holiday-decor">',
   '<div class="holiday-decor">'+
@@ -720,7 +720,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     if(key===this._lastImage)return;
     this._lastImage=key;
     const token=this._imageToken=(this._imageToken||0)+1;
-    const root=this._root,original='url("'+ASSETS+image+'")';
+    const root=this._root,original='url("'+ASSETS+image+'?v='+VERSION+'")';
     const cache=this._seasonCache??(this._seasonCache=new Map());
     if(cache.has(key)){photo.style.backgroundImage=cache.get(key);return;}
     photo.style.backgroundImage=original;
@@ -755,7 +755,7 @@ class HASeasonsUniversalCard extends HTMLElement {
         }
       };
       picture.onerror=fallback;
-      picture.src=ASSETS+image;
+      picture.src=ASSETS+image+'?v='+VERSION;
       return;
     }
     if(!grading){
@@ -763,7 +763,7 @@ class HASeasonsUniversalCard extends HTMLElement {
       const probe=new Image();
       probe.onload=()=>{if(this._root===root&&this._imageToken===token){cache.set(key,original);photo.style.backgroundImage=original;}};
       probe.onerror=fallback;
-      probe.src=ASSETS+image;
+      probe.src=ASSETS+image+'?v='+VERSION;
       return;
     }
     const picture=new Image();
@@ -801,7 +801,7 @@ class HASeasonsUniversalCard extends HTMLElement {
       }
     };
     picture.onerror=()=>{fallback();if(this._root===root&&this._imageToken===token)photo.style.backgroundImage=original;};
-    picture.src=ASSETS+image;
+    picture.src=ASSETS+image+'?v='+VERSION;
   }
   _update(){if(!this._root||!this._hass)return;const d=getInputs(this._hass,this._config),now=new Date();this._data=d;const el=(s)=>this._root.querySelector(s);
     const screen=el('.screen'),bounds=screen.getBoundingClientRect();screen.dataset.season=visualSeason(d.scene);screen.dataset.weather=d.weather;screen.dataset.layout=['auto','compact','wide'].includes(this._config.layout)?this._config.layout:'auto';screen.dataset.style=this._config.style==='minimal'?'minimal':'glass';screen.style.setProperty('--glass-opacity',String(clamp(Number(this._config.glass_opacity??0.48),0.2,0.9)));screen.style.setProperty('--font-factor',String(({small:0.82,normal:1,large:1.15})[this._config.clock_size]||1));
