@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.10.5 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.10.5';
+/* HA Seasons Universal 1.10.6 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.10.6';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -464,16 +464,21 @@ function landscapeHolidayPlacement(bounds,imageFit='cover',imageFocus=55,useUnif
     if(imageFit!=='contain'){
       // Wide mobile screens previously clipped the wreath beneath the edge.
       // Shift the photograph AND both sprites up together, never separately.
-      const ground=top+776*(sourceHeight/864)*scale;
+      const ground=top+798*(sourceHeight/864)*scale;
       const margin=clamp(bounds.height*.025,8,24);
       if(ground>bounds.height-margin)top-=ground-(bounds.height-margin);
     }
   }
   const photo={width:sourceWidth*scale,height:sourceHeight*scale,left,top,scale,portrait};
   const unitX=sourceWidth/1536*scale,unitY=sourceHeight/864*scale;
-  const treeWidth=148*unitX,wreathWidth=112*unitX;
-  const treeGround={x:left+647*unitX,y:top+732*unitY};
-  const wreathGround={x:left+790*unitX,y:top+776*unitY};
+  // Approved 22 Nov 2026 visualization:
+  // Christmas tree directly beside the church, with its base on the lawn;
+  // Advent wreath slightly right, lower on the grass immediately beside the
+  // curved footpath. Both anchors are in the ORIGINAL panorama, not viewport
+  // pixels: every screen size retains the same relative visual composition.
+  const treeWidth=154*unitX,wreathWidth=120*unitX;
+  const treeGround={x:left+610*unitX,y:top+720*unitY};
+  const wreathGround={x:left+690*unitX,y:top+798*unitY};
   const tree={left:treeGround.x-treeWidth*.5,top:treeGround.y-treeWidth*(137/120),width:treeWidth,groundY:treeGround.y};
   const wreath={left:wreathGround.x-wreathWidth*.5,top:wreathGround.y-wreathWidth*(93/174),width:wreathWidth,groundY:wreathGround.y};
   return {tree,wreath,photo};
@@ -664,15 +669,15 @@ class HASeasonsUniversalCard extends HTMLElement {
     // The photograph is much darker at night. Unfiltered tree/wreath cut-outs
     // looked pasted on and overly bright. Match their ambient exposure while
     // retaining the warm bulbs and candle flames as separate light sources.
-    const ambient=clamp(.59+.42*d.dayLight,.55,1.04);
+    const ambient=clamp(.67+.34*d.dayLight,.65,1.04);
     const foliageFilter=`brightness(${ambient.toFixed(3)}) contrast(1.06) saturate(${(.77+.20*d.dayLight).toFixed(3)})`;
     tree.querySelector('.real-tree-unlit').style.filter=foliageFilter;
     wreath.querySelector('.real-wreath-base').style.filter=foliageFilter;
     // The lit sprite already contains the whole tree, so blend it gently
     // instead of replacing its darker nighttime silhouette with a bright one.
     tree.querySelector('.tree-lights').style.filter=`brightness(${(.78+.10*d.dayLight).toFixed(3)}) saturate(.92)`;
-    tree.querySelector('.tree-lights').style.opacity=(glow*.58).toFixed(3);
-    tree.style.setProperty('--ground-glow',(glow*.30).toFixed(3));
+    tree.querySelector('.tree-lights').style.opacity=(glow*.74).toFixed(3);
+    tree.style.setProperty('--ground-glow',(glow*.36).toFixed(3));
     wreath.style.setProperty('--ground-glow',(holiday.candles?d.nightLight*.20:0).toFixed(3));
     const isPhotoSeason=['spring','summer','autumn','winter'].includes(d.scene);
     const stage=el('.sceneryfx'),view=el('.scene-map');
