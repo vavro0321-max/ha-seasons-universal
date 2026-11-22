@@ -1,4 +1,6 @@
-# HA Seasons Universal V1.12.5 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.12.6 – celoplošný šetrič Home Assistanta
+
+<img src="dist/assets/app-icon.webp" width="96" height="96" alt="Oficiálna ikona HA Seasons Universal">
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +13,12 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## V1.12.6 – ikona aplikácie
+
+Pridaná schválená ikona **HA Seasons Universal** s motívom kostolíka, krajiny, ročných období a adventného venca so štyrmi sviečkami. Kompaktný obrázok je súčasťou inštalácie v `dist/assets/app-icon.webp` a zobrazuje sa v záhlaví grafického editora. Používa sa aj v dokumentácii a v záložke oboch testovacích stránok.
+
+Týmto sa **nemení ikona celej mobilnej aplikácie Home Assistant ani ikona položky v katalógu HACS** – ich zobrazenie riadi platforma a tento doplnok ich bez podpory platformy nevie prepísať. V samotnom šetriči dekoratívne logo nezakrýva fotografiu.
 
 ## V1.12.5 – núdzové prepnutie dňa a noci, výber funkčných senzorov
 
