@@ -26,7 +26,7 @@ const launch=()=>new Promise((resolve,reject)=>{
     browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
     const context=await browser.newContext({viewport:{width:1280,height:800}});
     const page=await context.newPage();
-    page.on('pageerror',error=>pageErrors.push(error.message));
+    page.on('pageerror',error=>pageErrors.push(error.stack||error.message));
     page.on('response',response=>{
       if(response.status()>=400&&response.url().startsWith(base))pageErrors.push('HTTP '+response.status()+' '+response.url());
     });
@@ -100,6 +100,23 @@ const launch=()=>new Promise((resolve,reject)=>{
     await page.evaluate(()=>document.querySelector('#card')._close());
     // Weather rendering: partly should be visibly less cloudy than overcast.
     await page.goto(base+'/TEST.html',{waitUntil:'networkidle'});
+    // The approved app icon is part of the actual HACS asset bundle, not an
+    // external or data-URI image; verify the editor uses and loads it.
+    await page.click('#editorShow');
+    await page.waitForFunction(()=>{
+      const editor=document.querySelector('#editorHost ha-seasons-universal-editor');
+      const img=editor?.shadowRoot?.querySelector('.brand-icon');
+      return !!img&&img.complete&&img.naturalWidth>0;
+    },null,{timeout:10000});
+    const iconLoaded=await page.evaluate(()=>{
+      const editor=document.querySelector('#editorHost ha-seasons-universal-editor');
+      const img=editor.shadowRoot.querySelector('.brand-icon');
+      return {src:img.src,width:img.naturalWidth,height:img.naturalHeight};
+    });
+    assert(iconLoaded.src.includes('/assets/app-icon.webp?v=1.12.6'),
+      'Editor must show the versioned approved icon');
+    assert(iconLoaded.width>=64&&iconLoaded.height>=64,
+      'Real browser decoded the new icon successfully');
     const appearance=async weather=>{
       await page.selectOption('#weather',weather);
       await page.evaluate(()=>{const input=document.querySelector('#solar');input.value='0';input.dispatchEvent(new Event('input',{bubbles:true}));});await page.selectOption('#phase','day');
