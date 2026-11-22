@@ -1,18 +1,54 @@
-HA Seasons Universal V1.1 – inštalácia
+HA Seasons Universal V1.12.4 – inštalácia a aktualizácia
 
-RUČNE
-1. Obsah priečinka dist/ skopíruj do /config/www/ha-seasons-universal/
-2. V Nastavenia → Dashboardy → Zdroje pridaj JavaScript Module:
-   /local/ha-seasons-universal/ha-seasons-universal.js?v=1.1.0
-3. Obnov stránku.
-4. V ľubovoľnom svojom dashborde klikni Upraviť → Pridať kartu → HA Seasons Universal.
-5. V grafickom editore vyber čas, vzhľad, údaje a zdroj počasia.
+AKTUALIZÁCIA CEZ HOME ASSISTANT MARKETPLACE (ODPORÚČANÁ)
+1. V Home Assistante otvor Nastavenia → Marketplace.
+2. Ak repozitár nie je pridaný, pridaj ako vlastný Dashboard/Plugin:
+   https://github.com/vavro0321-max/ha-seasons-universal
+3. Pri položke HA Seasons Universal nainštaluj dostupnú aktualizáciu.
+4. Po dokončení vynúť obnovu stránky dashboardu (na Androide zavri a znova otvor zobrazenie).
+5. Skontroluj, že sa na testovacej stránke či v DOM zobrazuje V1.12.4.
 
-MARKETPLACE / HACS
-1. Vytvor samostatný verejný GitHub repozitár s obsahom tohto balíka.
-2. Marketplace (HA 2026.11+): Nastavenia → Marketplace → Add from link → URL repozitára.
-3. Nainštaluj položku typu Dashboard. Resource bude spravovať Marketplace.
-4. Pridaj kartu s typom custom:ha-seasons-universal-card pomocou grafického editora.
+RUČNÁ INŠTALÁCIA (AK NEPOUŽÍVAŠ MARKETPLACE)
+1. Skopíruj celý priečinok dist/ vrátane priečinka assets/ do:
+   /config/www/ha-seasons-universal/
+2. Nastavenia → Dashboardy → Zdroje → pridať JavaScript Module:
+   /local/ha-seasons-universal/ha-seasons-universal.js?v=1.12.4
+3. Obnov stránku a pridaj kartu typu custom:ha-seasons-universal-card.
+4. Pri existujúcom zdroji zmeň hodnotu ?v= na 1.12.4, aby prehliadač
+   nenačítal starý JavaScript. Fotografie sú od tejto verzie tiež verzované.
 
-POZOR: Ak už máš V8.7 na tom istom dashboarde, odstráň starú kartu šetriča, aby nebežali dva.
-Nezamieňaj /local/ha-seasons-universal/ a /local/community/ha-seasons-universal/: prvé je ručná inštalácia, druhé cez Marketplace.
+ODPORÚČANÁ KONFIGURÁCIA
+  type: custom:ha-seasons-universal-card
+  idle_seconds: 30
+  source: auto
+  scene: auto
+  phase: auto
+  layout: auto
+  snow_landscape: auto
+  precipitation_animation: true
+  entities:
+    weather: weather.forecast_cierne_11
+    temperature: sensor.ws2900_v2_02_01_outdoor_temperature
+    rain: sensor.ws2900_v2_02_01_rain_rate
+    solar: sensor.ws2900_v2_02_01_solar_radiation
+
+ZIMNÁ KRAJINA A SNEŽENIE
+- V zimnom období sa používa sezónny zasnežený obrázok.
+- Padajúce vločky sa aktivujú iba pri aktuálnom hlásení sneženia.
+- Voľba Bez snehu vypne aj prípadnú vrstvu umelého snehu.
+- Štyri adventné sviečky sa rozsvecujú po nedeliach od prvého adventu.
+- Stromček sa rozsvecuje od 6. decembra večer.
+
+KONTROLA
+- Automatické Node.js testy zahŕňajú počasie, WS2900, dátumy, zimu,
+  otvorenie/zatvorenie obrazovky a chybové stavy.
+- Samostatný test v reálnom Chrome kontroluje obraz a prispôsobenie
+  mobilu/tabletu vrátane otočenia.
+- Živé merania tvojej WS2900 musíš skontrolovať na svojej inštancii HA.
+- Na návrat zo šetriča slúži prvý dotyk. Pri otvorenej kamere sa
+  automatické spúšťanie pozastaví.
+
+DÔLEŽITÉ
+- Ak už máš starú kartu šetriča alebo duplicitne pridaný JavaScript zdroj,
+  nechaj iba jednu aktívnu inštaláciu. Nezamieňaj /local/ s /hacsfiles/.
+- Repozitár nemodifikuje obsah dashboardu ani zariadenia v domácnosti.
