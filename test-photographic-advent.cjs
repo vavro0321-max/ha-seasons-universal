@@ -17,8 +17,8 @@ assert(raw.includes("const integratedAdvent=!usingCustom&&d.holiday.advent&&"),
 assert(raw.includes("this._config.advent_photo!==false"),'User must be able to disable Advent photo');
 assert(raw.includes("this._config.show_christmas_tree!==false"),'Existing tree setting retained');
 assert(raw.includes("this._config.show_advent_wreath!==false"),'Existing wreath setting retained');
-assert(raw.includes("const image=integratedAdvent?'advent-photo-night-final.webp'"),
- 'Scene asset must be the approved four-candle photograph');
+assert(raw.includes("const image=integratedAdvent?(snowyAdvent?snowFile:'advent-photo-night-final.webp')"),
+ 'Scene asset must switch to the full snowy photograph without pasted decorations');
 assert(raw.includes("wreath.style.display=integratedAdvent||"),'No pasted duplicate wreath on photo');
 assert(raw.includes("tree.style.display=integratedAdvent||"),'No pasted duplicate tree on photo');
 assert(raw.includes("unifiedFx.style.display=useUnified&&!integratedAdvent"),'Do not double paint village effects');
