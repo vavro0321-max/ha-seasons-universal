@@ -1,5 +1,13 @@
 # Zmeny
 
+## 1.12.0 (2026-11-22)
+- Finálne plne zasnežené fotografické scény pre adventný deň, noc pred Mikulášom, noc od Mikuláša a obyčajnú zimu.
+- Štyri sviečky, separátne plamene s presnejším ukotvením na knôtoch; zachovaný automatický adventný kalendár.
+- Voliteľné zobrazenie trvalého snehu na zemi aj keď práve nesneží, bez falošných záverov zo samotnej nízkej teploty.
+- Bežná zima bez vianočnej výzdoby, responzívna fotografia aj na tablet.
+- Regresné testy s kontrolou reálnych WebP obrázkov, období, kalendára a meteo logiky.
+
+
 ## 1.11.0 (2026-11-22)
 - Oprava vyhodnocovania online oblačnosti a lokálneho slnečného žiarenia WS2900: pri dostatočne silnom, čerstvom slnečnom žiarení bez lokálneho dažďa sa regionálne „zamračené“ premení na „polooblačno“ (vrátane textu).
 - Časové kontroly starých alebo nedostupných senzorov; online režim `source: online` zostáva bez lokálneho prepisovania.
