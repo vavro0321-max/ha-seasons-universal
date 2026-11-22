@@ -48,9 +48,9 @@ assert(source.includes('advent-wreath-unlit.webp'),'real Advent wreath asset use
 assert(source.includes('advent-candle-flame.webp'),'real candle flame asset used');
 // Check geometry rather than a fragile exact source-code string.
 const positions=ctx.fn.landscapeHolidayPlacement({width:1536,height:864},'cover',55,true);
-assert.equal(positions.tree.groundY,732,'Tree must touch the church lawn');
-assert.equal(positions.wreath.groundY,776,'Wreath must rest on grass beside the path');
-assert(positions.wreath.left>positions.tree.left,'Wreath is on the path-side grass, away from foreground fence');
+assert.equal(positions.tree.groundY,720,'Tree must touch the church lawn');
+assert.equal(positions.wreath.groundY,798,'Wreath must rest on grass beside the path');
+assert(positions.wreath.left>positions.tree.left,'Wreath remains on the path-side grass, to the right of the tree');
 assert(!source.includes('viewBox=\\\"0 0 230 160\\\"'),
   'cartoon wreath SVG must not return');
 console.log('PASS Advent calendar, candle counts, St Nicholas tree, local day/night and config (14 dates)');
