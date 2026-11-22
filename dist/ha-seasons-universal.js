@@ -433,7 +433,7 @@ function cloudVisualProfile(clouds,dayLight){
     bankOpacity:clouds==='overcast'?.34:clouds==='partly'?.022:0,
     blueOpening:clouds==='partly'?.62*daylight:0,
     nightCloudShade:clouds==='overcast'?.27:clouds==='partly'?.025:0,
-    sunshine:clouds==='overcast'?.05:clouds==='partly'?.60:.58
+    sunshine:clouds==='overcast'?.05:clouds==='partly'?.50:.58
   };
 }
 const STYLE=`
