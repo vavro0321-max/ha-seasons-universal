@@ -1,0 +1,40 @@
+name: Validate HA Seasons Classic
+on:
+  push:
+    branches:
+      - classic/v1-1-original-waste-smooth-sun
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  original-and-classic-logic:
+    name: Original V1.1 tests plus waste and twilight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript
+        run: node --check dist/ha-seasons-universal.js
+      - name: Original 1.1 test suite
+        run: node test-logic.cjs
+      - name: Verify smooth daylight and optional waste
+        run: node test-classic-additions.cjs
+  browser-classic:
+    name: Original photo and smooth transition in Chrome
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chrome runner
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.65.1
+      - name: Check browser
+        run: google-chrome --version
+      - name: Test interactive preview in Chrome
+        run: node test-classic-browser.cjs
