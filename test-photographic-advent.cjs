@@ -17,8 +17,8 @@ assert(raw.includes("const integratedAdvent=!usingCustom&&d.holiday.advent&&"),
 assert(raw.includes("this._config.advent_photo!==false"),'User must be able to disable Advent photo');
 assert(raw.includes("this._config.show_christmas_tree!==false"),'Existing tree setting retained');
 assert(raw.includes("this._config.show_advent_wreath!==false"),'Existing wreath setting retained');
-assert(raw.includes("const image=integratedAdvent?'advent-photo-night-final.webp'"),
- 'Scene asset must be the approved four-candle photograph');
+assert(raw.includes("const image=integratedAdvent?(snowyAdvent?snowFile:'advent-photo-night-final.webp')"),
+ 'Scene asset must switch to the full snowy photograph without pasted decorations');
 assert(raw.includes("wreath.style.display=integratedAdvent||"),'No pasted duplicate wreath on photo');
 assert(raw.includes("tree.style.display=integratedAdvent||"),'No pasted duplicate tree on photo');
 assert(raw.includes("unifiedFx.style.display=useUnified&&!integratedAdvent"),'Do not double paint village effects');
@@ -27,7 +27,7 @@ assert(raw.includes("photoFx.style.left=sceneLayout.photo.left+'px'"),'Dynamic i
 assert(raw.includes("photoFx.style.width=sceneLayout.photo.width+'px'"),'Dynamic illumination scales with photo');
 assert.equal((ADVENT_PHOTO_OVERLAY.match(/data-photo-candle=/g)||[]).length,4,'Four candles individually controllable');
 assert(ADVENT_PHOTO_OVERLAY.includes('advent-photo-tree-lights'),'Tree lights on native photo');
-assert(raw.includes("Number(candle.getAttribute('data-photo-candle'))<=holiday.candles"),'Candles follow Sunday count');
+assert(raw.includes("candle.style.opacity=(n<=holiday.candles?d.nightLight:0)"),'Candles follow Sunday count');
 for(const [year,month,day,wanted,lights] of [
  [2026,11,28,0,false],[2026,11,29,1,false],[2026,12,5,1,false],
  [2026,12,6,2,true],[2026,12,13,3,true],[2026,12,20,4,true],

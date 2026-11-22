@@ -46,6 +46,8 @@ jobs:
         run: node test-natural-holiday-compositing.cjs
       - name: Test embedded photographic Advent scene and lighting schedule
         run: node test-photographic-advent.cjs
+      - name: Test final snow panorama with four candles and winter fallback
+        run: node test-snow-landscape.cjs
       - name: Test sunrise sunset and night transitions
         run: node test-sun-cycle.cjs
       - name: Test moonlit night and ground frost

@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.11.0 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.11.0';
+/* HA Seasons Universal 1.12.0 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.12.0';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -283,6 +283,20 @@ const CUSTOM_SEASON_COLOR={
   winter:'linear-gradient(180deg,rgba(178,215,251,.23),rgba(187,219,243,.51))'
 };
 
+function deepSnowLandscape(d,config={}){
+ if(visualSeason(d.scene)!=='winter'||config.snow_cover===false||config.snow_landscape==='bare')return false;
+ return config.snow_landscape==='snow'||d.precipitation==='snow';
+}
+function winterPhotographicAsset(d,config={},available=()=>true){
+ if(!deepSnowLandscape(d,config))return null;
+ const advent=!!d.holiday?.advent&&['christmas','nicholas'].includes(d.scene)&&config.advent_photo!==false&&
+   config.show_christmas_tree!==false&&config.show_advent_wreath!==false;
+ if(advent){
+   const name=d.nightLight>=.5?(d.holiday.treeLights?'advent-snow-night.webp':'advent-snow-night-unlit.webp'):'advent-snow-day.webp';
+   return available(name)?name:null;
+ }
+ return available('winter-snow-landscape.webp')?'winter-snow-landscape.webp':null;
+}
 function assetName(d){
   // A single landscape stays mounted throughout the entire solar cycle. Switching
   // day/night pictures here causes visibly doubled trees, mountains and houses.
@@ -653,10 +667,10 @@ class HASeasonsUniversalCard extends HTMLElement {
     const photo=this._root?.querySelector('.photo');if(!photo)return;
     const visual=visualSeason(d.scene);
     const scene=d.leafless&&visual==='autumn'?'late_autumn':visual;
-    const shared=image.startsWith('universal-landscape')||image==='advent-photographic-evening.webp'||image==='advent-photo-night-final.webp';
+    const shared=image.startsWith('universal-landscape')||image==='advent-photographic-evening.webp'||image==='advent-photo-night-final.webp'||image.startsWith('advent-snow-')||image==='winter-snow-landscape.webp';
     // New user-approved photos are already season-colored: never recolor them
     // in Canvas, which made autumn leaves green/brown and distorted blossoms.
-    const precolored=/^universal-landscape-(spring|summer|autumn|winter|winter-dry)\.webp$/.test(image)||image==='advent-photographic-evening.webp'||image==='advent-photo-night-final.webp';
+    const precolored=/^universal-landscape-(spring|summer|autumn|winter|winter-dry)\.webp$/.test(image)||image==='advent-photographic-evening.webp'||image==='advent-photo-night-final.webp'||image.startsWith('advent-snow-')||image==='winter-snow-landscape.webp';
     const grading=!precolored&&this._config.season_colors!==false&&(['spring','summer','autumn'].includes(scene)||(shared&&['late_autumn','winter'].includes(scene)));
     const weight=grading?(scene==='late_autumn'?.95:scene==='winter'?.83:seasonStrength(scene,d.p)):0;
     const daylightAdvent=image==='advent-photo-night-final.webp'&&d.dayLight>=.55;
@@ -754,13 +768,15 @@ class HASeasonsUniversalCard extends HTMLElement {
     const custom=chooseCustomPhoto(this._config,d,this._badCustomImages);
     const usingCustom=!!custom;
     const useUnified=!usingCustom&&this._config.unified_scene!==false&&!this._missingImages?.has(preferred);
-    // The approved clean photographic Advent background is activated only
-    // after sunset. Daytime retains the dynamic seasonal daylight panorama.
-    const integratedAdvent=!usingCustom&&d.holiday.advent&&
+    const snowFile=!usingCustom?winterPhotographicAsset(d,this._config,name=>!this._missingImages?.has(name)):null;
+    const snowyAdvent=!!snowFile&&snowFile.startsWith('advent-snow-');
+    const integratedAdvent=!usingCustom&&d.holiday.advent&&['christmas','nicholas'].includes(d.scene)&&
       this._config.advent_photo!==false&&this._config.show_christmas_tree!==false&&
       this._config.show_advent_wreath!==false&&
-      !this._missingImages?.has('advent-photo-night-final.webp');
-    const image=integratedAdvent?'advent-photo-night-final.webp':useUnified?preferred:assetName(d);
+      (snowyAdvent||!this._missingImages?.has('advent-photo-night-final.webp'));
+    const image=integratedAdvent?(snowyAdvent?snowFile:'advent-photo-night-final.webp'):
+      snowFile||(useUnified?preferred:assetName(d));
+    const winterSnowPhoto=image==='winter-snow-landscape.webp';
     const sceneLayout=usingCustom?null:landscapeHolidayPlacement(
       bounds,this._config.image_fit,this._config.image_focus??55,useUnified);
     // Use exactly the same geometry for the photo and every anchored overlay.
@@ -826,10 +842,15 @@ class HASeasonsUniversalCard extends HTMLElement {
       photoFx.style.top=sceneLayout.photo.top+'px';
       photoFx.style.width=sceneLayout.photo.width+'px';
       photoFx.style.height=sceneLayout.photo.height+'px';
-      photoFx.querySelector('.advent-photo-tree-lights').style.opacity=(glow*.95).toFixed(3);
-      photoFx.querySelector('.advent-photo-wreath-lights').style.opacity=d.nightLight.toFixed(3);
-      for(const candle of photoFx.querySelectorAll('[data-photo-candle]'))
-        candle.style.opacity=(Number(candle.getAttribute('data-photo-candle'))<=holiday.candles?d.nightLight:0).toFixed(3);
+      photoFx.querySelector('.advent-photo-tree-lights').style.opacity=(glow*(snowyAdvent?.25:.95)).toFixed(3);
+      photoFx.querySelector('.advent-photo-wreath-lights').style.opacity=(d.nightLight*(snowyAdvent?.55:1)).toFixed(3);
+      const snowWicks=[[-12,3],[-13,6],[-8,1],[-5,-2]];
+      for(const candle of photoFx.querySelectorAll('[data-photo-candle]')){
+        const n=Number(candle.getAttribute('data-photo-candle'));
+        candle.style.opacity=(n<=holiday.candles?d.nightLight:0).toFixed(3);
+        const [dx,dy]=snowyAdvent?snowWicks[n-1]:[0,0];
+        candle.setAttribute('transform','translate('+dx+' '+dy+')');
+      }
     }
     const isPhotoSeason=['spring','summer','autumn','winter'].includes(d.scene);
     const stage=el('.sceneryfx'),view=el('.scene-map');
@@ -889,7 +910,7 @@ class HASeasonsUniversalCard extends HTMLElement {
       wallReflection.style.opacity=(glow*.24).toFixed(3);
     }else{wallReflection.style.display='none';wallReflection.style.opacity='0';}
     const unifiedFx=el('.unifiedfx'),unifiedMap=el('.unified-map');
-    unifiedFx.style.display=useUnified&&!integratedAdvent?'block':'none';
+    unifiedFx.style.display=useUnified&&!integratedAdvent&&!winterSnowPhoto?'block':'none';
     if(useUnified){
       unifiedMap.style.width=sceneLayout.photo.width+'px';
       unifiedMap.style.height=sceneLayout.photo.height+'px';
@@ -965,6 +986,7 @@ const OPTIONS={
  clock_size:[['normal','Normálna'],['small','Menšia'],['large','Väčšia']],
  image_fit:[['cover','Vyplniť obrazovku (môže orezať kraje)'],['contain','Celá fotografia (môže mať okraje)']],
  scene:[['auto','Automaticky podľa roka'],['spring','Jar'],['summer','Leto'],['autumn','Jeseň'],['winter','Zima'],['christmas','Vianoce'],['easter','Veľká noc'],['may','Máj'],['memorial','Dušičky'],['nicholas','Mikuláš'],['newyear','Nový rok']],
+ snow_landscape:[['auto','Automaticky pri snežení'],['snow','Zasnežená krajina'],['bare','Bez snehu']],
  phase:[['auto','Automaticky podľa slnka'],['day','Deň'],['dawn','Svitanie'],['dusk','Súmrak'],['night','Noc']]
 };
 const OPTION_LABELS={advent_photo:'Fotografický adventný motív večer',show_advent_wreath:'Adventný veniec – sviečky iba večer',show_christmas_tree:'Vianočný stromček – svetlá od Mikuláša',custom_sky_objects:'Slnko a Mesiac na vlastnom obrázku',show_waste:'Zobrazovať vývoz odpadu (ak existujú senzory)',show_clock:'Hodiny',show_date:'Dátum',show_temperature:'Vonkajšia teplota',show_heating:'Kúrenie',show_nameday:'Meniny',show_lights:'Svetlá',show_weather:'Stav počasia',show_sun:'Východ a západ slnka',show_moon:'Fáza Mesiaca',precipitation_animation:'Padajúci dážď / sneh',leaf_animation:'Pohyb lístia',night_lights:'Svetlá v dedine a kostolíku',pause_on_camera:'Nespúšťať šetrič pri otvorenej záložke Kamery',moonlight_effect:'Osvetlenie krajiny Mesiacom',snow_cover:'Snehová pokrývka a námraza podľa teploty (odhad)',unified_scene:'Jedna krajina pre všetky ročné obdobia (moje fotografie)',fog_effect:'Hmla iba pri hlásení fog / mist',season_colors:'Výrazné farby ročných období (jar, leto, jeseň)'};
@@ -974,7 +996,7 @@ class HASeasonsUniversalEditor extends HTMLElement{
  constructor(){super();this.attachShadow({mode:'open'});this._config={type:'custom:ha-seasons-universal-card',idle_seconds:30,source:'auto',layout:'auto'};}
  setConfig(config){this._config={...config};this._render();}
  set hass(hass){this._hass=hass;if(!this._rendered)this._render();else this._updateWeatherList();}
- _select(key,label){const val=this._config[key]??(key==='source'||key==='scene'||key==='layout'||key==='phase'?'auto':key==='clock_size'?'normal':'glass');return `<label class="field">${escapeHtml(label)}<select data-prop="${key}">${OPTIONS[key].map(([v,t])=>`<option value="${v}" ${v===val?'selected':''}>${escapeHtml(t)}</option>`).join('')}</select></label>`;}
+ _select(key,label){const val=this._config[key]??(key==='source'||key==='scene'||key==='layout'||key==='phase'||key==='snow_landscape'?'auto':key==='clock_size'?'normal':'glass');return `<label class="field">${escapeHtml(label)}<select data-prop="${key}">${OPTIONS[key].map(([v,t])=>`<option value="${v}" ${v===val?'selected':''}>${escapeHtml(t)}</option>`).join('')}</select></label>`;}
  _render(){const c=this._config,check=(k,l)=>`<label class="check"><input type="checkbox" data-bool="${k}" ${c[k]===false?'':'checked'}>${escapeHtml(l)}</label>`,entity=(k,l)=>`<label class="field">${escapeHtml(l)}<input data-entity="${k}" value="${escapeHtml(k==='lights'?(Array.isArray(c.entities?.lights)?c.entities.lights.join(', '):''):(c.entities?.[k]||''))}" placeholder="Automaticky" spellcheck="false" list="seasons-entities"></label>`;
  this.shadowRoot.innerHTML=`<style>${EDITOR_STYLE}</style><div class="wrapper">
  <section class="panel"><h3>Spustenie a displej</h3><p>Šetrič nemení tvoj dashboard. Na šírku aj na výšku sa rozloženie prispôsobí automaticky.</p>
@@ -992,7 +1014,7 @@ class HASeasonsUniversalEditor extends HTMLElement{
  <input data-number="custom_season_strength" type="range" min="0" max="1.2" step="0.1" value="${clamp(Number(c.custom_season_strength??.8),0,1.2)}"></label>
  <small>Jedna fotografia mení sezónne farby, denný jas a počasie. Zelené listy sa však nedajú spoľahlivo automaticky odstrániť bez ďalšej fotografie alebo AI úpravy. Svoje varianty môžeš prezrieť cez voľbu Ročné obdobie nižšie.</small>
  </section>
- <section class="panel"><h3>Krajina a počasie</h3><div class="inline">${this._select('source','Zdroj počasia')}${this._select('scene','Ročné obdobie / sviatok')}</div>${this._select('phase','Denná doba')}
+ <section class="panel"><h3>Krajina a počasie</h3><div class="inline">${this._select('source','Zdroj počasia')}${this._select('scene','Ročné obdobie / sviatok')}</div>${this._select('phase','Denná doba')}${this._select('snow_landscape','Sneh na zemi')}
  <label class="field">Jas nočnej krajiny <small data-night-text>${Math.round(clamp(Number(c.night_brightness??1.1),.8,1.35)*100)} %</small>
  <input data-number="night_brightness" type="range" min="0.8" max="1.35" step="0.05" value="${clamp(Number(c.night_brightness??1.1),.8,1.35)}"></label>
  <small>Mení len noc. Krajina zostáva tmavá a modrastá; cez deň sa jas riadi Slnkom a WS2900.</small></section>
