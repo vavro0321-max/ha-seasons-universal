@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.12.4 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.12.4';
+/* HA Seasons Universal 1.12.5 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.12.5';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -40,7 +40,19 @@ function numberFor(hass,id){return safeNumber(state(hass,id)?.state);}
 function unitFor(hass,id){return String(state(hass,id)?.attributes?.unit_of_measurement||'').toLowerCase().replace(/\s+/g,'');}
 function toCelsius(n,unit){return n===null?null:(unit==='°f'||unit==='f'?(n-32)*5/9:n);}
 function toKmh(n,unit){if(n===null)return null;return unit==='m/s'?n*3.6:(unit==='mph'?n*1.609344:(unit==='kn'||unit==='kt'?n*1.852:n));}
-function pick(hass,forced,candidates=[],predicate=null){if(forced&&forced!=='auto')return forced;for(const id of candidates)if(state(hass,id))return id;if(predicate)return Object.keys(hass?.states||{}).find(id=>predicate(id,state(hass,id)))||null;return null;}
+function pick(hass,forced,candidates=[],predicate=null,now=new Date(),maxMinutes=25){
+  if(forced&&forced!=='auto')return forced;
+  // Existence alone is insufficient: an unavailable/stale WS2900 sensor
+  // must not prevent a valid alternate local measurement being selected.
+  const usable=id=>{
+    const e=state(hass,id);
+    return e&&safeNumber(e.state)!==null&&freshEntity(e,now,maxMinutes);
+  };
+  for(const id of candidates)if(usable(id))return id;
+  if(predicate)return Object.keys(hass?.states||{}).find(id=>
+    predicate(id,state(hass,id))&&usable(id))||null;
+  return null;
+}
 function entityAgeMinutes(entity,now){
   const raw=entity?.last_updated||entity?.last_changed;
   if(!raw)return null; // test fixtures and integrations without timestamps
@@ -66,15 +78,18 @@ function getInputs(hass,config,now=new Date()){
   const cfg=config.entities||{},p=localParts(now,hass?.config?.time_zone||Intl.DateTimeFormat().resolvedOptions().timeZone);
   const wId=weatherId(hass,cfg.weather,now),wo=state(hass,wId),wx=freshEntity(wo,now,180)&&knownWeather.includes(wo?.state)?wo.state:'unavailable';
   const localMode=config.source!=='online';
-  const tempId=localMode?pick(hass,cfg.temperature,['sensor.ws2900_v2_02_01_outdoor_temperature'],(id,s)=>id.startsWith('sensor.')&&s?.attributes?.device_class==='temperature'&&/outdoor|outside|vonku|external|vonkaj|exteri/i.test(id+' '+(s.attributes.friendly_name||''))):null;
-  const rainId=localMode?pick(hass,cfg.rain,['sensor.ws2900_v2_02_01_rain_rate'],(id,s)=>id.startsWith('sensor.')&&/rain_rate|rain_intensity|precipitation_intensity|intenzita_dazda/.test(id)):null;
-  const solarId=localMode?pick(hass,cfg.solar,['sensor.ws2900_v2_02_01_solar_radiation'],id=>id.startsWith('sensor.')&&/solar_radiation|slnecne_ziarenie/.test(id)):null;
-  const windId=localMode?pick(hass,cfg.wind,['sensor.ws2900_v2_02_01_wind_speed'],(id,s)=>id.startsWith('sensor.')&&/wind_speed|rychlost_vetra/.test(id)):null;
-  const gustId=localMode?pick(hass,cfg.gust,['sensor.ws2900_v2_02_01_wind_gust'],id=>id.startsWith('sensor.')&&/wind_gust|narazy_vetra/.test(id)):null;
-  const humidityId=localMode?pick(hass,cfg.humidity,['sensor.ws2900_v2_02_01_humidity'],id=>id.startsWith('sensor.')&&/outdoor.*humidity|humidity.*outdoor|ws2900.*humidity/.test(id)):null;
-  const dewpointId=localMode?pick(hass,cfg.dewpoint,['sensor.ws2900_v2_02_01_dewpoint'],id=>id.startsWith('sensor.')&&/dewpoint|dew_point|rosny_bod/.test(id)):null;
-  const sun=state(hass,'sun.sun'),elevation=safeNumber(sun?.attributes?.elevation),azimuth=safeNumber(sun?.attributes?.azimuth);
   const sensorAge=clamp(Number(config.station_max_age_minutes??25)||25,5,180);
+  const tempId=localMode?pick(hass,cfg.temperature,['sensor.ws2900_v2_02_01_outdoor_temperature'],(id,s)=>id.startsWith('sensor.')&&s?.attributes?.device_class==='temperature'&&/outdoor|outside|vonku|external|vonkaj|exteri/i.test(id+' '+(s.attributes.friendly_name||'')),now,sensorAge):null;
+  const rainId=localMode?pick(hass,cfg.rain,['sensor.ws2900_v2_02_01_rain_rate'],(id,s)=>id.startsWith('sensor.')&&/rain_rate|rain_intensity|precipitation_intensity|intenzita_dazda/.test(id),now,sensorAge):null;
+  const solarId=localMode?pick(hass,cfg.solar,['sensor.ws2900_v2_02_01_solar_radiation'],id=>id.startsWith('sensor.')&&/solar_radiation|slnecne_ziarenie/.test(id),now,sensorAge):null;
+  const windId=localMode?pick(hass,cfg.wind,['sensor.ws2900_v2_02_01_wind_speed'],(id,s)=>id.startsWith('sensor.')&&/wind_speed|rychlost_vetra/.test(id),now,sensorAge):null;
+  const gustId=localMode?pick(hass,cfg.gust,['sensor.ws2900_v2_02_01_wind_gust'],id=>id.startsWith('sensor.')&&/wind_gust|narazy_vetra/.test(id),now,sensorAge):null;
+  const humidityId=localMode?pick(hass,cfg.humidity,['sensor.ws2900_v2_02_01_humidity'],id=>id.startsWith('sensor.')&&/outdoor.*humidity|humidity.*outdoor|ws2900.*humidity/.test(id),now,sensorAge):null;
+  const dewpointId=localMode?pick(hass,cfg.dewpoint,['sensor.ws2900_v2_02_01_dewpoint'],id=>id.startsWith('sensor.')&&/dewpoint|dew_point|rosny_bod/.test(id),now,sensorAge):null;
+  const sun=state(hass,'sun.sun');
+  const sunValid=['above_horizon','below_horizon'].includes(sun?.state)&&freshEntity(sun,now,30);
+  const elevation=sunValid?safeNumber(sun?.attributes?.elevation):null;
+  const azimuth=sunValid?safeNumber(sun?.attributes?.azimuth):null;
   let temperature=freshEntity(state(hass,tempId),now,sensorAge)?toCelsius(numberFor(hass,tempId),unitFor(hass,tempId)):null;
   if(temperature===null&&wx!=='unavailable')temperature=toCelsius(safeNumber(wo?.attributes?.temperature),String(wo?.attributes?.temperature_unit||'°C').toLowerCase());
   // Sensor freshness is essential: an old 0 W/m² reading is not evidence
@@ -152,13 +167,22 @@ function getInputs(hass,config,now=new Date()){
     clouds==='clear'&&cloudSource==='ws2900_fallback'?'sunny':
     clouds==='overcast'&&cloudSource==='ws2900_fallback'?'cloudy':wx;
   const scene=config.scene&&config.scene!=='auto'?config.scene:seasonAt(p);
-  const phase=config.phase&&config.phase!=='auto'?config.phase:(elevation!==null?(elevation<=-6?'night':elevation<10?(sun?.attributes?.rising?'dawn':'dusk'):'day'):(sun?.state==='below_horizon'?'night':p.hour<8?'dawn':p.hour>=17?'dusk':'day'));
-  const isNight=phase==='night';
-  // Solar elevation is continuous from dawn through sunset and throughout the night.
-  // Use the HA sun.sun elevation; only fall back to a time-of-day estimate when it is missing.
+  // Only approximate clock-based phases if sun.sun is unavailable. In that
+  // case midnight and late evening MUST NOT be mistaken for daylight.
+  const clockPhase=p.hour<6||p.hour>=20?'night':p.hour<9?'dawn':p.hour>=17?'dusk':'day';
+  const sunPhase=elevation!==null?
+    (elevation<=-6?'night':elevation<10?(sun?.attributes?.rising?'dawn':'dusk'):'day'):
+    sunValid?(sun.state==='below_horizon'?'night':p.hour<10?'dawn':p.hour>=17?'dusk':'day'):
+    clockPhase;
   const manual=config.phase&&config.phase!=='auto';
+  const phase=manual?config.phase:sunPhase;
+  const isNight=phase==='night';
+  // Real solar elevation takes precedence. If unavailable, use the HA sun
+  // state; only with neither available use the approximate local-clock phase.
   const solarElevation=manual?({day:22,dawn:1,dusk:1,night:-24}[config.phase]??0):
-    (elevation!==null?elevation:(sun?.state==='below_horizon'?-19:(p.hour<9||p.hour>=16?4:20)));
+    elevation!==null?elevation:
+    sunValid?(sun.state==='below_horizon'?-19:phase==='day'?20:6):
+    ({day:20,dawn:1,dusk:1,night:-24}[clockPhase]??-24);
   const dayLight=smoothstep(-12,20,solarElevation);
   const nightLight=1-smoothstep(-13,-2,solarElevation);
   const deepNight=1-smoothstep(-65,-12,solarElevation);
