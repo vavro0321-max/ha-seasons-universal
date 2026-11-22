@@ -1,23 +1,34 @@
 <!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HA Seasons Universal – test</title>
 <style>body{background:#0b1a2a;color:#f2f7ff;font:16px system-ui;margin:0;padding:26px;max-width:800px}h1{font-size:25px}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:8px;background:#18304b;border-radius:14px;padding:15px}select,input{width:100%;min-height:36px}button{background:#40a3ec;border:0;border-radius:12px;font-size:18px;color:#001a2c;padding:13px 20px;cursor:pointer;margin-top:16px}.muted{color:#b2c7d7}output{font-weight:700}</style></head><body>
-<h1>HA Seasons Universal V1.1 – test počasia</h1><p class="muted">Testovacie hodnoty sú simulované. Nemenia zariadenia ani nastavenia Home Assistanta.</p>
+<h1>HA Seasons Classic V1.1.1 – pôvodný vzhľad + deň/noc + odpad</h1><p class="muted">Testovacie hodnoty sú simulované. Nemenia zariadenia ani nastavenia Home Assistanta.</p>
 <main>
 <label class="field">Oblačnosť<select id="weather"><option value="sunny">Jasno</option><option value="partlycloudy">Polooblačno</option><option value="cloudy">Zamračené</option><option value="rainy">Dážď</option><option value="pouring">Silný dážď</option><option value="snowy">Sneženie</option></select></label>
 <label class="field">Intenzita zrážok <output id="rainOut">0 mm/h</output><input id="rain" type="range" min="0" max="25" value="0" step="0.1"></label>
 <label class="field">Slnečné žiarenie <output id="solarOut">600 W/m²</output><input id="solar" type="range" min="0" max="1000" value="600" step="10"></label>
 <label class="field">Vietor <output id="windOut">8 km/h</output><input id="wind" type="range" min="0" max="90" value="8" step="1"></label>
 <label class="field">Teplota <output id="tempOut">11 °C</output><input id="temp" type="range" min="-15" max="35" value="11" step="1"></label>
-<label class="field">Fáza dňa<select id="phase"><option value="day">Deň</option><option value="dawn">Svitanie</option><option value="dusk">Západ slnka</option><option value="night">Noc</option></select></label>
+<label class="field">Fáza dňa<select id="phase"><option value="auto">Plynulo podľa polohy Slnka</option><option value="day">Deň</option><option value="dawn">Svitanie</option><option value="dusk">Západ slnka</option><option value="night">Noc</option></select></label>
+<label class="field">Výška Slnka <output id="elevationOut">22°</output><input id="elevation" type="range" min="-22" max="25" value="22" step="0.5"></label>
+<label class="field">Komunálny odpad – dátum<input type="date" id="municipal"></label>
+<label class="field">Separovaný odpad – dátum (voliteľné)<input type="date" id="recycling"></label>
 </main>
-<p><button id="open">Otvoriť šetrič</button> <button id="editorShow" type="button">Zobraziť grafický editor</button></p><div id="editorHost" style="max-width:660px"></div><p class="muted">Dotknutím obrazovky sa vrátiš na tento test. Pri zmene hodnôt otvor šetrič znova.</p><ha-seasons-universal-card id="card"></ha-seasons-universal-card>
+<p><button id="open">Otvoriť šetrič</button>
+<button id="playTransition" type="button">▶ Prehrať prechod deň → noc</button>
+<button id="editorShow" type="button">Zobraziť grafický editor</button></p><div id="editorHost" style="max-width:660px"></div><p class="muted">Dotknutím obrazovky sa vrátiš na tento test. Pri zmene hodnôt otvor šetrič znova.</p><ha-seasons-universal-card id="card"></ha-seasons-universal-card>
 <script type="module" src="./ha-seasons-universal.js"></script>
 <script type="module">
-const ids=['weather','rain','solar','wind','temp','phase'];const card=document.querySelector('#card');const now=new Date();
-const make=()=>{const w=document.querySelector('#weather').value,p=document.querySelector('#phase').value;const rain=+document.querySelector('#rain').value,solar=+document.querySelector('#solar').value,wind=+document.querySelector('#wind').value,temp=+document.querySelector('#temp').value;
+const ids=['weather','rain','solar','wind','temp','phase','elevation','municipal','recycling'];const card=document.querySelector('#card');const now=new Date();
+const localISO=(offset)=>{
+ const x=new Date(now);x.setDate(x.getDate()+offset);
+ return [x.getFullYear(),String(x.getMonth()+1).padStart(2,'0'),String(x.getDate()).padStart(2,'0')].join('-');
+};
+document.querySelector('#municipal').value=localISO(2);
+document.querySelector('#recycling').value=localISO(5);
+const make=()=>{const w=document.querySelector('#weather').value,p=document.querySelector('#phase').value;const rain=+document.querySelector('#rain').value,solar=+document.querySelector('#solar').value,wind=+document.querySelector('#wind').value,temp=+document.querySelector('#temp').value,elevation=+document.querySelector('#elevation').value;document.querySelector('#elevationOut').textContent=elevation+'°';
  for(const k of ['rain','solar','wind','temp'])document.querySelector('#'+k+'Out').textContent=document.querySelector('#'+k).value+({rain:' mm/h',solar:' W/m²',wind:' km/h',temp:' °C'}[k]);
  const states={
   'weather.home':{state:w,attributes:{temperature:temp,temperature_unit:'°C',wind_speed:wind,wind_speed_unit:'km/h'}},
-  'sun.sun':{state:p==='night'?'below_horizon':'above_horizon',attributes:{elevation:p==='night'?-12:p==='day'?38:5,azimuth:p==='dawn'?90:p==='dusk'?265:180,rising:p==='dawn',next_rising:new Date(now.getTime()+5e7).toISOString(),next_setting:new Date(now.getTime()+3e7).toISOString()}},
+  'sun.sun':{state:(p==='auto'?elevation<0:p==='night')?'below_horizon':'above_horizon',attributes:{elevation:p==='auto'?elevation:p==='night'?-18:p==='day'?25:p==='dawn'?-4:-4,azimuth:p==='dawn'?90:p==='dusk'?265:180,rising:p==='dawn',next_rising:new Date(now.getTime()+5e7).toISOString(),next_setting:new Date(now.getTime()+3e7).toISOString()}},
   'sensor.ws2900_v2_02_01_outdoor_temperature':{state:String(temp),attributes:{unit_of_measurement:'°C'}},
   'sensor.ws2900_v2_02_01_rain_rate':{state:String(rain),attributes:{unit_of_measurement:'mm/h'}},
   'sensor.ws2900_v2_02_01_solar_radiation':{state:String(solar),attributes:{unit_of_measurement:'W/m²'}},
@@ -26,7 +37,22 @@ const make=()=>{const w=document.querySelector('#weather').value,p=document.quer
   'switch.thermostat_switch':{state:'on',attributes:{}},
   'light.test':{state:'on',attributes:{}}
  };
- card.setConfig({source:'auto',phase:p,idle_seconds:3600,entities:{weather:'weather.home',nameday:'sensor.meniny_dnes'}});card.hass={states,config:{time_zone:'Europe/Bratislava'}};};
+ const municipal=document.querySelector('#municipal').value,
+ recycling=document.querySelector('#recycling').value;
+ if(municipal)states['sensor.najblizsi_komunalny_odpad']={state:municipal,attributes:{}};
+ if(recycling)states['sensor.najblizsi_triedeny_zber']={state:recycling,attributes:{}};
+ card.setConfig({source:'auto',phase:p,show_waste:true,idle_seconds:3600,entities:{weather:'weather.home',nameday:'sensor.meniny_dnes'}});card.hass={states,config:{time_zone:'Europe/Bratislava'}};};
 document.querySelector('#editorShow').addEventListener('click',()=>{const host=document.querySelector('#editorHost');host.replaceChildren();const e=document.createElement('ha-seasons-universal-editor');e.setConfig({type:'custom:ha-seasons-universal-card',idle_seconds:30,source:'auto',layout:'auto'});e.hass=card._hass;host.append(e);});
-ids.forEach(id=>document.getElementById(id).addEventListener('input',make));document.querySelector('#open').addEventListener('click',()=>{make();card.showForDemo();});make();
+ids.forEach(id=>document.getElementById(id).addEventListener('input',make));
+document.querySelector('#playTransition').addEventListener('click',()=>{
+ const slider=document.querySelector('#elevation');
+ document.querySelector('#phase').value='auto';
+ slider.value='25';make();card.showForDemo();
+ let step=0,frames=90;const interval=setInterval(()=>{
+   if(!card._visible||step>frames){clearInterval(interval);return;}
+   slider.value=(25-47*step/frames).toFixed(1);
+   make();step++;
+ },250);
+});
+document.querySelector('#open').addEventListener('click',()=>{make();card.showForDemo();});make();
 </script></body></html>
