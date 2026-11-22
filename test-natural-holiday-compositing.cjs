@@ -15,7 +15,7 @@ const domSelectors=[
 for(const selector of domSelectors){
   assert(HOLIDAY_COMPOSITED.includes(selector),'Compositor missing '+selector);
 }
-assert(source.includes('${HOLIDAY_COMPOSITED}<div class="information">'),
+assert(source.includes('${HOLIDAY_COMPOSITED}${ADVENT_PHOTO_OVERLAY}<div class="information">'),
   'Screensaver uses the composited image, not the old flat overlay');
 assert(source.includes("position.left+position.width*.5"),
   'Light pool x must use each decoration centre');
@@ -23,9 +23,9 @@ assert(source.includes("position.groundY+position.width*dy"),
   'Contact shadow and light must be anchored to ground contact y');
 assert(source.includes("phot.left+568/1536*phot.width"),
   'Church wall reflection must follow photo crop/scale');
-assert(source.includes("const treeVisible=holiday.tree&&this._config.show_christmas_tree!==false"),
+assert(source.includes("const treeVisible=!integratedAdvent&&holiday.tree&&this._config.show_christmas_tree!==false"),
   'Respect hide-tree switch');
-assert(source.includes("const wreathVisible=holiday.advent&&this._config.show_advent_wreath!==false"),
+assert(source.includes("const wreathVisible=!integratedAdvent&&holiday.advent&&this._config.show_advent_wreath!==false"),
   'Respect hide-wreath switch');
 assert(source.includes("treeVisible&&holiday.treeLights"),
   'No tree illumination before St Nicholas');
