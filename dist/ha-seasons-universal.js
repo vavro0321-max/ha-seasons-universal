@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.10.8 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.10.8';
+/* HA Seasons Universal 1.11.0 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.11.0';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -41,10 +41,30 @@ function unitFor(hass,id){return String(state(hass,id)?.attributes?.unit_of_meas
 function toCelsius(n,unit){return n===null?null:(unit==='°f'||unit==='f'?(n-32)*5/9:n);}
 function toKmh(n,unit){if(n===null)return null;return unit==='m/s'?n*3.6:(unit==='mph'?n*1.609344:(unit==='kn'||unit==='kt'?n*1.852:n));}
 function pick(hass,forced,candidates=[],predicate=null){if(forced&&forced!=='auto')return forced;for(const id of candidates)if(state(hass,id))return id;if(predicate)return Object.keys(hass?.states||{}).find(id=>predicate(id,state(hass,id)))||null;return null;}
-function weatherId(hass,forced){return pick(hass,forced,['weather.forecast_cierne_11','weather.home'],(id,s)=>id.startsWith('weather.')&&knownWeather.includes(s?.state));}
+function entityAgeMinutes(entity,now){
+  const raw=entity?.last_updated||entity?.last_changed;
+  if(!raw)return null; // test fixtures and integrations without timestamps
+  const time=Date.parse(raw);
+  if(!Number.isFinite(time))return null;
+  return Math.max(0,(now.getTime()-time)/60000);
+}
+function freshEntity(entity,now,maxMinutes=30){
+  if(!entity||['unknown','unavailable'].includes(entity.state))return false;
+  const age=entityAgeMinutes(entity,now);
+  return age===null||age<=maxMinutes;
+}
+function weatherId(hass,forced,now=new Date()){
+  if(forced&&forced!=='auto')return forced;
+  const ids=['weather.forecast_cierne_11','weather.home',
+    ...Object.keys(hass?.states||{}).filter(id=>id.startsWith('weather.'))];
+  return [...new Set(ids)].find(id=>{
+    const e=state(hass,id);
+    return knownWeather.includes(e?.state)&&freshEntity(e,now,180);
+  })||null;
+}
 function getInputs(hass,config,now=new Date()){
   const cfg=config.entities||{},p=localParts(now,hass?.config?.time_zone||Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const wId=weatherId(hass,cfg.weather),wo=state(hass,wId),wx=knownWeather.includes(wo?.state)?wo.state:'unavailable';
+  const wId=weatherId(hass,cfg.weather,now),wo=state(hass,wId),wx=knownWeather.includes(wo?.state)?wo.state:'unavailable';
   const localMode=config.source!=='online';
   const tempId=localMode?pick(hass,cfg.temperature,['sensor.ws2900_v2_02_01_outdoor_temperature'],(id,s)=>id.startsWith('sensor.')&&s?.attributes?.device_class==='temperature'&&/outdoor|outside|vonku|external|vonkaj|exteri/i.test(id+' '+(s.attributes.friendly_name||''))):null;
   const rainId=localMode?pick(hass,cfg.rain,['sensor.ws2900_v2_02_01_rain_rate'],(id,s)=>id.startsWith('sensor.')&&/rain_rate|rain_intensity|precipitation_intensity|intenzita_dazda/.test(id)):null;
@@ -56,8 +76,14 @@ function getInputs(hass,config,now=new Date()){
   const sun=state(hass,'sun.sun'),elevation=safeNumber(sun?.attributes?.elevation),azimuth=safeNumber(sun?.attributes?.azimuth);
   let temperature=toCelsius(numberFor(hass,tempId),unitFor(hass,tempId));
   if(temperature===null)temperature=toCelsius(safeNumber(wo?.attributes?.temperature),String(wo?.attributes?.temperature_unit||'°C').toLowerCase());
-  let rain=numberFor(hass,rainId);if(rain!==null&&unitFor(hass,rainId).includes('in/h'))rain*=25.4;
-  let solar=numberFor(hass,solarId);
+  // Sensor freshness is essential: an old 0 W/m² reading is not evidence
+  // for overcast clouds now, and an old rain value must not paint rain today.
+  const sensorAge=clamp(Number(config.station_max_age_minutes??25)||25,5,180);
+  const rainFresh=freshEntity(state(hass,rainId),now,sensorAge);
+  const solarFresh=freshEntity(state(hass,solarId),now,sensorAge);
+  let rain=rainFresh?numberFor(hass,rainId):null;
+  if(rain!==null&&unitFor(hass,rainId).includes('in/h'))rain*=25.4;
+  let solar=solarFresh?numberFor(hass,solarId):null;
   let wind=toKmh(numberFor(hass,windId),unitFor(hass,windId));
   if(wind===null)wind=toKmh(safeNumber(wo?.attributes?.wind_speed),String(wo?.attributes?.wind_speed_unit||'km/h').toLowerCase());
   const gust=toKmh(numberFor(hass,gustId),unitFor(hass,gustId));
@@ -67,7 +93,17 @@ function getInputs(hass,config,now=new Date()){
   // Fog is a weather condition, not a synonym for overcast skies or humid air.
   // Even 100% humidity / near-zero dewpoint gap does not trigger white fog.
   // Only a weather entity that explicitly reports fog or mist may show it.
-  const reportedFog=wx==='fog'||wx==='mist';
+  const elevationRad=elevation===null?null:Math.max(0,elevation)*Math.PI/180;
+  // Conservative clear-sky irradiance approximation in W/m², scaled by
+  // solar elevation. Radiation is observed sunlight, not cloud coverage itself.
+  const expectedSolar=elevationRad===null||elevation<8?null:
+    Math.max(80,1010*Math.pow(Math.sin(elevationRad),1.18));
+  const solarRatio=solar!==null&&expectedSolar!==null?clamp(solar/expectedSolar,0,2):null;
+  const localSunshine=solarRatio!==null&&solar>=65&&solarRatio>=.38&&rain!==null&&rain<=.025;
+  const strongSunshine=solarRatio!==null&&solar>=125&&solarRatio>=.72&&rain!==null&&rain<=.025;
+  // Very strong local sunshine can override a regional fog report; weak
+  // irradiance alone must never create fog.
+  const reportedFog=(wx==='fog'||wx==='mist')&&!strongSunshine;
   const fogLevel=config.fog_effect===false?0:(reportedFog?.87:0);
   const weatherValid=wx!=='unavailable';
   const rainWeather=['rainy','pouring','lightning-rainy'].includes(wx);
@@ -77,8 +113,25 @@ function getInputs(hass,config,now=new Date()){
   }else if(rain!==null&&rain>0.025){precipitation='rain';intensity=clamp(Math.log1p(rain)/Math.log1p(22),0.05,1);}
   else if(rain===null&&rainWeather){precipitation='rain';intensity=wx==='pouring'?0.85:0.34;estimated=true;}
   let clouds=wx==='partlycloudy'||wx==='windy-variant'?'partly':wx==='cloudy'||reportedFog||['rainy','pouring','lightning-rainy','snowy','snowy-rainy','hail'].includes(wx)?'overcast':'clear';
-  if(!weatherValid&&solar!==null&&elevation!==null&&elevation>10){const expected=Math.max(150,900*Math.sin(elevation*Math.PI/180)),ratio=solar/expected;clouds=ratio<.30?'overcast':ratio<.67?'partly':'clear';}
+  let cloudSource=weatherValid?'online_weather':'unavailable';
+  if(config.source!=='online'&&expectedSolar!==null&&solar!==null){
+    if(!weatherValid){
+      clouds=solarRatio<.28?'overcast':solarRatio<.73?'partly':'clear';
+      cloudSource='ws2900_fallback';
+    }else if(localSunshine&&clouds==='overcast'&&precipitation==='none'&&!reportedFog){
+      // Real sunlight at home contradicts regional overcast. Prefer PARTLY
+      // CLOUDY, rather than blindly declaring clear from one irradiance sample.
+      clouds='partly';
+      cloudSource='ws2900_sunshine';
+    }else if(strongSunshine&&reportedFog===false&&['fog','mist'].includes(wx)){
+      clouds='partly';cloudSource='ws2900_sunshine';
+    }
+  }
   if(precipitation!=='none')clouds='overcast';
+  const weatherDisplay=clouds==='partly'&&cloudSource==='ws2900_sunshine'?'partlycloudy':
+    clouds==='clear'&&wx==='unavailable'?'sunny':
+    clouds==='partly'&&wx==='unavailable'?'partlycloudy':
+    clouds==='overcast'&&wx==='unavailable'?'cloudy':wx;
   const scene=config.scene&&config.scene!=='auto'?config.scene:seasonAt(p);
   const phase=config.phase&&config.phase!=='auto'?config.phase:(elevation!==null?(elevation<=-6?'night':elevation<10?(sun?.attributes?.rising?'dawn':'dusk'):'day'):(sun?.state==='below_horizon'?'night':p.hour<8?'dawn':p.hour>=17?'dusk':'day'));
   const isNight=phase==='night';
@@ -97,7 +150,6 @@ function getInputs(hass,config,now=new Date()){
   const moonlight=config.moonlight_effect===false?0:nightLight*moonTransmission*(.12+.88*illuminated);
   // Twilight has more ambient light than midnight. A moonlit clear night is brighter
   // than a cloudy one, but landscape features remain discernible in both.
-  const solarRatio=solar!==null&&solarElevation>0?clamp(solar/Math.max(150,900*Math.sin(solarElevation*Math.PI/180)),0,1.5):null;
   const cloudFactor=clouds==='overcast'?.80:clouds==='partly'?.93:1.04;
   const solarBoost=solarRatio===null?0:clamp((solarRatio-.55)*.14,-.07,.11)*dayLight*smoothstep(3,16,solarElevation);
   const daylightBrightness=(.50+.54*dayLight)*cloudFactor+solarBoost;
@@ -125,7 +177,7 @@ function getInputs(hass,config,now=new Date()){
   // leaves may fall earlier. Manual spring/season testing stays respected.
   const leafless=['winter','christmas','nicholas','newyear'].includes(scene) ||
     (scene==='autumn'&&((p.month===11&&p.day>=10)||(p.month===10&&temperature!==null&&temperature<0)));
-  return {p,wId,weather:wx,temperature,rain,solar,wind:wind??0,gust:gust??0,scene,phase,isNight,clouds,precipitation,intensity,estimated,brightness,elevation,azimuth,solarElevation,dayLight,nightLight,deepNight,warmth,lunar,moonlight,snowCover,fogLevel,humidity,dewpoint,leafless,holiday:holidayDecorAt(p)};
+  return {p,wId,weather:wx,weatherDisplay,cloudSource,solarRatio,temperature,rain,solar,wind:wind??0,gust:gust??0,scene,phase,isNight,clouds,precipitation,intensity,estimated,brightness,elevation,azimuth,solarElevation,dayLight,nightLight,deepNight,warmth,lunar,moonlight,snowCover,fogLevel,humidity,dewpoint,leafless,holiday:holidayDecorAt(p)};
 }
 
 // All four seasons previously reused visually near-identical green source photos.
@@ -832,7 +884,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     for(const [field,opt] of Object.entries(visible)){const target=el(field==='clock'?'.clock':field==='date'?'.date':`[data-field="${field}"]`);const box=field==='temperature'||field==='heating'||field==='nameday'||field==='lighting'?target?.closest('.status'):target;if(box)box.style.display=this._config[opt]===false?'none':'';}
     el('.statusbar').style.display=['temperature','heating','nameday','lighting'].some(f=>this._config[visible[f]]!==false)?'grid':'none';
     const wdesc={sunny:'Jasno',partlycloudy:'Polooblačno',cloudy:'Zamračené',rainy:'Dážď',pouring:'Silný dážď',snowy:'Sneženie','snowy-rainy':'Sneh s dažďom',fog:'Hmla',mist:'Hmla','clear-night':'Jasná noc'};
-    el('[data-field="weather"]').textContent=`🌦️ ${wdesc[d.weather]|| (d.weather==='unavailable'?'Počasie nedostupné':d.weather)}${d.estimated?' (odhad)':''}`;
+    el('[data-field="weather"]').textContent=`🌦️ ${wdesc[d.weatherDisplay]|| (d.weatherDisplay==='unavailable'?'Počasie nedostupné':d.weatherDisplay)}${d.cloudSource==='ws2900_sunshine'?' · WS2900':d.cloudSource==='ws2900_fallback'?' · stanica':''}${d.estimated?' (odhad)':''}`;
     el('[data-field="rise"]').textContent=`🌅 ${fmtTime(this._hass,state(this._hass,'sun.sun')?.attributes?.next_rising)}`;
     el('[data-field="set"]').textContent=`🌇 ${fmtTime(this._hass,state(this._hass,'sun.sun')?.attributes?.next_setting)}`;
     el('[data-field="moon"]').textContent=`🌙 ${phase.label}${phase.estimate?' (odhad)':''}`;
