@@ -89,7 +89,7 @@ const launch=()=>new Promise((resolve,reject)=>{
     await page.goto(base+'/TEST.html',{waitUntil:'networkidle'});
     const appearance=async weather=>{
       await page.selectOption('#weather',weather);
-      await page.fill('#solar','0');await page.selectOption('#phase','day');
+      await page.evaluate(()=>{const input=document.querySelector('#solar');input.value='0';input.dispatchEvent(new Event('input',{bubbles:true}));});await page.selectOption('#phase','day');
       await page.click('#open');
       const out=await page.evaluate(()=>{
         const c=document.querySelector('#card'),r=c._root;
