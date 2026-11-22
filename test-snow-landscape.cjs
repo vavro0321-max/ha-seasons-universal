@@ -4,8 +4,8 @@ const src=fs.readFileSync(__dirname+'/dist/ha-seasons-universal.js','utf8');
 const code=src.replace("const ASSETS=new URL('./assets/',import.meta.url).href;","const ASSETS='/assets/';");
 const context={window:{customCards:[]},customElements:{get:()=>undefined,define:()=>{}},HTMLElement:class{},Date,Intl,URL,Math,console,devicePixelRatio:1};
 vm.createContext(context);
-vm.runInContext(code+'\nglobalThis.snowFns={winterPhotographicAsset,deepSnowLandscape,holidayDecorAt,getInputs};',context);
-const {winterPhotographicAsset,deepSnowLandscape,holidayDecorAt,getInputs}=context.snowFns;
+vm.runInContext(code+'\nglobalThis.snowFns={winterPhotographicAsset,deepSnowLandscape,holidayDecorAt,getInputs,unifiedAssetName};',context);
+const {winterPhotographicAsset,deepSnowLandscape,holidayDecorAt,getInputs,unifiedAssetName}=context.snowFns;
 for(const filename of ['advent-snow-day.webp','advent-snow-night.webp','advent-snow-night-unlit.webp','winter-snow-landscape.webp']){
  const b=fs.readFileSync(__dirname+'/dist/assets/'+filename);
  assert(b.length>95000,'Real photographic asset not provided: '+filename);
@@ -49,8 +49,19 @@ assert(src.includes("candle.setAttribute('transform','translate('+dx+' '+dy+')')
  'All flames must move together with the photo geometry');
 assert(src.includes("this._select('snow_landscape','Sneh na zemi')"),
  'User must be able to keep photographed snow after snowfall stops');
-assert(src.includes("snowFile||(useUnified?preferred:assetName(d))"),
- 'Existing non-snow seasonal backgrounds must be preserved');
+assert(src.includes("snowFile||(noSnowWinter?preferred:(useUnified?preferred:assetName(d)))"),
+ 'Non-snow winter setting must use dry photo instead of snowy fallback');
+const snow={scene:'winter',snowCover:.9,precipitation:'snow',holiday:{advent:false}};
+assert.equal(unifiedAssetName(snow,{snow_landscape:'bare'}),'universal-landscape-winter-dry.webp',
+ 'Bare setting must override snowfall and freezing ground');
+assert.equal(unifiedAssetName(snow,{snow_cover:false}),'universal-landscape-winter-dry.webp',
+ 'Disabled snow cover must override falling snow in photo selection');
+assert.equal(unifiedAssetName(snow,{}),'universal-landscape-winter.webp',
+ 'Normal winter retains snowy panorama');
+assert(src.includes("unifiedMap.querySelector('.us-snow').style.opacity=allowSnowCover?"),
+ 'Bare setting must disable unified vector snow overlay');
+assert(src.includes("view.querySelector('.frost-cover').style.opacity=allowSnowCover?"),
+ 'Bare setting must disable scene frost overlay');
 assert(src.includes("unifiedFx.style.display=useUnified&&!integratedAdvent&&!winterSnowPhoto"),
  'Winter photo must not have a misaligned duplicate overlay');
 console.log('PASS: winter scenery persists without falling snow, 4 snow photos, Advent candles and separate no-snow setting');
