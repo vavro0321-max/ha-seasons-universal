@@ -8,6 +8,7 @@ vm.createContext(ctx);
 vm.runInContext(src+'\nglobalThis.audit={getInputs,pick};',ctx);
 const {getInputs,pick}=ctx.audit;
 const states={
+ 'sun.sun':{state:'above_horizon',attributes:{elevation:22,azimuth:180},last_updated:'2026-11-22T12:00:00Z'},
  'weather.home':{state:'partlycloudy',attributes:{temperature:5}},
  'sensor.ws2900_v2_02_01_outdoor_temperature':{state:'unavailable',attributes:{device_class:'temperature',unit_of_measurement:'°C'}},
  'sensor.backup_outdoor_temperature':{state:'1.5',attributes:{device_class:'temperature',unit_of_measurement:'°C',friendly_name:'Outdoor temp'},last_updated:'2026-11-22T12:00:00Z'},
@@ -34,6 +35,7 @@ assert.equal(d.solar,420,'Stale backup skipped in favor of fresh alternative');
 // User-selected explicit sensor must remain authoritative even if unavailable.
 d=getInputs(hass,{...cfg,entities:{solar:'sensor.ws2900_v2_02_01_solar_radiation'}},new Date('2026-11-22T12:05:00Z'));
 assert.equal(d.solar,null,'Forced unavailable entity does not silently switch sources');
+delete hass.states['sun.sun'];
 delete hass.states['sensor.ws2900_v2_02_01_outdoor_temperature'];
 delete hass.states['sensor.backup_outdoor_temperature'];
 const tests=[
