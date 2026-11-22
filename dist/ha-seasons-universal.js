@@ -71,7 +71,7 @@ function getInputs(hass,config,now=new Date()){
   const isNight=phase==='night';
   // Prefer continuous solar elevation when available; the manual phase is
   // reserved for previews and user-forced settings.
-  const blend=solarBlend(elevation,config.phase&&config.phase!=='auto'?config.phase:'auto');
+  const blend=solarBlend(elevation??(phase==='day'?20:phase==='night'?-20:-4),config.phase&&config.phase!=='auto'?config.phase:'auto');
   const solarRatio=solar!==null&&elevation!==null&&elevation>0?clamp(solar/Math.max(150,900*Math.sin(elevation*Math.PI/180)),0,1.5):null;
   const brightness=isNight?.89:clamp((clouds==='overcast'?.79:clouds==='partly'?.93:1.04)+(solarRatio===null?0:(solarRatio-.55)*.24),.69,1.23);
   return {p,wId,weather:wx,temperature,rain,solar,wind:wind??0,gust:gust??0,scene,phase,isNight,clouds,precipitation,intensity,estimated,brightness,elevation,azimuth,blend};
@@ -121,7 +121,7 @@ function wasteDateInfo(raw,local){
   days=Math.round((utc-today)/86400000);
   if(days<0||days>365)return null;
   const dateText=parsed.toLocaleDateString('sk-SK',{timeZone:'UTC',day:'numeric',month:'short',year:'numeric'});
-  return {days,dateText,short:days===0?'DNES':days===1?'ZAJTRA':'O '+days+' dní',urgent:days<=1};
+  return {days,dateText,short:days===0?'DNES':days===1?'ZAJTRA':'O '+days+(days>=2&&days<=4?' dni':' dní'),urgent:days<=1};
 }
 function wasteInfoFromEntity(entity,local){
   if(!entity)return null;
