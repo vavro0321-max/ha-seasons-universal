@@ -1,7 +1,18 @@
-/* HA Seasons Universal 1.1.0 — standalone Lovelace screensaver. No HA dashboard skin modifications. */
-const VERSION='1.1.0';
+/* HA Seasons Universal Classic 1.1.1 — original V1.1.0 appearance + waste collection + smooth twilight. */
+const VERSION='1.1.1-classic';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
+// 3 photographic layers from the ORIGINAL V1.1.0 repository, smoothly
+// blended according to HA sun.sun's elevation. This never changes scenery.
+function solarBlend(elevation,phase='auto'){
+  const e=phase==='day'?24:phase==='night'?-22:(phase==='dawn'||phase==='dusk')?-4:Number(elevation);
+  const altitude=Number.isFinite(e)?e:-20;
+  const twilight=smoothstep(-13,-3,altitude);
+  const daylight=smoothstep(-3,12,altitude);
+  const night=1-twilight;
+  return {night,twilight,daylight,nightLight:1-smoothstep(-10,1,altitude)};
+}
 const knownWeather=['sunny','clear-night','partlycloudy','cloudy','rainy','pouring','lightning-rainy','snowy','snowy-rainy','fog','hail','lightning','windy','windy-variant','exceptional'];
 const MOONS=['new_moon','waxing_crescent','first_quarter','waxing_gibbous','full_moon','waning_gibbous','last_quarter','waning_crescent'];
 const MOON_SK=['Nov','Dorastajúci kosáčik','Prvá štvrť','Dorastajúci Mesiac','Spln','Ubúdajúci Mesiac','Posledná štvrť','Ubúdajúci kosáčik'];
@@ -58,9 +69,12 @@ function getInputs(hass,config,now=new Date()){
   const scene=config.scene&&config.scene!=='auto'?config.scene:seasonAt(p);
   const phase=config.phase&&config.phase!=='auto'?config.phase:(elevation!==null?(elevation<=-6?'night':elevation<10?(sun?.attributes?.rising?'dawn':'dusk'):'day'):(sun?.state==='below_horizon'?'night':p.hour<8?'dawn':p.hour>=17?'dusk':'day'));
   const isNight=phase==='night';
+  // Prefer continuous solar elevation when available; the manual phase is
+  // reserved for previews and user-forced settings.
+  const blend=solarBlend(elevation,config.phase&&config.phase!=='auto'?config.phase:'auto');
   const solarRatio=solar!==null&&elevation!==null&&elevation>0?clamp(solar/Math.max(150,900*Math.sin(elevation*Math.PI/180)),0,1.5):null;
   const brightness=isNight?.89:clamp((clouds==='overcast'?.79:clouds==='partly'?.93:1.04)+(solarRatio===null?0:(solarRatio-.55)*.24),.69,1.23);
-  return {p,wId,weather:wx,temperature,rain,solar,wind:wind??0,gust:gust??0,scene,phase,isNight,clouds,precipitation,intensity,estimated,brightness,elevation,azimuth};
+  return {p,wId,weather:wx,temperature,rain,solar,wind:wind??0,gust:gust??0,scene,phase,isNight,clouds,precipitation,intensity,estimated,brightness,elevation,azimuth,blend};
 }
 const supportedScenes=['spring','summer','autumn','winter','christmas','easter','may','memorial','nicholas','newyear'];
 function assetName(d){
@@ -83,6 +97,64 @@ function moonDraw(canvas,idx){const ctx=canvas.getContext('2d');if(!ctx)return;c
   ctx.beginPath();ctx.arc(x0,y0,r,0,Math.PI*2);ctx.strokeStyle='rgba(230,242,255,.4)';ctx.lineWidth=1.2;ctx.stroke();
 }
 function fmtTime(hass,dt){if(!dt)return '—';const d=new Date(dt);if(Number.isNaN(d.getTime()))return '—';return d.toLocaleTimeString('sk-SK',{timeZone:hass?.config?.time_zone||undefined,hour:'2-digit',minute:'2-digit'});}
+// Optional waste collection; a missing/invalid entity never creates a widget.
+// Date-only states are interpreted as local collection dates, without UTC time shifts.
+function wasteDateInfo(raw,local){
+  if(raw===undefined||raw===null)return null;
+  const v=String(raw).trim();
+  if(!v||/^(unknown|unavailable|none|null|n\/a|—)$/i.test(v))return null;
+  let y,m,day,utc,days;
+  const iso=/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/.exec(v);
+  const sk=/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})(?:$|\s)/.exec(v);
+  const relative=/^\d{1,3}$/.test(v)?Number(v):null;
+  const today=Date.UTC(local.year,local.month-1,local.day);
+  if(iso){y=Number(iso[1]);m=Number(iso[2]);day=Number(iso[3]);}
+  else if(sk){y=Number(sk[3]);m=Number(sk[2]);day=Number(sk[1]);}
+  else if(relative!==null&&relative<=365){
+    utc=today+relative*86400000;
+    const d=new Date(utc);y=d.getUTCFullYear();m=d.getUTCMonth()+1;day=d.getUTCDate();
+  }else return null;
+  if(y<2020||y>2200||m<1||m>12||day<1||day>31)return null;
+  utc=Date.UTC(y,m-1,day);
+  const parsed=new Date(utc);
+  if(parsed.getUTCFullYear()!==y||parsed.getUTCMonth()+1!==m||parsed.getUTCDate()!==day)return null;
+  days=Math.round((utc-today)/86400000);
+  if(days<0||days>365)return null;
+  const dateText=parsed.toLocaleDateString('sk-SK',{timeZone:'UTC',day:'numeric',month:'short',year:'numeric'});
+  return {days,dateText,short:days===0?'DNES':days===1?'ZAJTRA':'O '+days+' dní',urgent:days<=1};
+}
+function wasteInfoFromEntity(entity,local){
+  if(!entity)return null;
+  const attrs=entity.attributes||{};
+  const values=[entity.state,attrs.next_collection,attrs.next_date,attrs.next_pickup,attrs.date,attrs.next];
+  for(const raw of values){const info=wasteDateInfo(raw,local);if(info)return info;}
+  return null;
+}
+function wasteEntries(hass,config,local){
+  if(config?.show_waste===false)return [];
+  const sensors=Object.keys(hass?.states||{}).filter(id=>id.startsWith('sensor.'));
+  const entities=config?.entities||{};
+  const categories=[
+    {kind:'municipal',key:'waste_municipal',title:'Komunálny odpad',icon:'🗑️',
+      exact:['sensor.najblizsi_komunalny_odpad','sensor.najblizsi_komunalni_odpad'],
+      pattern:/(komunaln|municipal_waste|mixed_waste|garbage_collection)/i},
+    {kind:'recycling',key:'waste_recycling',title:'Separovaný odpad',icon:'♻️',
+      exact:['sensor.najblizsi_triedeny_zber','sensor.najblizsi_triedeni_zber'],
+      pattern:/(trieden|separ|recycl)/i}
+  ];
+  const result=[];
+  for(const type of categories){
+    const selected=entities[type.key];
+    const candidates=selected&&selected!=='auto'?[selected]:
+      [...type.exact,...sensors.filter(id=>type.pattern.test(id))];
+    for(const id of [...new Set(candidates)]){
+      const data=wasteInfoFromEntity(state(hass,id),local);
+      if(data){result.push({kind:type.kind,title:type.title,icon:type.icon,entityId:id,...data});break;}
+    }
+  }
+  return result;
+}
+
 function cardReadings(hass,config,d){const x=config.entities||{};let heating=state(hass,x.heating||'switch.thermostat_switch');let heat='—';
   if(heating&&['on','off'].includes(heating.state))heat=heating.state==='on'?'Kúri':'Nekúri';else {
     const climates=Object.entries(hass?.states||{}).filter(([id])=>id.startsWith('climate.'));
@@ -99,12 +171,15 @@ const STYLE=`
 const OVERLAY_STYLE=`
 :host{all:initial;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#fff;position:fixed;inset:0;z-index:2147483000;pointer-events:auto;}
 .screen{position:fixed;inset:0;width:100vw;width:100dvw;height:100vh;height:100dvh;overflow:hidden;background:#081729;touch-action:manipulation;user-select:none;cursor:pointer;--glass-opacity:.48;--font-factor:1;isolation:isolate}
-.photo{position:absolute;inset:0;background-size:cover;background-position:center center;background-repeat:no-repeat;transition:filter 1.7s ease,background-image .5s linear}
+.photo{position:absolute;inset:0;background-size:cover;background-position:center center;background-repeat:no-repeat;
+ transition:opacity 5s ease,filter 3s ease;will-change:opacity}
+.photo-night{opacity:1}.photo-twilight{opacity:0}.photo-day{opacity:1}
+@media (prefers-reduced-motion:reduce){.photo{transition:none}}
 .tint{position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,rgba(3,13,30,.20),rgba(6,17,37,.03) 45%,rgba(1,11,24,.43));transition:background 1.5s ease}
 .weatherfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .shadowTree{position:absolute;bottom:9%;left:7%;height:5%;width:30%;background:radial-gradient(ellipse,rgba(12,20,24,.30),transparent 75%);filter:blur(10px);transform-origin:0% 50%;transition:transform 8s linear,opacity 2s;pointer-events:none}
 .sun{position:absolute;width:clamp(46px,7vh,90px);height:clamp(46px,7vh,90px);border-radius:50%;background:radial-gradient(circle,#fff9d7 0%,#ffcd72 38%,#ffcc7955 62%,transparent 78%);filter:drop-shadow(0 0 18px #ffcf7b);transform:translate(-50%,-50%);opacity:.75;transition:left 12s linear,top 12s linear,opacity 3s;pointer-events:none;mix-blend-mode:screen}
-.moon{position:absolute;top:8%;right:12%;width:clamp(55px,9vh,96px);filter:drop-shadow(0 0 14px rgba(235,239,255,.38));pointer-events:none}
+.moon{position:absolute;top:8%;right:12%;width:clamp(55px,9vh,96px);filter:drop-shadow(0 0 14px rgba(235,239,255,.38));pointer-events:none;transition:opacity 5s ease}
 .leaves{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:.68}
 .leaf{position:absolute;width:7px;height:3px;border-radius:100% 2px;background:rgba(228,176,90,.22);animation:sway var(--speed) ease-in-out infinite alternate;top:var(--top);left:var(--left);transform-origin:20px 30px;animation-delay:var(--delay)}
 @keyframes sway{from{transform:rotate(-9deg) translateX(-1px)}to{transform:rotate(9deg) translateX(2px)}}
@@ -115,6 +190,12 @@ const OVERLAY_STYLE=`
 .status{box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;min-height:clamp(70px,13vh,130px);padding:10px 6px;border-radius:17px;border:1px solid rgba(210,230,252,.35);background:rgba(4,20,39,var(--glass-opacity));backdrop-filter:blur(8px);box-shadow:0 4px 16px #06172833}
 .status b{font-size:clamp(14px,2.2vw,27px);font-weight:680;overflow-wrap:anywhere}.status small{font-size:clamp(9px,1.6vw,13px);letter-spacing:.07em;text-transform:uppercase;color:#cbd9eb}.icon{font-size:clamp(18px,3.4vh,29px)}
 .extra{margin:clamp(8px,2vh,14px) auto 0;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:clamp(11px,1.4vw,15px);color:#ebf2fc}
+.wastebar{display:none;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:clamp(8px,1.6vh,14px);max-width:100%}
+.wasteitem{display:flex;align-items:center;gap:9px;border:1px solid rgba(210,230,252,.25);border-radius:14px;background:rgba(4,20,39,.63);
+ padding:8px 13px;font-size:clamp(11px,1.55vw,15px);text-align:left;backdrop-filter:blur(6px)}
+.wasteitem strong{font-size:clamp(11px,1.5vw,14px)}.wasteitem .waste-when{font-weight:700;color:#d9edff}
+.wasteitem.urgent{border-color:rgba(255,200,102,.68)}.wasteitem.urgent .waste-when{color:#ffdb91}
+@media(max-height:550px){.wastebar{margin-top:4px}.wasteitem{padding:4px 9px}}
 .tap{position:absolute;bottom:max(3%,env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(5,20,38,.68);border:1px solid #a8bbd144;border-radius:22px;padding:10px 20px;font-size:clamp(12px,2vw,15px);white-space:nowrap;z-index:4}
 @media (max-width:650px){.information{top:4%}.clock{font-size:clamp(46px,12vh,80px)}.statusbar{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:10px}.status{min-height:70px;padding:7px 4px}.status b{font-size:16px}.extra{font-size:11px;gap:6px}.tap{bottom:3%}}
 /* Auto tablet layout: landscape uses four columns; portrait uses two without changing dashboard. */
@@ -161,7 +242,7 @@ const OVERLAY_STYLE=`
 `;
 class HASeasonsUniversalCard extends HTMLElement {
   constructor(){super();this.attachShadow({mode:'open'}).innerHTML=`<style>${STYLE}</style><div id="anchor" aria-hidden="true"></div>`;this._config={idle_seconds:30,source:'auto',layout:'auto',style:'glass'};this._last=Date.now();this._weather=null;this._onActivity=this._onActivity.bind(this);this._onKey=this._onKey.bind(this);this._onTick=this._onTick.bind(this);}
-  setConfig(config){if(config&&typeof config!=='object')throw new Error('Konfigurácia musí byť objekt');this._config={idle_seconds:30,source:'auto',scene:'auto',layout:'auto',style:'glass',show_clock:true,show_date:true,show_temperature:true,show_heating:true,show_nameday:true,show_lights:true,show_weather:true,show_sun:true,show_moon:true,precipitation_animation:true,leaf_animation:true,...config};this._last=Date.now();}
+  setConfig(config){if(config&&typeof config!=='object')throw new Error('Konfigurácia musí byť objekt');this._config={idle_seconds:30,source:'auto',scene:'auto',layout:'auto',style:'glass',show_clock:true,show_date:true,show_temperature:true,show_heating:true,show_nameday:true,show_lights:true,show_weather:true,show_sun:true,show_moon:true,show_waste:true,precipitation_animation:true,leaf_animation:true,...config};this._last=Date.now();}
   set hass(value){this._hass=value;if(this._visible)this._update();}
   getCardSize(){return 1;}
   static getStubConfig(){return {idle_seconds:30,source:'auto',layout:'auto'};}
@@ -173,8 +254,11 @@ class HASeasonsUniversalCard extends HTMLElement {
   _editing(){return document.querySelector('hui-root')?.editMode||this.closest('hui-card')?.closest('hui-card-edit-mode')||window.location.search.includes('edit=1');}
   _onTick(){if(!this.isConnected)return;if(this._visible){this._update();return;}if(document.hidden||this._editing()||!this._hass)return;
     if(Date.now()-this._last>=clamp(Number(this._config.idle_seconds)||30,5,3600)*1000)this._open();}
-  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo"></div><div class="tint"></div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas><div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
-    document.body.appendChild(this._host);this._root=this._host.shadowRoot;this._lastImage=null;
+  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo photo-night"></div><div class="photo photo-twilight"></div><div class="photo photo-day"></div><div class="tint"></div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas><div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div><div class="wastebar" aria-label="Odvoz odpadu">
+<div class="wasteitem" data-waste="municipal"><span>🗑️</span><div><strong>Komunálny odpad</strong><div class="waste-date"></div><div class="waste-when"></div></div></div>
+<div class="wasteitem" data-waste="recycling"><span>♻️</span><div><strong>Separovaný odpad</strong><div class="waste-date"></div><div class="waste-when"></div></div></div>
+</div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
+    document.body.appendChild(this._host);this._root=this._host.shadowRoot;this._lastImages=null;
     const leaves=this._root.querySelector('.leaves');for(let i=0;i<12;i++){const n=document.createElement('i');n.className='leaf';n.style.setProperty('--top',`${7+(i%5)*6}%`);n.style.setProperty('--left',`${2+(i*13)%32}%`);n.style.setProperty('--delay',`${-(i%7)*.5}s`);leaves.append(n);}
   }
   _open(){if(this._visible)return;this._visible=true;this._make();this._update();this._animate();}
@@ -182,17 +266,45 @@ class HASeasonsUniversalCard extends HTMLElement {
   _close(){this._visible=false;if(this._raf)cancelAnimationFrame(this._raf);this._raf=null;this._host?.remove();this._host=null;this._root=null;}
   _update(){if(!this._root||!this._hass)return;const d=getInputs(this._hass,this._config),now=new Date();this._data=d;const el=(s)=>this._root.querySelector(s);
     const screen=el('.screen');screen.dataset.layout=['auto','compact','wide'].includes(this._config.layout)?this._config.layout:'auto';screen.dataset.style=this._config.style==='minimal'?'minimal':'glass';screen.style.setProperty('--glass-opacity',String(clamp(Number(this._config.glass_opacity??0.48),0.2,0.9)));screen.style.setProperty('--font-factor',String(({small:0.82,normal:1,large:1.15})[this._config.clock_size]||1));
-    const photo=el('.photo');photo.style.backgroundSize=this._config.image_fit==='contain'?'contain':'cover';photo.style.backgroundPosition=`${clamp(Number(this._config.image_focus??55),0,100)}% center`;
-    const image=assetName(d);if(this._lastImage!==image){el('.photo').style.backgroundImage=`url("${ASSETS+image}")`;this._lastImage=image;}
-    el('.photo').style.filter=`brightness(${d.brightness.toFixed(2)}) saturate(${d.clouds==='overcast'?.82:1.04})`;
-    el('.tint').style.background=d.isNight?'linear-gradient(180deg,rgba(0,6,27,.18),rgba(3,10,32,.12) 55%,rgba(1,8,25,.55))':d.clouds==='overcast'?'linear-gradient(180deg,rgba(54,66,83,.24),transparent 60%,rgba(0,13,29,.26))':'linear-gradient(180deg,rgba(3,13,30,.12),transparent 52%,rgba(1,11,24,.35))';
+    const fit=this._config.image_fit==='contain'?'contain':'cover',
+      focus=clamp(Number(this._config.image_focus??55),0,100)+'% center';
+    const images=[
+      ['.photo-night',assetName({...d,phase:'night'})],
+      ['.photo-twilight',assetName({...d,phase:'dusk'})],
+      ['.photo-day',assetName({...d,phase:'day'})]
+    ];
+    this._lastImages=this._lastImages||{};
+    for(const [selector,image] of images){
+      const node=el(selector);
+      node.style.backgroundSize=fit;node.style.backgroundPosition=focus;
+      if(this._lastImages[selector]!==image){node.style.backgroundImage=`url("${ASSETS+image}")`;this._lastImages[selector]=image;}
+      node.style.filter=`brightness(${(selector==='.photo-night'?.94:d.brightness).toFixed(3)}) saturate(${d.clouds==='overcast'?.82:1.04})`;
+    }
+    el('.photo-twilight').style.opacity=d.blend.twilight.toFixed(4);
+    el('.photo-day').style.opacity=d.blend.daylight.toFixed(4);
+    el('.tint').style.background=d.clouds==='overcast'?
+   'linear-gradient(180deg,rgba(54,66,83,.24),transparent 60%,rgba(0,13,29,.26))':
+   'linear-gradient(180deg,rgba(3,13,30,.12),transparent 52%,rgba(1,11,24,.35))';
+    el('.tint').style.opacity=(.50+.50*d.blend.nightLight).toFixed(3);
     const sun=el('.sun');const elev=d.elevation??(d.isNight?-15:30),az=d.azimuth??(d.p.hour*15+90);
-    sun.style.left=`${clamp(12+(az-65)/230*76,8,92)}%`;sun.style.top=`${clamp(62-elev*.55,13,68)}%`;sun.style.opacity=d.isNight||d.clouds==='overcast'?0:d.phase==='dusk'||d.phase==='dawn'?.7:.5;
+    sun.style.left=`${clamp(12+(az-65)/230*76,8,92)}%`;sun.style.top=`${clamp(62-elev*.55,13,68)}%`;sun.style.opacity=d.clouds==='overcast'?0:((1-d.blend.nightLight)*.56).toFixed(3);
     const sh=el('.shadowTree');sh.style.opacity=d.isNight||d.clouds==='overcast'?'0':'.58';sh.style.transform=`skewX(${clamp((180-az)*.22,-35,35)}deg) scaleX(${clamp(1.8-Math.max(0,elev)/65,.65,1.8)})`;
-    const moon=el('.moon');moon.style.display=d.isNight?'block':'none';const phase=moonPhase(this._hass,this._config.entities?.moon,now);if(d.isNight)moonDraw(moon,phase.index);
+    const moon=el('.moon');moon.style.display='block';moon.style.opacity=d.blend.nightLight.toFixed(3);
+    const phase=moonPhase(this._hass,this._config.entities?.moon,now);if(d.blend.nightLight>.02)moonDraw(moon,phase.index);
     el('.clock').textContent=now.toLocaleTimeString('sk-SK',{timeZone:this._hass.config?.time_zone||undefined,hour:'2-digit',minute:'2-digit'});
     el('.date').textContent=now.toLocaleDateString('sk-SK',{timeZone:this._hass.config?.time_zone||undefined,weekday:'long',day:'numeric',month:'long',year:'numeric'});
     const values=cardReadings(this._hass,this._config,d);for(const [key,v] of Object.entries(values)){el(`[data-field="${key}"]`).textContent=v;}
+    // Entire waste strip is optional: no sensor, invalid date or disabled
+    // option => show nothing, preserving the original V1.1.0 composition.
+    const waste=wasteEntries(this._hass,this._config,d.p),bar=el('.wastebar');
+    bar.style.display=waste.length?'flex':'none';
+    for(const kind of ['municipal','recycling']){
+      const box=bar.querySelector('[data-waste="'+kind+'"]'),entry=waste.find(v=>v.kind===kind);
+      box.style.display=entry?'flex':'none';
+      box.classList.toggle('urgent',!!entry?.urgent);
+      box.querySelector('.waste-date').textContent=entry?.dateText||'';
+      box.querySelector('.waste-when').textContent=entry?.short||'';
+    }
     const visible={clock:'show_clock',date:'show_date',temperature:'show_temperature',heating:'show_heating',nameday:'show_nameday',lighting:'show_lights',weather:'show_weather',rise:'show_sun',set:'show_sun',moon:'show_moon'};
     for(const [field,opt] of Object.entries(visible)){const target=el(field==='clock'?'.clock':field==='date'?'.date':`[data-field="${field}"]`);const box=field==='temperature'||field==='heating'||field==='nameday'||field==='lighting'?target?.closest('.status'):target;if(box)box.style.display=this._config[opt]===false?'none':'';}
     el('.statusbar').style.display=['temperature','heating','nameday','lighting'].some(f=>this._config[visible[f]]!==false)?'grid':'none';
@@ -233,8 +345,8 @@ const OPTIONS={
  scene:[['auto','Automaticky podľa roka'],['spring','Jar'],['summer','Leto'],['autumn','Jeseň'],['winter','Zima'],['christmas','Vianoce'],['easter','Veľká noc'],['may','Máj'],['memorial','Dušičky'],['nicholas','Mikuláš'],['newyear','Nový rok']],
  phase:[['auto','Automaticky podľa slnka'],['day','Deň'],['dawn','Svitanie'],['dusk','Súmrak'],['night','Noc']]
 };
-const OPTION_LABELS={show_clock:'Hodiny',show_date:'Dátum',show_temperature:'Vonkajšia teplota',show_heating:'Kúrenie',show_nameday:'Meniny',show_lights:'Svetlá',show_weather:'Stav počasia',show_sun:'Východ a západ slnka',show_moon:'Fáza Mesiaca',precipitation_animation:'Padajúci dážď / sneh',leaf_animation:'Pohyb lístia'};
-const ENTITY_LABELS={weather:'Počasie (weather.*)',temperature:'Vonkajšia teplota',rain:'Intenzita dažďa',solar:'Slnečné žiarenie',wind:'Rýchlosť vetra',gust:'Nárazy vetra',heating:'Kúrenie / termostat',nameday:'Meniny',moon:'Fáza Mesiaca',lights:'Svetlá – entity oddelené čiarkou'};
+const OPTION_LABELS={show_waste:'Vývoz odpadu (iba ak sú dostupné senzory)',show_clock:'Hodiny',show_date:'Dátum',show_temperature:'Vonkajšia teplota',show_heating:'Kúrenie',show_nameday:'Meniny',show_lights:'Svetlá',show_weather:'Stav počasia',show_sun:'Východ a západ slnka',show_moon:'Fáza Mesiaca',precipitation_animation:'Padajúci dážď / sneh',leaf_animation:'Pohyb lístia'};
+const ENTITY_LABELS={weather:'Počasie (weather.*)',temperature:'Vonkajšia teplota',rain:'Intenzita dažďa',solar:'Slnečné žiarenie',wind:'Rýchlosť vetra',gust:'Nárazy vetra',heating:'Kúrenie / termostat',nameday:'Meniny',moon:'Fáza Mesiaca',waste_municipal:'Komunálny odpad – dátum vývozu (voliteľné)',waste_recycling:'Separovaný odpad – dátum vývozu (voliteľné)',lights:'Svetlá – entity oddelené čiarkou'};
 function escapeHtml(t){return String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 class HASeasonsUniversalEditor extends HTMLElement{
  constructor(){super();this.attachShadow({mode:'open'});this._config={type:'custom:ha-seasons-universal-card',idle_seconds:30,source:'auto',layout:'auto'};}
