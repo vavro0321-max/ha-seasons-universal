@@ -18,15 +18,19 @@ const cases=[
  [p('christmas','snow',1,true,false),'advent-snow-night-unlit.webp'],
  [p('nicholas','snow',1,true,true),'advent-snow-night.webp'],
  [p('winter','snow',0,false,false),'winter-snow-landscape.webp'],
- [p('winter','none',0,false,false),null],
+ [p('winter','none',0,false,false),'winter-snow-landscape.webp'],
  [p('winter','none',0,false,false),'winter-snow-landscape.webp','snow'],
  [p('winter','snow',0,false,false),null,'bare']
 ];
 for(const [data,want,manual] of cases)
  assert.equal(winterPhotographicAsset(data,manual?{snow_landscape:manual}:{}),want,
    'Photo selection '+JSON.stringify({data,manual}));
-assert.equal(deepSnowLandscape(p('winter','none',0,false,false),{}),false,
- 'Cold or winter season alone does not prove snow exists');
+assert.equal(deepSnowLandscape(p('winter','none',0,false,false),{}),true,
+ 'A winter photograph may show snow cover even while no snow is falling');
+assert.equal(deepSnowLandscape(p('winter','none',0,false,false),{snow_landscape:'bare'}),false,
+ 'Explicit no-snow winter landscape setting must still work');
+assert.equal(winterPhotographicAsset(p('summer','none',0,false,false),{}),null,
+ 'Snowy winter landscape must not appear outside winter');
 const nonadvent=p('winter','snow',0,false,false);
 assert.equal(winterPhotographicAsset(nonadvent,{}),'winter-snow-landscape.webp',
  'Ordinary winter after Three Kings must never contain Advent decorations');
@@ -49,4 +53,4 @@ assert(src.includes("snowFile||(useUnified?preferred:assetName(d))"),
  'Existing non-snow seasonal backgrounds must be preserved');
 assert(src.includes("unifiedFx.style.display=useUnified&&!integratedAdvent&&!winterSnowPhoto"),
  'Winter photo must not have a misaligned duplicate overlay');
-console.log('PASS: 4 actual snow photos, Advent 1-4 candles, tree at Mikulas, winter after holidays and no false snow inference');
+console.log('PASS: winter scenery persists without falling snow, 4 snow photos, Advent candles and separate no-snow setting');
