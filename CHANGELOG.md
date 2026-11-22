@@ -1,5 +1,14 @@
 # Zmeny
 
+## 1.12.4 (2026-11-22)
+- Kompletný audit Node.js testov, obrázkov a skutočného zobrazenia v Google Chrome; nový browser smoke CI job.
+- Oprava voľby zimnej krajiny Bez snehu: správna suchá fotografia aj vypnuté grafické vrstvy snehu.
+- Ochrana pred okamžitým zatvorením šetriča po oneskorenom posúvaní mobilnej stránky.
+- Verzovanie URL obrázkov pri aktualizácii, aby sa nenačítali staré fotografie.
+- Rozšírený test mobilného/portrétového zobrazenia, adventných sviečok, zimných scén a zmeny počasia.
+- Aktualizované webové testy a slovenský návod na inštaláciu.
+
+
 ## 1.12.3 (2026-11-22)
 - Výrazne znížená hustota generovaných oblakov pri polooblačnom počasí: 0,022 oproti 0,34 pri zamračenom.
 - Denná polooblačná obloha je viac modrá, má vyšší jas a viditeľnejšie slnko.
