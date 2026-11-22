@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.12.5 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.12.5';
+/* HA Seasons Universal 1.12.6 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.12.6';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -1050,6 +1050,10 @@ h3{font-size:16px;margin:0 0 5px;font-weight:650}p{font-size:12px;margin:0;color
 .field{display:grid;gap:5px;font-size:13px}.field select,.field input:not([type="checkbox"]){font:inherit;box-sizing:border-box;border:1px solid var(--divider-color,#667);background:var(--card-background-color,#213246);color:var(--primary-text-color,#fff);border-radius:8px;padding:8px;width:100%;min-width:0}
 .field input[type="range"]{padding:0}.inline{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.check{display:flex;align-items:center;gap:8px;font-size:13px;min-height:30px}.check input{width:17px;height:17px;accent-color:var(--primary-color,#03a9f4)}
 small{font-size:12px;color:var(--secondary-text-color,#abb)}
+.brand-head{display:flex;align-items:center;gap:12px;border:1px solid var(--divider-color,#667);border-radius:14px;padding:10px 12px;background:var(--card-background-color,#213246)}
+.brand-icon{display:block;width:64px;height:64px;flex:none;object-fit:cover;border-radius:15px;box-shadow:0 2px 10px rgba(0,125,255,.16)}
+.brand-title{font-size:16px;font-weight:750;line-height:1.3}
+.brand-head small{display:block;margin-top:5px;line-height:1.4}
 @media(max-width:350px){.checks,.inline{grid-template-columns:1fr}}
 `;
 const OPTIONS={
@@ -1072,6 +1076,7 @@ class HASeasonsUniversalEditor extends HTMLElement{
  _select(key,label){const val=this._config[key]??(key==='source'||key==='scene'||key==='layout'||key==='phase'||key==='snow_landscape'?'auto':key==='clock_size'?'normal':'glass');return `<label class="field">${escapeHtml(label)}<select data-prop="${key}">${OPTIONS[key].map(([v,t])=>`<option value="${v}" ${v===val?'selected':''}>${escapeHtml(t)}</option>`).join('')}</select></label>`;}
  _render(){const c=this._config,check=(k,l)=>`<label class="check"><input type="checkbox" data-bool="${k}" ${c[k]===false?'':'checked'}>${escapeHtml(l)}</label>`,entity=(k,l)=>`<label class="field">${escapeHtml(l)}<input data-entity="${k}" value="${escapeHtml(k==='lights'?(Array.isArray(c.entities?.lights)?c.entities.lights.join(', '):''):(c.entities?.[k]||''))}" placeholder="Automaticky" spellcheck="false" list="seasons-entities"></label>`;
  this.shadowRoot.innerHTML=`<style>${EDITOR_STYLE}</style><div class="wrapper">
+ <header class="brand-head"><img class="brand-icon" src="${ASSETS}app-icon.webp?v=${VERSION}" width="64" height="64" alt="HA Seasons Universal" loading="lazy"><div><div class="brand-title">HA Seasons Universal</div><small>Sezónny šetrič a počasie · V${VERSION}</small></div></header>
  <section class="panel"><h3>Spustenie a displej</h3><p>Šetrič nemení tvoj dashboard. Na šírku aj na výšku sa rozloženie prispôsobí automaticky.</p>
  <div class="inline"><label class="field">Spustiť po (sekundy)<input data-number="idle_seconds" type="number" min="5" max="3600" step="5" value="${clamp(Number(c.idle_seconds)||30,5,3600)}"></label>${this._select('layout','Rozloženie')}</div><div class="inline">${this._select('style','Vzhľad panelov')}${this._select('clock_size','Veľkosť hodín')}</div>
  ${this._select('image_fit','Prispôsobenie fotografie')}<label class="field">Posun fotografie do strán <small data-focus-text>${clamp(Number(c.image_focus??55),0,100)} %</small><input data-number="image_focus" type="range" min="0" max="100" step="1" value="${clamp(Number(c.image_focus??55),0,100)}"></label>
