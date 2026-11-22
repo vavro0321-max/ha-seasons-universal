@@ -1082,7 +1082,7 @@ class HASeasonsUniversalEditor extends HTMLElement{
  ${this._select('image_fit','Prispôsobenie fotografie')}<label class="field">Posun fotografie do strán <small data-focus-text>${clamp(Number(c.image_focus??55),0,100)} %</small><input data-number="image_focus" type="range" min="0" max="100" step="1" value="${clamp(Number(c.image_focus??55),0,100)}"></label>
  <label class="field">Priehľadnosť kariet <small data-opacity-text>${Math.round((Number(c.glass_opacity??.48))*100)} %</small><input data-number="glass_opacity" type="range" min="0.2" max="0.9" step="0.05" value="${Number(c.glass_opacity??.48)}"></label></section>
  <section class="panel"><h3>Vlastná krajina / obrázky</h3>
- <p>Vlož odkaz na obrázok. Napríklad súbor `/config/www/moja-krajina.jpg` je dostupný ako `/local/moja-krajina.jpg`. Bez vlastného obrázka zostane naša pôvodná dedina.</p>
+ <p>Vlož odkaz na obrázok. Napríklad súbor <code>/config/www/moja-krajina.jpg</code> je dostupný ako <code>/local/moja-krajina.jpg</code>. Bez vlastného obrázka zostane naša pôvodná dedina.</p>
  <label class="field">Jeden obrázok pre celý rok<input data-image="base" value="${escapeHtml(c.custom_image||'')}" placeholder="/local/moja-krajina.jpg" spellcheck="false"></label>
  <p>Ak chceš verné ročné obdobia, zadaj samostatné fotografie jari, leta, jesene a zimy. Nevyplnené obdobia použijú základný obrázok a farebnú sezónnu úpravu.</p>
  <div class="inline">
