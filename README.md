@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.10.7 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.10.8 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,16 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Nové vo V1.10.8 – fotografia pre adventné večery
+
+Počas adventu **od prvej adventnej nedele do Štedrého dňa** používa šetrič po zotmení novú fotografickú krajinu s **vianočným stromčekom pri kostole a vencom pri ceste priamo zakomponovanými do obrázka**. Nejde už o samostatné prilepené obrázky s ostrými okrajmi. Z obrazového podkladu boli odstránené pevné hodiny a informačné karty; čas, dátum, počasie a ďalšie údaje naďalej zobrazuje Home Assistant naživo. Fotografický podklad je odvodený od schválenej ukážky, takže môže mať drobné odlišnosti od pôvodného screenshotu.
+
+**Automatické pravidlá zostali:** 29. novembra 2026 sa zobrazí veniec s prvou zapálenou sviečkou a nesvietiaci stromček. Každú ďalšiu adventnú nedeľu pribúda jeden plamienok. Od **6. decembra** sa stromček večer rozsvieti. Malé svetlá a plamene sa pridávajú ako presne ukotvené svetelné body k fotografii, nie ako druhý prekrývajúci obrázok. **Po 24. decembri** sa zostava vráti k bežnej vianočnej krajine s pôvodnými riadenými dekoráciami, do 6. januára. Počas dňa sa používa svetlá živá sezónna krajina, aby napriek nočnej predlohe nebol cez obed nočný obraz.
+
+Grafický editor má voliteľnú položku **Advent: fotografický motív večer** (predvolene zapnuté), prípadne YAML `advent_photo: true`. Ak je nastavená vlastná fotografia alebo niektorá dekorácia vypnutá, použije sa pôvodné univerzálne zobrazenie. Fotografia aj svetlá používajú rovnaké responzívne súradnice na mobile a tablete.
+
+Test: `dist/ADVENT-TEST.html`; kontrolný súbor: `test-photographic-advent.cjs`.
 
 ## Nové vo V1.10.7 – prirodzené začlenenie adventnej výzdoby do fotografie
 
