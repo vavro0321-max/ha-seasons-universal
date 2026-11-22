@@ -20,6 +20,8 @@ Pridaná schválená ikona **HA Seasons Universal** s motívom kostolíka, kraji
 
 Týmto sa **nemení ikona celej mobilnej aplikácie Home Assistant ani ikona položky v katalógu HACS** – ich zobrazenie riadi platforma a tento doplnok ich bez podpory platformy nevie prepísať. V samotnom šetriči dekoratívne logo nezakrýva fotografiu.
 
+V tejto verzii je tiež opravená staršia chyba zobrazovania grafického editora pri texte s cestami k vlastným obrázkom. Opravu overuje test v skutočnom Chrome.
+
 ## V1.12.5 – núdzové prepnutie dňa a noci, výber funkčných senzorov
 
 Po rozšírenom audite sú opravené dve skutočné chyby:
