@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.12.0 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.12.0';
+/* HA Seasons Universal 1.12.1 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.12.1';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -110,8 +110,13 @@ function getInputs(hass,config,now=new Date()){
   const fogLevel=config.fog_effect===false?0:(reportedFog?.87:0);
   const weatherValid=wx!=='unavailable';
   const rainWeather=['rainy','pouring','lightning-rainy'].includes(wx);
+  // Falling flakes are based on CURRENT weather condition, never the season,
+  // cold temperature, visual snow coverage, or the manual photo preset.
+  // WS2900 rain-rate alone cannot identify snowflakes (a separate snow sensor
+  // or a current weather entity reporting snowy/snowy-rainy is required).
+  const reportedSnowfall=['snowy','snowy-rainy'].includes(wx)&&(temperature===null||temperature<=2);
   let precipitation='none',intensity=0,estimated=false;
-  if(['snowy','snowy-rainy'].includes(wx)&&(temperature===null||temperature<=2)){
+  if(reportedSnowfall){
     precipitation='snow';intensity=wx==='snowy-rainy'?0.36:0.49;estimated=true;
   }else if(rain!==null&&rain>0.025){precipitation='rain';intensity=clamp(Math.log1p(rain)/Math.log1p(22),0.05,1);}
   else if(rain===null&&rainWeather){precipitation='rain';intensity=wx==='pouring'?0.85:0.34;estimated=true;}
@@ -180,7 +185,7 @@ function getInputs(hass,config,now=new Date()){
   // leaves may fall earlier. Manual spring/season testing stays respected.
   const leafless=['winter','christmas','nicholas','newyear'].includes(scene) ||
     (scene==='autumn'&&((p.month===11&&p.day>=10)||(p.month===10&&temperature!==null&&temperature<0)));
-  return {p,wId,weather:wx,weatherDisplay,cloudSource,solarRatio,temperature,rain,solar,wind:wind??0,gust:gust??0,scene,phase,isNight,clouds,precipitation,intensity,estimated,brightness,elevation,azimuth,solarElevation,dayLight,nightLight,deepNight,warmth,lunar,moonlight,snowCover,fogLevel,humidity,dewpoint,leafless,holiday:holidayDecorAt(p)};
+  return {p,wId,weather:wx,weatherDisplay,cloudSource,solarRatio,temperature,rain,solar,wind:wind??0,gust:gust??0,scene,phase,isNight,clouds,precipitation,snowingNow:precipitation==='snow',intensity,estimated,brightness,elevation,azimuth,solarElevation,dayLight,nightLight,deepNight,warmth,lunar,moonlight,snowCover,fogLevel,humidity,dewpoint,leafless,holiday:holidayDecorAt(p)};
 }
 
 // All four seasons previously reused visually near-identical green source photos.
@@ -284,8 +289,11 @@ const CUSTOM_SEASON_COLOR={
 };
 
 function deepSnowLandscape(d,config={}){
+ // Snow on the ground is an ILLUSTRATIVE WINTER LANDSCAPE, independent
+ // of whether it is currently snowing. Keep the explicit no-snow switch.
+ // Falling snow is handled separately by getInputs() / _animate().
  if(visualSeason(d.scene)!=='winter'||config.snow_cover===false||config.snow_landscape==='bare')return false;
- return config.snow_landscape==='snow'||d.precipitation==='snow';
+ return true;
 }
 function winterPhotographicAsset(d,config={},available=()=>true){
  if(!deepSnowLandscape(d,config))return null;
@@ -960,7 +968,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     const leafSway=clamp((d.wind+d.gust*.35)/25,.1,1.7);el('.leaves').style.opacity=!usingCustom&&this._config.leaf_animation!==false&&['autumn','spring','summer','easter','may'].includes(d.scene)?'.72':'0';for(const n of el('.leaves').children)n.style.setProperty('--speed',`${clamp(6-leafSway*2,1.7,7)}s`);
   }
   _animate(){const tick=(tm)=>{if(!this._visible||!this._root)return;const canvas=this._root.querySelector('.weatherfx'),r=canvas.getBoundingClientRect();if(r.width&&r.height){const dpi=Math.min(1.6,devicePixelRatio||1),w=Math.round(r.width*dpi),h=Math.round(r.height*dpi);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}const ctx=canvas.getContext('2d');ctx.setTransform(dpi,0,0,dpi,0,0);ctx.clearRect(0,0,r.width,r.height);
-      const d=this._data;if(d&&d.precipitation!=='none'&&this._config.precipitation_animation!==false){const amount=clamp(Math.round((d.precipitation==='rain'?22:17)+d.intensity*(d.precipitation==='rain'?190:125)),0,220),t=tm/1000,wind=clamp(d.wind/30,0,3);
+      const d=this._data;if(d&&(d.precipitation==='rain'||d.snowingNow===true)&&this._config.precipitation_animation!==false){const amount=clamp(Math.round((d.precipitation==='rain'?22:17)+d.intensity*(d.precipitation==='rain'?190:125)),0,220),t=tm/1000,wind=clamp(d.wind/30,0,3);
         ctx.strokeStyle=d.precipitation==='rain'?'rgba(206,224,244,.42)':'rgba(243,247,255,.82)';ctx.fillStyle='rgba(244,248,255,.8)';ctx.lineWidth=d.precipitation==='rain'?1.25:1.6;
         for(let i=0;i<amount;i++){const seed=(i*0.61803398875)%1,seedY=(i*.41421356237)%1,speed=(d.precipitation==='rain'?320:45)*(0.6+seed*.9)*(0.8+d.intensity*.8),yy=(seedY*r.height+t*speed)%(r.height+25)-15,xx=(seed*r.width+t*wind*(d.precipitation==='rain'?25:17))%(r.width+25)-10;
           if(d.precipitation==='rain'){ctx.beginPath();ctx.moveTo(xx,yy);ctx.lineTo(xx-3-wind*3,yy+7+d.intensity*13);ctx.stroke();}
