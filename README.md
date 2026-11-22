@@ -1,8 +1,23 @@
-# HA Seasons Universal V1.1 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal Classic V1.1.1 – pôvodná verzia + odpad + plynulý deň/noc
 
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Klasická verzia na otestovanie (bez prepisovania aktuálnej aplikácie)
+
+Základ tvorí **prvá publikovaná funkčná verzia V1.1.0** z 21. novembra 2026. Pôvodná fotografia s veľkým stromom vľavo a kostolíkom vpravo, pôvodné informačné panely, ovládanie, farby a editor zostávajú zachované.
+
+Pridané sú presne dve veci:
+
+1. **Odvoz komunálneho a separovaného odpadu (voliteľné)** – ak v Home Assistante existujú vhodné senzory (napr. `sensor.najblizsi_komunalny_odpad`, `sensor.najblizsi_triedeny_zber`), dole pod údajmi sa objavia dátumy a texty `DNES`, `ZAJTRA`, `O 2 dní` atď. Dajú sa zadať aj ručne v grafickom editore pomocou entít `waste_municipal` a `waste_recycling`. Bez dátumu zostane pôvodná obrazovka čistá.
+2. **Plynulý prechod deň → svitanie/súmrak → noc** – pôvodné denné, súmrakové a nočné fotografie sa prelínajú podľa výšky Slnka zo `sun.sun`, neprepínajú sa skokom pri jednom okamihu.
+
+### Rýchly test bez Home Assistanta
+
+Otvor `dist/TEST.html` na náhľade tejto vetvy. Nastav výšku Slnka, prípadne odpad a stlač **Otvoriť šetrič** alebo **Prehrať prechod deň → noc**. Všetky údaje sú simulované a nezasahujú do reálnych entít. Pri automatickom prehrávaní trvá simulovaný prechod približne 23 sekúnd.
+
+Toto je **samostatná testovacia vetva**, ktorá nemení hlavnú verziu `main`. Kým neschváliš výsledok, klasická verzia nebude nasadená namiesto aktuálnej.
 
 ## Funkcie
 - Dátum, čas, vonkajšia teplota, kúrenie, meniny a počty zapnutých svetiel
