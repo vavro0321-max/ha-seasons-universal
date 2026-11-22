@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.12.1 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.12.2 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,16 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Nové vo V1.12.2 – aktuálny stav počasia a WS2900
+
+- **Slnečno / polojasno / zamračené:** keď lokálna WS2900 nameria slnečné žiarenie a online počasie hlási zamračené, údaj sa konzervatívne upraví na polojasno. Nízke žiarenie samo osebe **nedokazuje**, že je zamračené.
+- **Dážď:** aktuálna intenzita dažďa z WS2900 má prednosť pred nesúhlasným online stavom pri animácii. Názov počasia už neukazuje „Slnečno“, ak stanica naozaj meria dážď. Pri online „Prší“, ale nulovom lokálnom daždi a slnku, sa ukáže lokálne polojasno; táto nezhoda nie je dôkaz, že v okolí vôbec neprší.
+- **Nedostupné / staré údaje:** predpoveď staršia než 180 minút je ignorovaná. Pri starom online počasí sa nepoužíva ani jeho stará teplota, vietor či vlhkosť. Ak chýba predpoveď aj použiteľná stanica, zobrazí sa „Počasie nedostupné“ a neutrálny stav oblohy namiesto vymysleného slnečna.
+- **Zima:** zasnežená fotografia je sezónny vzhľad. Padajúce vločky sú nezávislá animácia viazaná na aktuálne hlásenie sneženia; teplota alebo dátum samotné vločky nespúšťajú. Nastavenie **Sneh na zemi → Automaticky v zime** teraz označuje skutočné správanie.
+- **Aktualizácia:** karta spracúva aktuálne stavy Home Assistanta pri prijatí nových entít a počas aktívneho šetriča sa obnovuje. Testy simulujú zmenu senzorov aj zastarané merania.
+
+**Dôležité obmedzenie:** bez priameho pripojenia k lokálnej inštancii Home Assistanta a skutočným meraniam WS2900 sa nedá potvrdiť, či aktuálny výjav zodpovedá počasiu pred tvojím domom. Automatické testy overujú logiku nad simulovanými stavmi, nie živú meteorologickú presnosť.
 
 ## Nové vo V1.12.1 – zimná krajina nie je sneženie
 
