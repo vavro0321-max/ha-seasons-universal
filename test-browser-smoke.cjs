@@ -66,6 +66,19 @@ const launch=()=>new Promise((resolve,reject)=>{
     assert.equal(a.candlesExpected,4);
     assert.equal(a.candlesLit,4);
     assert(a.width>=359&&a.width<=361,'Responsive mobile viewport');
+    a=await scenario({date:'2026-12-06',phase:'day',weather:'snowy',viewport:{width:768,height:1024}});
+    assert.equal(a.candlesExpected,2);
+    assert.equal(a.candlesLit,0,'Advent candle flames are invisible in daytime');
+    assert(a.image.includes('advent-snow-day.webp'),'Use a real daylight Advent photo');
+    a=await scenario({date:'2026-12-06',phase:'night',weather:'cloudy'});
+    assert(a.image.includes('advent-snow-night.webp'),
+      'Winter holiday scenery is snowy even if it is not actively snowing');
+    assert.equal(a.snowingNow,false);
+    a=await scenario({date:'2026-12-25',phase:'night',weather:'cloudy'});
+    assert.equal(a.candlesExpected,0,'No Advent flames after Christmas Eve');
+    assert.equal(a.candlesLit,0);
+    a=await scenario({date:'2026-12-06',phase:'night',weather:'snowy',decor:'none'});
+    assert.equal(a.candlesLit,0,'Disabled decorations have no photo flames');
     a=await scenario({date:'2027-01-07',phase:'day',weather:'partlycloudy'});
     assert.equal(a.candlesExpected,0,'No Advent candles after 6 January');
     assert(a.image.includes('winter-snow-landscape.webp'),'Still snowy winter scenery');
@@ -104,8 +117,29 @@ const launch=()=>new Promise((resolve,reject)=>{
     assert.equal(part.clouds,'partly');
     assert(part.bank<over.bank/8,'Partly sky has far fewer clouds');
     assert(part.blue>.1&&over.blue===0,'Blue opening only under partly cloudy');
+    // Real rotation while the screensaver is open must preserve the scene.
+    await page.goto(base+'/ADVENT-TEST.html',{waitUntil:'networkidle'});
+    await page.waitForFunction(()=>!document.querySelector('#open').disabled);
+    await page.selectOption('#date','2026-12-13');
+    await page.selectOption('#phase','night');
+    await page.selectOption('#weather','snowy');
+    await page.click('#open');
+    await page.waitForFunction(()=>document.querySelector('#card')?._root?.querySelector('.screen'));
+    await page.setViewportSize({width:800,height:1280});
+    const rotated=await page.evaluate(()=>{
+      const card=document.querySelector('#card');card._update();
+      const root=card._root;
+      return {width:root.querySelector('.screen').getBoundingClientRect().width,
+        image:root.querySelector('.photo').style.backgroundImage,
+        candles:[...root.querySelectorAll('[data-photo-candle]')]
+          .filter(c=>Number(c.style.opacity)>.8).length};
+    });
+    assert(rotated.width>=799&&rotated.width<=801,'Screen adapts to tablet rotation');
+    assert(rotated.image.includes('advent-snow-night.webp'));
+    assert.equal(rotated.candles,3,'Three flames stay aligned after tablet rotation');
+    await page.evaluate(()=>document.querySelector('#card')._close());
     assert.deepEqual(pageErrors,[],'No page errors or failed local assets');
-    console.log('PASS real Chrome: Advent 1/2/4 candles, Mikulas, winter transition, dry override, mobile resize, clouds, all assets');
+    console.log('PASS real Chrome: Advent 1-4 candles/day/night, Mikulas, winter, dry override, phone/tablet rotation, clouds, assets');
     await context.close();
   }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(err=>{console.error(err);process.exitCode=1;});
