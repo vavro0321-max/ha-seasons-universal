@@ -64,7 +64,7 @@ function weatherId(hass,forced,now=new Date()){
 }
 function getInputs(hass,config,now=new Date()){
   const cfg=config.entities||{},p=localParts(now,hass?.config?.time_zone||Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const wId=weatherId(hass,cfg.weather,now),wo=state(hass,wId),wx=knownWeather.includes(wo?.state)?wo.state:'unavailable';
+  const wId=weatherId(hass,cfg.weather,now),wo=state(hass,wId),wx=freshEntity(wo,now,180)&&knownWeather.includes(wo?.state)?wo.state:'unavailable';
   const localMode=config.source!=='online';
   const tempId=localMode?pick(hass,cfg.temperature,['sensor.ws2900_v2_02_01_outdoor_temperature'],(id,s)=>id.startsWith('sensor.')&&s?.attributes?.device_class==='temperature'&&/outdoor|outside|vonku|external|vonkaj|exteri/i.test(id+' '+(s.attributes.friendly_name||''))):null;
   const rainId=localMode?pick(hass,cfg.rain,['sensor.ws2900_v2_02_01_rain_rate'],(id,s)=>id.startsWith('sensor.')&&/rain_rate|rain_intensity|precipitation_intensity|intenzita_dazda/.test(id)):null;
@@ -74,21 +74,21 @@ function getInputs(hass,config,now=new Date()){
   const humidityId=localMode?pick(hass,cfg.humidity,['sensor.ws2900_v2_02_01_humidity'],id=>id.startsWith('sensor.')&&/outdoor.*humidity|humidity.*outdoor|ws2900.*humidity/.test(id)):null;
   const dewpointId=localMode?pick(hass,cfg.dewpoint,['sensor.ws2900_v2_02_01_dewpoint'],id=>id.startsWith('sensor.')&&/dewpoint|dew_point|rosny_bod/.test(id)):null;
   const sun=state(hass,'sun.sun'),elevation=safeNumber(sun?.attributes?.elevation),azimuth=safeNumber(sun?.attributes?.azimuth);
-  let temperature=toCelsius(numberFor(hass,tempId),unitFor(hass,tempId));
+  const sensorAge=clamp(Number(config.station_max_age_minutes??25)||25,5,180);
+  let temperature=freshEntity(state(hass,tempId),now,sensorAge)?toCelsius(numberFor(hass,tempId),unitFor(hass,tempId)):null;
   if(temperature===null)temperature=toCelsius(safeNumber(wo?.attributes?.temperature),String(wo?.attributes?.temperature_unit||'°C').toLowerCase());
   // Sensor freshness is essential: an old 0 W/m² reading is not evidence
   // for overcast clouds now, and an old rain value must not paint rain today.
-  const sensorAge=clamp(Number(config.station_max_age_minutes??25)||25,5,180);
   const rainFresh=freshEntity(state(hass,rainId),now,sensorAge);
   const solarFresh=freshEntity(state(hass,solarId),now,sensorAge);
   let rain=rainFresh?numberFor(hass,rainId):null;
   if(rain!==null&&unitFor(hass,rainId).includes('in/h'))rain*=25.4;
   let solar=solarFresh?numberFor(hass,solarId):null;
-  let wind=toKmh(numberFor(hass,windId),unitFor(hass,windId));
+  let wind=freshEntity(state(hass,windId),now,sensorAge)?toKmh(numberFor(hass,windId),unitFor(hass,windId)):null;
   if(wind===null)wind=toKmh(safeNumber(wo?.attributes?.wind_speed),String(wo?.attributes?.wind_speed_unit||'km/h').toLowerCase());
-  const gust=toKmh(numberFor(hass,gustId),unitFor(hass,gustId));
-  const humidity=numberFor(hass,humidityId)??safeNumber(wo?.attributes?.humidity);
-  const dewpoint=toCelsius(numberFor(hass,dewpointId),unitFor(hass,dewpointId));
+  const gust=freshEntity(state(hass,gustId),now,sensorAge)?toKmh(numberFor(hass,gustId),unitFor(hass,gustId)):null;
+  const humidity=(freshEntity(state(hass,humidityId),now,sensorAge)?numberFor(hass,humidityId):null)??safeNumber(wo?.attributes?.humidity);
+  const dewpoint=freshEntity(state(hass,dewpointId),now,sensorAge)?toCelsius(numberFor(hass,dewpointId),unitFor(hass,dewpointId)):null;
   const dewGap=temperature!==null&&dewpoint!==null?temperature-dewpoint:null;
   // Fog is a weather condition, not a synonym for overcast skies or humid air.
   // Even 100% humidity / near-zero dewpoint gap does not trigger white fog.
