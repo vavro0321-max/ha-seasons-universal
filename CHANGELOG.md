@@ -5,6 +5,8 @@
 - Ikona sa zobrazuje v natívnom editore karty, README a záložke oboch testovacích stránok.
 - Zimná krajina, adventné dekorácie a ovládanie reálnych zariadení zostávajú bez zmien.
 
+- Opravená staršia chyba v grafickom editore, kde sa cesta `/config/www/...` vyhodnocovala ako JavaScript namiesto textu.
+
 
 ## 1.12.5 (2026-11-22)
 - Opravený falošne svetlý nočný režim pri výpadku alebo zastaraní entity `sun.sun`.
