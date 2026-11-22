@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.12.2 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.12.3 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,12 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Nové vo V1.12.3 – polooblačno má výrazne menej oblakov
+
+Pri stave **Polooblačno** sa teraz používa približne pätnásťkrát slabšia vrstva generovaných oblakov než pri stave **Zamračené** (0,022 vs. 0,34). Počas dňa sa obloha jemne rozjasní do modra a slnko bude viditeľnejšie. Zamračené naďalej znamená výrazne viac oblakov a tlmenejšie svetlo.
+
+Úprava sa mení automaticky podľa platného počasia z Home Assistanta, bez nastavenia pre konkrétny tablet. Počas dažďa a sneženia sa modré presvetlenie vypne; v noci tiež. Pôvodné oblaky, ktoré sú priamo súčasťou fotografie, sa týmto efektom úplne nevymažú – výrazný rozdiel tvorí hlavne obloha, vrstva generovaných oblakov a jas scény.
 
 ## Nové vo V1.12.2 – aktuálny stav počasia a WS2900
 
