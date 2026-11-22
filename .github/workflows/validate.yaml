@@ -40,6 +40,8 @@ jobs:
         run: node test-weather-sources.cjs
       - name: Test real-time weather changes and stale telemetry
         run: node test-reality-sync.cjs
+      - name: Test visibly fewer clouds for partly cloudy weather
+        run: node test-partly-cloud-visibility.cjs
       - name: Test seasonal winter photo versus actual live snowfall
         run: node test-winter-scene-vs-snowfall.cjs
       - name: Test Advent wreath, Sunday candles and Christmas tree

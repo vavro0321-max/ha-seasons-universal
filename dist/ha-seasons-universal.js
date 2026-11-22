@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.12.2 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.12.2';
+/* HA Seasons Universal 1.12.3 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.12.3';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -169,7 +169,7 @@ function getInputs(hass,config,now=new Date()){
   const moonlight=config.moonlight_effect===false?0:nightLight*moonTransmission*(.12+.88*illuminated);
   // Twilight has more ambient light than midnight. A moonlit clear night is brighter
   // than a cloudy one, but landscape features remain discernible in both.
-  const cloudFactor=clouds==='overcast'?.80:clouds==='partly'?.93:1.04;
+  const cloudFactor=clouds==='overcast'?.80:clouds==='partly'?1.00:1.04;
   const solarBoost=solarRatio===null?0:clamp((solarRatio-.55)*.14,-.07,.11)*dayLight*smoothstep(3,16,solarElevation);
   const daylightBrightness=(.50+.54*dayLight)*cloudFactor+solarBoost;
   // Keep dusk, full-moon and cloudy nights distinguishable while preserving village detail.
@@ -424,6 +424,18 @@ function cardReadings(hass,config,d){const x=config.entities||{};let heating=sta
   const on=ids.filter(id=>state(hass,id)?.state==='on').length;const avail=ids.filter(id=>['on','off'].includes(state(hass,id)?.state)).length;
   return {temperature:d.temperature===null?'—':`${d.temperature.toFixed(1).replace('.',',')} °C`,heating:heat,nameday:namedayText,lighting:avail?`${on} zapnuté / ${avail}`:'—'};
 }
+// Three visually DISTINCT sky states; winter/advent photos already contain
+// clouds, so a weak cloud overlay alone cannot differentiate partly from overcast.
+// Add a sky-only blue opening for partly cloudy weather during daylight.
+function cloudVisualProfile(clouds,dayLight){
+  const daylight=clamp(dayLight,0,1);
+  return {
+    bankOpacity:clouds==='overcast'?.34:clouds==='partly'?.022:0,
+    blueOpening:clouds==='partly'?.62*daylight:0,
+    nightCloudShade:clouds==='overcast'?.27:clouds==='partly'?.025:0,
+    sunshine:clouds==='overcast'?.05:clouds==='partly'?.50:.58
+  };
+}
 const STYLE=`
 :host{display:block;width:100%;height:1px;overflow:hidden;pointer-events:none}
 #anchor{height:1px;width:1px;opacity:0}
@@ -441,6 +453,9 @@ const OVERLAY_STYLE=`
 .skyshade{position:absolute;inset:0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(1,8,24,.92),rgba(3,15,33,.53) 34%,rgba(4,15,30,.1) 61%,transparent 78%);transition:opacity 6s ease;}
 .moonwash{position:absolute;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse 76% 76% at 82% 25%,rgba(189,218,255,.22),rgba(123,173,231,.11) 48%,transparent 90%);mix-blend-mode:screen;transition:opacity 7s ease;}
 .cloudshade{position:absolute;inset:0 0 64% 0;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(25,38,65,.46) 0%,rgba(45,62,82,.15) 68%,transparent 100%);transition:opacity 6s ease;}
+.skybreak{position:absolute;inset:0 0 58% 0;pointer-events:none;opacity:0;z-index:1;
+ background:radial-gradient(ellipse 70% 95% at 52% 12%,rgba(29,140,241,.57),rgba(34,124,224,.37) 53%,rgba(38,126,215,.06) 79%,transparent 100%);
+ mix-blend-mode:soft-light;transition:opacity 8s ease}
 .cloudbank{position:absolute;inset:0 0 72% 0;pointer-events:none;opacity:0;
  background:radial-gradient(ellipse 31% 38% at 18% 30%,rgba(176,188,205,.50),transparent 100%),
  radial-gradient(ellipse 36% 34% at 71% 31%,rgba(179,192,208,.46),transparent 100%),
@@ -659,7 +674,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     if(this._cameraActive()){if(this._visible)this._close();this._last=Date.now();return;}
     if(this._visible){this._update();return;}if(document.hidden||this._editing()||!this._hass)return;
     if(Date.now()-this._last>=clamp(Number(this._config.idle_seconds)||30,5,3600)*1000)this._open();}
-  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo"></div><div class="customseason"></div><div class="customsnow"></div><div class="customfog"></div><div class="cloudbank"></div><div class="tint"></div><div class="nightveil"></div><div class="skyshade"></div><div class="moonwash"></div><div class="cloudshade"></div><div class="warmth"></div><div class="stars"></div><div class="sceneryfx">${SCENE_SVG}</div><div class="unifiedfx">${UNIFIED_SCENE_FX}</div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas>${HOLIDAY_COMPOSITED}${ADVENT_PHOTO_OVERLAY}<div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="wastebar" aria-live="off"><div class="wasteitem" data-waste="municipal"><span>🗑️</span><strong>Komunálny odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div><div class="wasteitem" data-waste="recycling"><span>♻️</span><strong>Separovaný odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
+  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo"></div><div class="skybreak"></div><div class="customseason"></div><div class="customsnow"></div><div class="customfog"></div><div class="cloudbank"></div><div class="tint"></div><div class="nightveil"></div><div class="skyshade"></div><div class="moonwash"></div><div class="cloudshade"></div><div class="warmth"></div><div class="stars"></div><div class="sceneryfx">${SCENE_SVG}</div><div class="unifiedfx">${UNIFIED_SCENE_FX}</div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas>${HOLIDAY_COMPOSITED}${ADVENT_PHOTO_OVERLAY}<div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="wastebar" aria-live="off"><div class="wasteitem" data-waste="municipal"><span>🗑️</span><strong>Komunálny odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div><div class="wasteitem" data-waste="recycling"><span>♻️</span><strong>Separovaný odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
     document.body.appendChild(this._host);this._root=this._host.shadowRoot;this._lastImage=null;
     const leaves=this._root.querySelector('.leaves');for(let i=0;i<12;i++){const n=document.createElement('i');n.className='leaf';n.style.setProperty('--top',`${7+(i%5)*6}%`);n.style.setProperty('--left',`${2+(i*13)%32}%`);n.style.setProperty('--delay',`${-(i%7)*.5}s`);leaves.append(n);}
   }
@@ -818,7 +833,8 @@ class HASeasonsUniversalCard extends HTMLElement {
       frost.style.opacity=usingCustom&&this._config.snow_cover!==false?(d.snowCover*.70).toFixed(3):'0';
       fog.style.opacity=usingCustom?d.fogLevel.toFixed(3):'0';
     }
-    const saturation=(d.clouds==='overcast'?.97:d.clouds==='partly'?1.02:1.07)*(.90+.10*d.dayLight);
+    const skyProfile=cloudVisualProfile(d.clouds,d.dayLight);
+    const saturation=(d.clouds==='overcast'?.97:d.clouds==='partly'?1.09:1.07)*(.90+.10*d.dayLight);
     // Soft gamma-like shadow lift reveals church, mountains and village at night
     // while sunlight, solar elevation, seasonal photos and day brightness stay unchanged.
     const nightContrast=1-.07*d.nightLight;
@@ -826,9 +842,12 @@ class HASeasonsUniversalCard extends HTMLElement {
     el('.nightveil').style.opacity=integratedAdvent?'0':(d.nightLight*(.06+.08*d.deepNight)).toFixed(3);
     el('.skyshade').style.opacity=integratedAdvent?'0':(d.nightLight*(d.clouds==='overcast'?.32:d.clouds==='partly'?.38:.43)).toFixed(3);
     el('.moonwash').style.opacity=integratedAdvent?'0':(d.moonlight*.96).toFixed(3);
-    el('.cloudshade').style.opacity=integratedAdvent?'0':(d.nightLight*(d.clouds==='overcast'?.27:d.clouds==='partly'?.10:0)).toFixed(3);
+    el('.cloudshade').style.opacity=integratedAdvent?'0':(d.nightLight*skyProfile.nightCloudShade).toFixed(3);
     // Add distinct cloud coverage in the SKY only; overcast must never paint fog over buildings.
-    el('.cloudbank').style.opacity=(d.clouds==='overcast'?.34:d.clouds==='partly'?.13:0).toFixed(3);
+    // Partly cloudy = mostly blue sky, just small wisps. Overcast stays dense.
+    // Hide the blue opening during precipitation to prevent false sunshine.
+    el('.skybreak').style.opacity=(d.precipitation==='none'?skyProfile.blueOpening:0).toFixed(3);
+    el('.cloudbank').style.opacity=skyProfile.bankOpacity.toFixed(3);
     el('.warmth').style.opacity=integratedAdvent?'0':(d.warmth*.72).toFixed(3);
     el('.stars').style.opacity=integratedAdvent?'0':(d.nightLight*(d.clouds==='overcast'?.015:d.clouds==='partly'?.18:.63)).toFixed(3);
     // Candle flames and tree lights are only illuminated at dusk/night.
@@ -950,7 +969,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     const customSkyVisible=!usingCustom||this._config.custom_sky_objects!==false;
     const sun=el('.sun');const elev=d.solarElevation,az=d.azimuth??(d.p.hour*15+90);
     sun.style.left=`${clamp(12+(az-65)/230*76,8,92)}%`;sun.style.top=`${clamp(54-elev*1.5,8,59)}%`;
-    sun.style.opacity=customSkyVisible&&!integratedAdvent?(smoothstep(-4,3,elev)*(d.clouds==='overcast'?.05:d.clouds==='partly'?.23:.58)).toFixed(3):'0';
+    sun.style.opacity=customSkyVisible&&!integratedAdvent?(smoothstep(-4,3,elev)*skyProfile.sunshine).toFixed(3):'0';
     const sh=el('.shadowTree');sh.style.opacity=usingCustom?'0':(smoothstep(0,14,elev)*(d.clouds==='overcast'?.08:.52)).toFixed(3);sh.style.transform=`skewX(${clamp((180-az)*.22,-35,35)}deg) scaleX(${clamp(1.8-Math.max(0,elev)/65,.65,1.8)})`;
     const moon=el('.moon');moon.style.opacity=customSkyVisible&&!integratedAdvent?(d.moonlight*(d.clouds==='overcast'?.04:1)).toFixed(3):'0';
     const phase=d.lunar;if(d.nightLight>.01)moonDraw(moon,phase.index);

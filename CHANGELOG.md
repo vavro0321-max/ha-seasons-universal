@@ -1,5 +1,12 @@
 # Zmeny
 
+## 1.12.3 (2026-11-22)
+- Výrazne znížená hustota generovaných oblakov pri polooblačnom počasí: 0,022 oproti 0,34 pri zamračenom.
+- Denná polooblačná obloha je viac modrá, má vyšší jas a viditeľnejšie slnko.
+- Pri daždi, snehu a v noci sa modré presvetlenie vypína; jasno zostáva bez generovaných oblakov.
+- Nový test kontrastu medzi polooblačnom a zamračeným počasím.
+
+
 ## 1.12.2 (2026-11-22)
 - Opravené konflikty medzi textom aktuálneho počasia, animovaným dažďom a údajmi meteostanice WS2900.
 - Nedostupná online predpoveď už nie je považovaná za jasnú oblohu; bez použiteľných meraní sa zobrazí nedostupné počasie.
