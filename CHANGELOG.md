@@ -1,5 +1,13 @@
 # Zmeny
 
+## 1.12.2 (2026-11-22)
+- Opravené konflikty medzi textom aktuálneho počasia, animovaným dažďom a údajmi meteostanice WS2900.
+- Nedostupná online predpoveď už nie je považovaná za jasnú oblohu; bez použiteľných meraní sa zobrazí nedostupné počasie.
+- Stará online predpoveď nemôže ďalej poskytovať teplotu, vietor ani vlhkosť.
+- Upravený názov automatického zimného režimu, ktorý je sezónnym motívom nezávislým od padajúcich vločiek.
+- Nový integračný test priebežnej zmeny WS2900 a online podmienok aj ich čerstvosti.
+
+
 ## 1.12.1 (2026-11-22)
 - Zasnežené fotografie sú sezónny zimný motív aj keď aktuálne nesneží; voľba Bez snehu ostáva funkčná.
 - Padajúce vločky sa animujú výlučne pri aktuálnom hlásenom snežení alebo daždi so snehom z nezastaranej weather entity, pri teplote vhodnej na sneh.

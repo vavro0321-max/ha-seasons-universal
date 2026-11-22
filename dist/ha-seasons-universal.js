@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.12.1 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.12.1';
+/* HA Seasons Universal 1.12.2 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.12.2';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -76,7 +76,7 @@ function getInputs(hass,config,now=new Date()){
   const sun=state(hass,'sun.sun'),elevation=safeNumber(sun?.attributes?.elevation),azimuth=safeNumber(sun?.attributes?.azimuth);
   const sensorAge=clamp(Number(config.station_max_age_minutes??25)||25,5,180);
   let temperature=freshEntity(state(hass,tempId),now,sensorAge)?toCelsius(numberFor(hass,tempId),unitFor(hass,tempId)):null;
-  if(temperature===null)temperature=toCelsius(safeNumber(wo?.attributes?.temperature),String(wo?.attributes?.temperature_unit||'°C').toLowerCase());
+  if(temperature===null&&wx!=='unavailable')temperature=toCelsius(safeNumber(wo?.attributes?.temperature),String(wo?.attributes?.temperature_unit||'°C').toLowerCase());
   // Sensor freshness is essential: an old 0 W/m² reading is not evidence
   // for overcast clouds now, and an old rain value must not paint rain today.
   const rainFresh=freshEntity(state(hass,rainId),now,sensorAge);
@@ -85,9 +85,9 @@ function getInputs(hass,config,now=new Date()){
   if(rain!==null&&unitFor(hass,rainId).includes('in/h'))rain*=25.4;
   let solar=solarFresh?numberFor(hass,solarId):null;
   let wind=freshEntity(state(hass,windId),now,sensorAge)?toKmh(numberFor(hass,windId),unitFor(hass,windId)):null;
-  if(wind===null)wind=toKmh(safeNumber(wo?.attributes?.wind_speed),String(wo?.attributes?.wind_speed_unit||'km/h').toLowerCase());
+  if(wind===null&&wx!=='unavailable')wind=toKmh(safeNumber(wo?.attributes?.wind_speed),String(wo?.attributes?.wind_speed_unit||'km/h').toLowerCase());
   const gust=freshEntity(state(hass,gustId),now,sensorAge)?toKmh(numberFor(hass,gustId),unitFor(hass,gustId)):null;
-  const humidity=(freshEntity(state(hass,humidityId),now,sensorAge)?numberFor(hass,humidityId):null)??safeNumber(wo?.attributes?.humidity);
+  const humidity=(freshEntity(state(hass,humidityId),now,sensorAge)?numberFor(hass,humidityId):null)??(wx==='unavailable'?null:safeNumber(wo?.attributes?.humidity));
   const dewpoint=freshEntity(state(hass,dewpointId),now,sensorAge)?toCelsius(numberFor(hass,dewpointId),unitFor(hass,dewpointId)):null;
   const dewGap=temperature!==null&&dewpoint!==null?temperature-dewpoint:null;
   // Fog is a weather condition, not a synonym for overcast skies or humid air.
@@ -120,7 +120,9 @@ function getInputs(hass,config,now=new Date()){
     precipitation='snow';intensity=wx==='snowy-rainy'?0.36:0.49;estimated=true;
   }else if(rain!==null&&rain>0.025){precipitation='rain';intensity=clamp(Math.log1p(rain)/Math.log1p(22),0.05,1);}
   else if(rain===null&&rainWeather){precipitation='rain';intensity=wx==='pouring'?0.85:0.34;estimated=true;}
-  let clouds=wx==='partlycloudy'||wx==='windy-variant'?'partly':wx==='cloudy'||reportedFog||['rainy','pouring','lightning-rainy','snowy','snowy-rainy','hail'].includes(wx)?'overcast':'clear';
+  // Unknown weather is NOT evidence of a clear sky; use a neutral partial-cloud
+  // rendering until a fresh online or an actual local solar measurement exists.
+  let clouds=wx==='unavailable'||wx==='partlycloudy'||wx==='windy-variant'?'partly':wx==='cloudy'||reportedFog||['rainy','pouring','lightning-rainy','snowy','snowy-rainy','hail'].includes(wx)?'overcast':'clear';
   let cloudSource=weatherValid?'online_weather':'unavailable';
   if(config.source!=='online'&&expectedSolar!==null&&solar!==null){
     if(!weatherValid){
@@ -136,10 +138,19 @@ function getInputs(hass,config,now=new Date()){
     }
   }
   if(precipitation!=='none')clouds='overcast';
-  const weatherDisplay=clouds==='partly'&&cloudSource==='ws2900_sunshine'?'partlycloudy':
-    clouds==='clear'&&wx==='unavailable'?'sunny':
-    clouds==='partly'&&wx==='unavailable'?'partlycloudy':
-    clouds==='overcast'&&wx==='unavailable'?'cloudy':wx;
+  // Ensure the condition text matches the animation when a measured LOCAL
+  // rain rate contradicts the regional online weather report. The rain gauge
+  // cannot reliably classify snow, so snow still uses a fresh weather report.
+  if(precipitation==='rain'&&rain!==null&&rain>.025&&!rainWeather)cloudSource='ws2900_rain';
+  const localDryOnlineRain=rainWeather&&rain!==null&&rain<=.025&&precipitation==='none';
+  const warmOnlineSnow=['snowy','snowy-rainy'].includes(wx)&&precipitation!=='snow';
+  const weatherDisplay=precipitation==='rain'?(rain!==null&&rain>=7?'pouring':'rainy'):
+    precipitation==='snow'?(wx==='snowy-rainy'?'snowy-rainy':'snowy'):
+    !weatherValid&&cloudSource!=='ws2900_fallback'?'unavailable':
+    (localDryOnlineRain||warmOnlineSnow)?(clouds==='partly'?'partlycloudy':'cloudy'):
+    clouds==='partly'&&['ws2900_sunshine','ws2900_fallback'].includes(cloudSource)?'partlycloudy':
+    clouds==='clear'&&cloudSource==='ws2900_fallback'?'sunny':
+    clouds==='overcast'&&cloudSource==='ws2900_fallback'?'cloudy':wx;
   const scene=config.scene&&config.scene!=='auto'?config.scene:seasonAt(p);
   const phase=config.phase&&config.phase!=='auto'?config.phase:(elevation!==null?(elevation<=-6?'night':elevation<10?(sun?.attributes?.rising?'dawn':'dusk'):'day'):(sun?.state==='below_horizon'?'night':p.hour<8?'dawn':p.hour>=17?'dusk':'day'));
   const isNight=phase==='night';
@@ -960,7 +971,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     for(const [field,opt] of Object.entries(visible)){const target=el(field==='clock'?'.clock':field==='date'?'.date':`[data-field="${field}"]`);const box=field==='temperature'||field==='heating'||field==='nameday'||field==='lighting'?target?.closest('.status'):target;if(box)box.style.display=this._config[opt]===false?'none':'';}
     el('.statusbar').style.display=['temperature','heating','nameday','lighting'].some(f=>this._config[visible[f]]!==false)?'grid':'none';
     const wdesc={sunny:'Jasno',partlycloudy:'Polooblačno',cloudy:'Zamračené',rainy:'Dážď',pouring:'Silný dážď',snowy:'Sneženie','snowy-rainy':'Sneh s dažďom',fog:'Hmla',mist:'Hmla','clear-night':'Jasná noc'};
-    el('[data-field="weather"]').textContent=`🌦️ ${wdesc[d.weatherDisplay]|| (d.weatherDisplay==='unavailable'?'Počasie nedostupné':d.weatherDisplay)}${d.cloudSource==='ws2900_sunshine'?' · WS2900':d.cloudSource==='ws2900_fallback'?' · stanica':''}${d.estimated?' (odhad)':''}`;
+    el('[data-field="weather"]').textContent=`🌦️ ${wdesc[d.weatherDisplay]|| (d.weatherDisplay==='unavailable'?'Počasie nedostupné':d.weatherDisplay)}${['ws2900_sunshine','ws2900_rain'].includes(d.cloudSource)?' · WS2900':d.cloudSource==='ws2900_fallback'?' · stanica':''}${d.estimated?' (odhad)':''}`;
     el('[data-field="rise"]').textContent=`🌅 ${fmtTime(this._hass,state(this._hass,'sun.sun')?.attributes?.next_rising)}`;
     el('[data-field="set"]').textContent=`🌇 ${fmtTime(this._hass,state(this._hass,'sun.sun')?.attributes?.next_setting)}`;
     el('[data-field="moon"]').textContent=`🌙 ${phase.label}${phase.estimate?' (odhad)':''}`;
@@ -994,7 +1005,7 @@ const OPTIONS={
  clock_size:[['normal','Normálna'],['small','Menšia'],['large','Väčšia']],
  image_fit:[['cover','Vyplniť obrazovku (môže orezať kraje)'],['contain','Celá fotografia (môže mať okraje)']],
  scene:[['auto','Automaticky podľa roka'],['spring','Jar'],['summer','Leto'],['autumn','Jeseň'],['winter','Zima'],['christmas','Vianoce'],['easter','Veľká noc'],['may','Máj'],['memorial','Dušičky'],['nicholas','Mikuláš'],['newyear','Nový rok']],
- snow_landscape:[['auto','Automaticky pri snežení'],['snow','Zasnežená krajina'],['bare','Bez snehu']],
+ snow_landscape:[['auto','Automaticky v zime'],['snow','Zasnežená krajina'],['bare','Bez snehu']],
  phase:[['auto','Automaticky podľa slnka'],['day','Deň'],['dawn','Svitanie'],['dusk','Súmrak'],['night','Noc']]
 };
 const OPTION_LABELS={advent_photo:'Fotografický adventný motív večer',show_advent_wreath:'Adventný veniec – sviečky iba večer',show_christmas_tree:'Vianočný stromček – svetlá od Mikuláša',custom_sky_objects:'Slnko a Mesiac na vlastnom obrázku',show_waste:'Zobrazovať vývoz odpadu (ak existujú senzory)',show_clock:'Hodiny',show_date:'Dátum',show_temperature:'Vonkajšia teplota',show_heating:'Kúrenie',show_nameday:'Meniny',show_lights:'Svetlá',show_weather:'Stav počasia',show_sun:'Východ a západ slnka',show_moon:'Fáza Mesiaca',precipitation_animation:'Padajúci dážď / sneh',leaf_animation:'Pohyb lístia',night_lights:'Svetlá v dedine a kostolíku',pause_on_camera:'Nespúšťať šetrič pri otvorenej záložke Kamery',moonlight_effect:'Osvetlenie krajiny Mesiacom',snow_cover:'Snehová pokrývka a námraza podľa teploty (odhad)',unified_scene:'Jedna krajina pre všetky ročné obdobia (moje fotografie)',fog_effect:'Hmla iba pri hlásení fog / mist',season_colors:'Výrazné farby ročných období (jar, leto, jeseň)'};
