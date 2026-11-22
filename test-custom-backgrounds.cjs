@@ -66,7 +66,7 @@ assert.equal(editor._config.custom_season_strength,1.1);
 assert(label.textContent.includes('110'),'Strength label updates');
 assert(code.includes('data-image="base"')&&code.includes('data-image="\${key}"'),'Graphical photo input fields present');
 assert(code.includes("stage.style.display=isPhotoSeason&&!useUnified&&!usingCustom"),'No old village-specific elements on own photo');
-assert(code.includes("unifiedFx.style.display=useUnified&&!integratedAdvent?'block':'none'"),'No duplicate village lights on Advent photo or own photo');
+assert(code.includes("unifiedFx.style.display=useUnified&&!integratedAdvent&&!winterSnowPhoto?'block':'none'"),'No duplicate village lights on Advent photo, full-snow winter image or own photo');
 assert(code.includes("const integratedAdvent=!usingCustom&&d.holiday.advent"),'Own photo remains selected instead of integrated Advent image');
 assert(code.includes('customSkyVisible'), 'Sky toggle present for arbitrary photos');
 assert(!code.includes('livingPaintActor'),'No walkers/cars');
