@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.12.0 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.12.1 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -12,11 +12,19 @@ Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení je
 
 ![Ukážka](docs/preview.jpg)
 
+## Nové vo V1.12.1 – zimná krajina nie je sneženie
+
+**Zimné obdobie** automaticky používa zasneženú krajinu cez deň aj v noci (vrátane adventných fotografií). Toto je *ilustračný sezónny vzhľad* a nepredstavuje meranie skutočnej snehovej pokrývky. Ak chceš zimnú krajinu bez snehu, v grafickom editore nastav **Sneh na zemi → Bez snehu**.
+
+**Padajúce vločky** sa zobrazujú iba pri aktuálnom hlásení `snowy` alebo `snowy-rainy` z povolenej, nie zastaranej entity `weather.*` a pri teplote najviac 2 °C (alebo keď teplota nie je známa). Po zmene počasia sa animácia vypne; ani mráz, ani december, ani ručne zvolená zasnežená fotografia ju nespustia. Animáciu môžeš nezávisle vypnúť voľbou **Padajúci dážď / sneh**.
+
+**Poznámka k WS2900:** bežný senzor `rain_rate` nedokáže spoľahlivo odlíšiť padajúci sneh od dažďa. Bez samostatného senzora sneženia používame aktuálny stav online počasia v Home Assistante; ten môže byť miestami nepresný. Fotografie a animácia sú oddelené, takže nesprávna predpoveď nepremení samotný zimný motív na iné ročné obdobie.
+
 ## Nové vo V1.12.0 – finálna bohatá zasnežená krajina ❄️
 
 - Pridané **štyri skutočné zasnežené WebP fotografie**: adventný deň, adventná noc so stromčekom od Mikuláša, adventná noc s nesvietiacim stromčekom pred Mikulášom a bežná zimná krajina bez sviatočných dekorácií.
 - Stromček a veniec sú v týchto fotografiách priamo zakomponované do terénu. Na venci sú štyri červené sviečky; plamene sú samostatné efekty ukotvené pri ich knôtoch, ktoré sa rozsvecujú po jednej každú adventnú nedeľu len v noci.
-- Pri snežení sa použije naozaj **zasnežený obraz**, nie iba priesvitná biela vrstva. Zastavenie sneženia automaticky nepreukazuje prítomnosť snehu na zemi; preto je v grafickom editore voľba **Sneh na zemi: Automaticky / Zasnežená krajina / Bez snehu**. Pri automatickom režime sa plne zasnežená fotografia používa pri hlásenom snežení.
+- Pri snežení sa použije naozaj **zasnežený obraz**, nie iba priesvitná biela vrstva. Zastavenie sneženia automaticky nepreukazuje prítomnosť snehu na zemi; preto je v grafickom editore voľba **Sneh na zemi: Automaticky / Zasnežená krajina / Bez snehu**. V režime Automaticky sa plne zasnežená fotografia používa počas zimného obdobia bez ohľadu na to, či práve padajú vločky.
 - Mimo adventu, najmä od 7. januára, zostane bežná zimná zasnežená fotografia **bez stromčeka a venca**.
 - Predošlé rozlišovanie polojasna podľa čerstvých údajov WS2900 a online predpovede zostáva zachované; chýbajúca meteoentita nebráni zobrazeniu.
 - Grafika používa spoločnú responzívnu geometriu na mobile aj tablete. Nemení rozloženie dashboardu ani neovláda reálne zariadenia.
