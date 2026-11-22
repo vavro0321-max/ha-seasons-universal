@@ -1,5 +1,14 @@
 # Zmeny
 
+## 1.10.8 (2026-11-22)
+- Nová fotografická adventná krajina na večer a noc s prirodzene začleneným stromčekom a vencom pri kostole a cestičke (`dist/assets/advent-photographic-evening.webp`).
+- Plamene štyroch sviečok, drobné svetelné body stromčeka a jemné svetlo na tráve zostávajú plne dynamické podľa adventného dátumu a súmraku.
+- Počas adventnej fotografickej scény sa pôvodné priehľadné obrázky dekorácií nevykresľujú, aby nevznikol nalepený alebo zdvojený efekt.
+- Zdvojené vrstvy Mesiaca, hviezd, neba a dedinských svetiel sa na novej nočnej fotografii vypínajú; živé hodiny, teplota, kúrenie, meniny a počasie zostávajú dostupné.
+- Cez deň zostáva živá svetlá sezónna fotografia, po Štedrom dni pôvodné zimné a vianočné zobrazenie.
+- Samostatné overovanie fotografického WebP a test dynamiky adventných svetiel.
+
+
 ## 1.10.7 (2026-11-22)
 - Jemné realistické kontaktné tiene pod stromčekom a vencom viazané na trávnatý terén.
 - Samostatné teplé svetelné škvrny na tráve od rozsvietených dekorácií a veľmi slabý odraz na neďalekej stene kostola.

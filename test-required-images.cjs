@@ -32,6 +32,17 @@ for(const f of REQUIRED){
     invalid=true;
   }else console.log('OK '+f+' '+width+'x'+height+' '+b.length+' bytes');
 }
+// The Advent scene has its own full-resolution, photographically blended tree
+// and wreath. Check the binary asset, not merely the JavaScript path reference.
+const advent='dist/assets/advent-photographic-evening.webp';
+if(!fs.existsSync(advent)){console.error('::error file='+advent+'::Missing photographic Advent background');invalid=true;}
+else {
+ const b=fs.readFileSync(advent);
+ if(b.length<75000||b.toString('ascii',0,4)!=='RIFF'||b.toString('ascii',8,12)!=='WEBP'){
+  console.error('::error file='+advent+'::Invalid or truncated photographic Advent image');
+  invalid=true;
+ }else console.log('OK '+advent+' '+b.length+' bytes');
+}
 // Christmas overlays must be actual raster images, never placeholders or empty files.
 for(const f of [
  'dist/assets/christmas-tree-lit.webp',
