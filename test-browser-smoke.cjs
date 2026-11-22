@@ -26,7 +26,7 @@ const launch=()=>new Promise((resolve,reject)=>{
     browser=await chromium.launch({channel:'chrome',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
     const context=await browser.newContext({viewport:{width:1280,height:800}});
     const page=await context.newPage();
-    page.on('pageerror',error=>pageErrors.push(error.message));
+    page.on('pageerror',error=>pageErrors.push(error.stack||error.message));
     page.on('response',response=>{
       if(response.status()>=400&&response.url().startsWith(base))pageErrors.push('HTTP '+response.status()+' '+response.url());
     });
