@@ -27,7 +27,7 @@ assert(raw.includes("photoFx.style.left=sceneLayout.photo.left+'px'"),'Dynamic i
 assert(raw.includes("photoFx.style.width=sceneLayout.photo.width+'px'"),'Dynamic illumination scales with photo');
 assert.equal((ADVENT_PHOTO_OVERLAY.match(/data-photo-candle=/g)||[]).length,4,'Four candles individually controllable');
 assert(ADVENT_PHOTO_OVERLAY.includes('advent-photo-tree-lights'),'Tree lights on native photo');
-assert(raw.includes("Number(candle.getAttribute('data-photo-candle'))<=holiday.candles"),'Candles follow Sunday count');
+assert(raw.includes("candle.style.opacity=(n<=holiday.candles?d.nightLight:0)"),'Candles follow Sunday count');
 for(const [year,month,day,wanted,lights] of [
  [2026,11,28,0,false],[2026,11,29,1,false],[2026,12,5,1,false],
  [2026,12,6,2,true],[2026,12,13,3,true],[2026,12,20,4,true],
