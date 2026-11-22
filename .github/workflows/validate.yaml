@@ -26,6 +26,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: Validate both shared landscape WebP images
         run: node test-required-images.cjs
+      - name: Validate approved HA Seasons application icon
+        run: node test-brand-icon.cjs
 
   test-javascript:
     name: JavaScript syntax and logic
