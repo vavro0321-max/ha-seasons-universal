@@ -99,8 +99,11 @@ function getInputs(hass,config,now=new Date()){
   const expectedSolar=elevationRad===null||elevation<8?null:
     Math.max(80,1010*Math.pow(Math.sin(elevationRad),1.18));
   const solarRatio=solar!==null&&expectedSolar!==null?clamp(solar/expectedSolar,0,2):null;
-  const localSunshine=solarRatio!==null&&solar>=65&&solarRatio>=.38&&rain!==null&&rain<=.025;
-  const strongSunshine=solarRatio!==null&&solar>=125&&solarRatio>=.72&&rain!==null&&rain<=.025;
+  // A rain sensor is optional. No reading is not the same as rain;
+  // however, an actual online rain/snow report prevents an unwarranted sunny override.
+  const locallyDry=rain===null?!['rainy','pouring','lightning-rainy','snowy','snowy-rainy'].includes(wx):rain<=.025;
+  const localSunshine=solarRatio!==null&&solar>=65&&solarRatio>=.38&&locallyDry;
+  const strongSunshine=solarRatio!==null&&solar>=125&&solarRatio>=.72&&locallyDry;
   // Very strong local sunshine can override a regional fog report; weak
   // irradiance alone must never create fog.
   const reportedFog=(wx==='fog'||wx==='mist')&&!strongSunshine;
