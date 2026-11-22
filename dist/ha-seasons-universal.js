@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.12.3 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.12.3';
+/* HA Seasons Universal 1.12.4 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.12.4';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -256,10 +256,11 @@ const supportedScenes=['spring','summer','autumn','winter','christmas','easter',
 // These five assets are individually approved seasonal photographs from the
 // same four-panel village composition. They retain the church, valley and path.
 // Winter without snow uses a cool, leafless dry view instead of invented snow.
-function unifiedAssetName(d){
+function unifiedAssetName(d,config={}){
   const scene=visualSeason(d.scene);
-  if(scene==='winter')return (d.precipitation==='snow'||d.snowCover>=.38)
-      ?'universal-landscape-winter.webp':'universal-landscape-winter-dry.webp';
+  // Respect explicit no-snow choice in both photo and vector effect layers.
+  if(scene==='winter')return config.snow_cover===false||config.snow_landscape==='bare'
+      ?'universal-landscape-winter-dry.webp':'universal-landscape-winter.webp';
   if(['spring','summer','autumn'].includes(scene))return 'universal-landscape-'+scene+'.webp';
   return 'universal-landscape-autumn.webp';
 }
@@ -798,7 +799,7 @@ class HASeasonsUniversalCard extends HTMLElement {
   _update(){if(!this._root||!this._hass)return;const d=getInputs(this._hass,this._config),now=new Date();this._data=d;const el=(s)=>this._root.querySelector(s);
     const screen=el('.screen'),bounds=screen.getBoundingClientRect();screen.dataset.season=visualSeason(d.scene);screen.dataset.weather=d.weather;screen.dataset.layout=['auto','compact','wide'].includes(this._config.layout)?this._config.layout:'auto';screen.dataset.style=this._config.style==='minimal'?'minimal':'glass';screen.style.setProperty('--glass-opacity',String(clamp(Number(this._config.glass_opacity??0.48),0.2,0.9)));screen.style.setProperty('--font-factor',String(({small:0.82,normal:1,large:1.15})[this._config.clock_size]||1));
     const photo=el('.photo');
-    const preferred=unifiedAssetName(d);
+    const preferred=unifiedAssetName(d,this._config);
     const custom=chooseCustomPhoto(this._config,d,this._badCustomImages);
     const usingCustom=!!custom;
     const useUnified=!usingCustom&&this._config.unified_scene!==false&&!this._missingImages?.has(preferred);
@@ -808,8 +809,10 @@ class HASeasonsUniversalCard extends HTMLElement {
       this._config.advent_photo!==false&&this._config.show_christmas_tree!==false&&
       this._config.show_advent_wreath!==false&&
       (snowyAdvent||!this._missingImages?.has('advent-photo-night-final.webp'));
+    const noSnowWinter=visualSeason(d.scene)==='winter'&&
+      (this._config.snow_landscape==='bare'||this._config.snow_cover===false);
     const image=integratedAdvent?(snowyAdvent?snowFile:'advent-photo-night-final.webp'):
-      snowFile||(useUnified?preferred:assetName(d));
+      snowFile||(noSnowWinter?preferred:(useUnified?preferred:assetName(d)));
     const winterSnowPhoto=image==='winter-snow-landscape.webp';
     const sceneLayout=usingCustom?null:landscapeHolidayPlacement(
       bounds,this._config.image_fit,this._config.image_focus??55,useUnified);
@@ -825,12 +828,13 @@ class HASeasonsUniversalCard extends HTMLElement {
     photo.style.backgroundColor=sceneLayout?.photo.portrait?'#101b2d':'transparent';
     if(usingCustom)this._setCustomPhoto(custom.src,d);
     else this._setSeasonPhoto(image,d);
+    const allowSnowCover=this._config.snow_cover!==false&&this._config.snow_landscape!=='bare';
     const coat=el('.customseason'),frost=el('.customsnow'),fog=el('.customfog');
     if(coat){
       coat.style.background=usingCustom&&custom.graded?(CUSTOM_SEASON_COLOR[custom.scene]||CUSTOM_SEASON_COLOR.autumn):'none';
       coat.style.opacity=usingCustom&&custom.graded&&this._config.season_colors!==false?
         String(clamp(Number(this._config.custom_season_strength??.8),0,1.2)): '0';
-      frost.style.opacity=usingCustom&&this._config.snow_cover!==false?(d.snowCover*.70).toFixed(3):'0';
+      frost.style.opacity=usingCustom&&allowSnowCover?(d.snowCover*.70).toFixed(3):'0';
       fog.style.opacity=usingCustom?d.fogLevel.toFixed(3):'0';
     }
     const skyProfile=cloudVisualProfile(d.clouds,d.dayLight);
@@ -957,7 +961,7 @@ class HASeasonsUniversalCard extends HTMLElement {
       unifiedMap.querySelector('.us-lights').style.opacity=this._config.night_lights===false?'0':(d.nightLight*(.35+.65*d.deepNight)).toFixed(3);
       // Never add any mist on sunny, partly cloudy, cloudy or rainy days.
       unifiedMap.querySelector('.us-fog').style.opacity=d.fogLevel.toFixed(3);
-      unifiedMap.querySelector('.us-snow').style.opacity=this._config.snow_cover===false?'0':d.snowCover.toFixed(3);
+      unifiedMap.querySelector('.us-snow').style.opacity=allowSnowCover?d.snowCover.toFixed(3):'0';
     }
     const winter=d.scene==='winter';
     view.querySelector('.lights-normal').style.display=winter?'none':'block';
@@ -965,7 +969,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     view.querySelector('.frost-normal').style.display=winter?'none':'block';
     view.querySelector('.frost-winter').style.display=winter?'block':'none';
     view.querySelector('.village-lights').style.opacity=this._config.night_lights===false?'0':(d.nightLight*(.35+.65*d.deepNight)).toFixed(3);
-    view.querySelector('.frost-cover').style.opacity=this._config.snow_cover===false?'0':d.snowCover.toFixed(3);
+    view.querySelector('.frost-cover').style.opacity=allowSnowCover?d.snowCover.toFixed(3):'0';
     const customSkyVisible=!usingCustom||this._config.custom_sky_objects!==false;
     const sun=el('.sun');const elev=d.solarElevation,az=d.azimuth??(d.p.hour*15+90);
     sun.style.left=`${clamp(12+(az-65)/230*76,8,92)}%`;sun.style.top=`${clamp(54-elev*1.5,8,59)}%`;
