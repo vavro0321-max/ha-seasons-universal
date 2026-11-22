@@ -1,5 +1,5 @@
-/* HA Seasons Universal 1.10.6 — photorealistic tree and wreath assets, positioned beside the church and path. */
-const VERSION='1.10.6';
+/* HA Seasons Universal 1.10.7 — photorealistic tree and wreath assets, positioned beside the church and path. */
+const VERSION='1.10.7';
 const ASSETS=new URL('./assets/',import.meta.url).href;
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const smoothstep=(lo,hi,x)=>{const t=clamp((x-lo)/(hi-lo),0,1);return t*t*(3-2*t);};
@@ -371,7 +371,28 @@ const OVERLAY_STYLE=`
 
 /* Holiday decorations are above the panorama, not attached to its buildings. */
 .holiday-decor{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}
-.advent-wreath,.christmas-tree{position:absolute;display:none;isolation:isolate;filter:none;--ground-glow:0}
+.advent-wreath,.christmas-tree{position:absolute;display:none;isolation:isolate;filter:none;--ground-glow:0;z-index:2;transform-origin:50% 100%}
+.christmas-tree{transform:rotate(-.7deg)}
+.advent-wreath{transform:rotate(-2deg) scaleY(.96)}
+/* Ground-contact compositor: dark occlusion below the cutouts, warm scatter on the
+   grass around their bases, and an extremely subtle reflection on the church.
+   These follow the SAME photograph landmarks as the decorations. */
+.holiday-ground-shadow,.holiday-ground-light,.holiday-wall-reflection{
+  position:absolute;display:none;pointer-events:none;transform:translate(-50%,-50%);
+  border-radius:50%;transition:opacity 2s ease;z-index:0;
+}
+.holiday-ground-shadow{
+  background:radial-gradient(ellipse at 50% 50%,rgba(1,8,5,.75) 0%,rgba(4,11,7,.48) 28%,rgba(6,15,9,.17) 55%,transparent 82%);
+  filter:blur(5px);mix-blend-mode:multiply;transform:translate(-50%,-50%) rotate(-8deg) scaleY(.72);
+}
+.holiday-ground-light{
+  background:radial-gradient(ellipse at 50% 47%,rgba(255,189,91,.47) 0%,rgba(249,160,66,.21) 35%,rgba(238,140,43,.06) 63%,transparent 86%);
+  filter:blur(9px);mix-blend-mode:screen;transform:translate(-50%,-50%) rotate(-8deg);
+}
+.holiday-wall-reflection{
+  background:radial-gradient(ellipse at 50% 50%,rgba(255,198,112,.26),rgba(237,169,74,.09) 45%,transparent 80%);
+  filter:blur(15px);mix-blend-mode:screen;
+}
 .advent-wreath{left:clamp(10px,3vw,45px);bottom:clamp(60px,12vh,120px);width:clamp(135px,18vw,230px)}
 .christmas-tree{right:clamp(12px,4vw,52px);bottom:clamp(54px,9vh,95px);width:clamp(100px,15vw,185px)}
 .advent-wreath img,.christmas-tree img{display:block;width:100%;height:auto;max-width:none;pointer-events:none;user-select:none;position:relative;z-index:1}
@@ -384,7 +405,7 @@ const OVERLAY_STYLE=`
 }
 .christmas-tree::after,.advent-wreath::after{
   content:'';position:absolute;left:-20%;right:-20%;bottom:-2%;height:20%;
-  border-radius:50%;background:radial-gradient(ellipse,rgba(255,184,79,.55),rgba(231,128,37,.16) 45%,transparent 75%);
+  border-radius:50%;background:radial-gradient(ellipse,rgba(255,184,79,.40),rgba(231,128,37,.10) 45%,transparent 75%);
   filter:blur(9px);opacity:var(--ground-glow);z-index:-1;
 }
 .advent-wreath .real-flame{position:absolute;opacity:0;width:12%;height:auto;max-width:none;z-index:2;filter:drop-shadow(0 0 5px rgba(255,185,64,.45));transition:opacity 2s ease}
@@ -484,6 +505,14 @@ function landscapeHolidayPlacement(bounds,imageFit='cover',imageFocus=55,useUnif
   return {tree,wreath,photo};
 }
 const HOLIDAY_DECOR="<div class=\"holiday-decor\"><div class=\"advent-wreath\" aria-hidden=\"true\"><img class=\"real-wreath-base\" src=\"__ASSET__advent-wreath-unlit.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-1\" data-candle=\"1\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-2\" data-candle=\"2\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-3\" data-candle=\"3\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"><img class=\"real-flame flame-4\" data-candle=\"4\" src=\"__ASSET__advent-candle-flame.webp\" alt=\"\" draggable=\"false\"></div><div class=\"christmas-tree\" aria-hidden=\"true\"><img class=\"real-tree-unlit\" src=\"__ASSET__christmas-tree-unlit.webp\" alt=\"\" draggable=\"false\"><img class=\"real-tree-lit tree-lights\" src=\"__ASSET__christmas-tree-lit.webp\" alt=\"\" draggable=\"false\"></div></div>".replaceAll('__ASSET__',ASSETS);
+const HOLIDAY_COMPOSITED=HOLIDAY_DECOR.replace(
+  '<div class="holiday-decor">',
+  '<div class="holiday-decor">'+
+  '<div class="holiday-ground-shadow tree-ground-shadow" aria-hidden="true"></div>'+
+  '<div class="holiday-ground-shadow wreath-ground-shadow" aria-hidden="true"></div>'+
+  '<div class="holiday-ground-light tree-ground-light" aria-hidden="true"></div>'+
+  '<div class="holiday-ground-light wreath-ground-light" aria-hidden="true"></div>'+
+  '<div class="holiday-wall-reflection" aria-hidden="true"></div>');
 const SCENE_SVG='<svg class="scene-map" viewBox="0 0 1672 941" aria-hidden="true" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">\n <defs><filter id="haWindowBlur" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="5"/></filter><linearGradient id="haSnowFall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7fcff" stop-opacity="0"/><stop offset=".25" stop-color="#f7fcff" stop-opacity=".09"/><stop offset="1" stop-color="#ecf6ff" stop-opacity=".56"/></linearGradient></defs>\n <g class="frost-cover" opacity="0"><g class="frost-normal"><path d="M0 690 C190 717 415 750 710 759 C950 764 1120 739 1270 751 C1400 773 1565 802 1672 823 L1672 941 L0 941 Z" fill="url(#haSnowFall)"/><path d="M0 804 C240 815 400 833 638 822 M0 865 C300 870 530 884 704 856 M1435 810 C1545 800 1613 818 1672 839" fill="none" stroke="#e9f9ff" stroke-width="14" opacity=".30"/></g><g class="frost-winter"><path d="M0 665 C220 690 412 713 635 722 C930 733 1090 694 1290 709 C1440 715 1565 744 1672 750 L1672 941 L0 941 Z" fill="url(#haSnowFall)"/></g></g>\n <g class="village-lights" opacity="0"><g class="lights-normal"><ellipse cx="1427" cy="655" rx="11.6" ry="14.3" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1427" cy="655" rx="3.4" ry="5.1" fill="#ffe4a7"/><ellipse cx="1467" cy="657" rx="11.6" ry="14.3" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1467" cy="657" rx="3.4" ry="5.1" fill="#ffe4a7"/><ellipse cx="1504" cy="657" rx="10.9" ry="13.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1504" cy="657" rx="3.2" ry="4.8" fill="#ffe4a7"/><ellipse cx="1573" cy="657" rx="10.9" ry="13.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1573" cy="657" rx="3.2" ry="4.8" fill="#ffe4a7"/><ellipse cx="1427" cy="522" rx="8.5" ry="10.5" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1427" cy="522" rx="2.5" ry="3.8" fill="#ffe4a7"/><ellipse cx="1456" cy="531" rx="8.5" ry="10.5" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1456" cy="531" rx="2.5" ry="3.8" fill="#ffe4a7"/><ellipse cx="1361" cy="682" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1361" cy="682" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1319" cy="647" rx="7.5" ry="9.2" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1319" cy="647" rx="2.2" ry="3.3" fill="#ffe4a7"/><ellipse cx="1356" cy="648" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1356" cy="648" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="527" cy="685" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="525.6" y="683.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="549" cy="680" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="547.6" y="678.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="569" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="567.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="609" cy="685" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="607.6" y="683.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="640" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="638.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="667" cy="677" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="665.6" y="675.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="779" cy="681" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="777.6" y="679.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="803" cy="676" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="801.6" y="674.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="834" cy="681" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="832.6" y="679.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="861" cy="667" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="859.6" y="665.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="897" cy="674" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="895.6" y="672.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="922" cy="673" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="920.6" y="671.5" width="2.8" height="3" fill="#ffd790"/></g><g class="lights-winter"><ellipse cx="1438" cy="594" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1438" cy="594" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1473" cy="595" rx="10.5" ry="13.0" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1473" cy="595" rx="3.1" ry="4.7" fill="#ffe4a7"/><ellipse cx="1515" cy="597" rx="9.9" ry="12.2" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1515" cy="597" rx="2.9" ry="4.3" fill="#ffe4a7"/><ellipse cx="1575" cy="596" rx="10.2" ry="12.6" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1575" cy="596" rx="3.0" ry="4.5" fill="#ffe4a7"/><ellipse cx="1429" cy="420" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1429" cy="420" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="1344" cy="608" rx="9.5" ry="11.8" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1344" cy="608" rx="2.8" ry="4.2" fill="#ffe4a7"/><ellipse cx="1303" cy="584" rx="7.1" ry="8.8" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1303" cy="584" rx="2.1" ry="3.2" fill="#ffe4a7"/><ellipse cx="1385" cy="587" rx="6.8" ry="8.4" fill="#ffad43" opacity=".72" filter="url(#haWindowBlur)"/><ellipse cx="1385" cy="587" rx="2.0" ry="3.0" fill="#ffe4a7"/><ellipse cx="496" cy="631" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="494.6" y="629.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="532" cy="624" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="530.6" y="622.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="563" cy="624" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="561.6" y="622.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="582" cy="620" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="580.6" y="618.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="773" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="771.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="807" cy="613" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="805.6" y="611.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="837" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="835.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="883" cy="608" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="881.6" y="606.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="927" cy="618" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="925.6" y="616.5" width="2.8" height="3" fill="#ffd790"/><ellipse cx="961" cy="619" rx="7" ry="5" fill="#ffb753" opacity=".60" filter="url(#haWindowBlur)"/><rect x="959.6" y="617.5" width="2.8" height="3" fill="#ffd790"/></g></g>\n</svg>';
 class HASeasonsUniversalCard extends HTMLElement {
   constructor(){super();this.attachShadow({mode:'open'}).innerHTML=`<style>${STYLE}</style><div id="anchor" aria-hidden="true"></div>`;this._config={idle_seconds:30,source:'auto',layout:'auto',style:'glass'};this._last=Date.now();this._weather=null;this._onActivity=this._onActivity.bind(this);this._onKey=this._onKey.bind(this);this._onTick=this._onTick.bind(this);this._onNavigation=this._onNavigation.bind(this);}
@@ -519,7 +548,7 @@ class HASeasonsUniversalCard extends HTMLElement {
     if(this._cameraActive()){if(this._visible)this._close();this._last=Date.now();return;}
     if(this._visible){this._update();return;}if(document.hidden||this._editing()||!this._hass)return;
     if(Date.now()-this._last>=clamp(Number(this._config.idle_seconds)||30,5,3600)*1000)this._open();}
-  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo"></div><div class="customseason"></div><div class="customsnow"></div><div class="customfog"></div><div class="cloudbank"></div><div class="tint"></div><div class="nightveil"></div><div class="skyshade"></div><div class="moonwash"></div><div class="cloudshade"></div><div class="warmth"></div><div class="stars"></div><div class="sceneryfx">${SCENE_SVG}</div><div class="unifiedfx">${UNIFIED_SCENE_FX}</div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas>${HOLIDAY_DECOR}<div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="wastebar" aria-live="off"><div class="wasteitem" data-waste="municipal"><span>🗑️</span><strong>Komunálny odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div><div class="wasteitem" data-waste="recycling"><span>♻️</span><strong>Separovaný odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
+  _make(){this._host=document.createElement('div');this._host.setAttribute('data-ha-seasons-universal',VERSION);this._host.attachShadow({mode:'open'}).innerHTML=`<style>${OVERLAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="photo"></div><div class="customseason"></div><div class="customsnow"></div><div class="customfog"></div><div class="cloudbank"></div><div class="tint"></div><div class="nightveil"></div><div class="skyshade"></div><div class="moonwash"></div><div class="cloudshade"></div><div class="warmth"></div><div class="stars"></div><div class="sceneryfx">${SCENE_SVG}</div><div class="unifiedfx">${UNIFIED_SCENE_FX}</div><div class="shadowTree"></div><div class="sun"></div><canvas class="moon" width="96" height="96"></canvas><div class="leaves"></div><canvas class="weatherfx"></canvas>${HOLIDAY_COMPOSITED}<div class="information"><div class="clock"></div><div class="date"></div><div class="statusbar"><div class="status"><div class="icon">🌡️</div><small>Vonku</small><b data-field="temperature">—</b></div><div class="status"><div class="icon">♨️</div><small>Kúrenie</small><b data-field="heating">—</b></div><div class="status"><div class="icon">🎁</div><small>Meniny dnes</small><b data-field="nameday">—</b></div><div class="status"><div class="icon">💡</div><small>Osvetlenie</small><b data-field="lighting">—</b></div></div><div class="wastebar" aria-live="off"><div class="wasteitem" data-waste="municipal"><span>🗑️</span><strong>Komunálny odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div><div class="wasteitem" data-waste="recycling"><span>♻️</span><strong>Separovaný odpad</strong><span class="waste-date"></span><span class="waste-when"></span></div></div><div class="extra"><span data-field="weather">—</span><span data-field="rise">🌅 —</span><span data-field="set">🌇 —</span><span data-field="moon">🌙 —</span></div></div><div class="tap">Dotkni sa obrazovky pre návrat</div></div>`;
     document.body.appendChild(this._host);this._root=this._host.shadowRoot;this._lastImage=null;
     const leaves=this._root.querySelector('.leaves');for(let i=0;i<12;i++){const n=document.createElement('i');n.className='leaf';n.style.setProperty('--top',`${7+(i%5)*6}%`);n.style.setProperty('--left',`${2+(i*13)%32}%`);n.style.setProperty('--delay',`${-(i%7)*.5}s`);leaves.append(n);}
   }
@@ -677,8 +706,8 @@ class HASeasonsUniversalCard extends HTMLElement {
     // instead of replacing its darker nighttime silhouette with a bright one.
     tree.querySelector('.tree-lights').style.filter=`brightness(${(.78+.10*d.dayLight).toFixed(3)}) saturate(.92)`;
     tree.querySelector('.tree-lights').style.opacity=(glow*.74).toFixed(3);
-    tree.style.setProperty('--ground-glow',(glow*.36).toFixed(3));
-    wreath.style.setProperty('--ground-glow',(holiday.candles?d.nightLight*.20:0).toFixed(3));
+    tree.style.setProperty('--ground-glow',(glow*.14).toFixed(3));
+    wreath.style.setProperty('--ground-glow',(holiday.candles?d.nightLight*.09:0).toFixed(3));
     const isPhotoSeason=['spring','summer','autumn','winter'].includes(d.scene);
     const stage=el('.sceneryfx'),view=el('.scene-map');
     if(sceneLayout){
@@ -706,6 +735,36 @@ class HASeasonsUniversalCard extends HTMLElement {
       wreath.style.right='auto';wreath.style.bottom='clamp(60px,12vh,120px)';
       wreath.style.width='clamp(135px,18vw,230px)';
     }
+    // Realistic contact shadows and environment light must use the exact
+    // same photo transform as the tree and wreath. No independent screen
+    // percentages, otherwise the composition falls apart on tablets.
+    const setGround=(selector,position,visible,sizeX,sizeY,dy,opacity)=>{
+      const node=el(selector);
+      if(!sceneLayout||!visible){node.style.display='none';node.style.opacity='0';return;}
+      node.style.display='block';
+      node.style.left=(position.left+position.width*.5)+'px';
+      node.style.top=(position.groundY+position.width*dy)+'px';
+      node.style.width=(position.width*sizeX)+'px';
+      node.style.height=(position.width*sizeY)+'px';
+      node.style.opacity=clamp(opacity,0,1).toFixed(3);
+    };
+    const treeVisible=holiday.tree&&this._config.show_christmas_tree!==false;
+    const wreathVisible=holiday.advent&&this._config.show_advent_wreath!==false;
+    const snowReflect=1+clamp(d.snowCover??0,0,1)*.2;
+    setGround('.tree-ground-shadow',sceneLayout?.tree,treeVisible,1.35,.34,-.01,.60);
+    setGround('.wreath-ground-shadow',sceneLayout?.wreath,wreathVisible,1.22,.31,-.01,.52);
+    setGround('.tree-ground-light',sceneLayout?.tree,treeVisible&&holiday.treeLights,2.12,.72,-.09,glow*.38*snowReflect);
+    setGround('.wreath-ground-light',sceneLayout?.wreath,wreathVisible&&holiday.candles>0,1.64,.64,-.07,d.nightLight*.24*snowReflect);
+    const wallReflection=el('.holiday-wall-reflection');
+    if(sceneLayout&&treeVisible&&holiday.treeLights){
+      const phot=sceneLayout.photo;
+      wallReflection.style.display='block';
+      wallReflection.style.left=(phot.left+568/1536*phot.width)+'px';
+      wallReflection.style.top=(phot.top+667/864*phot.height)+'px';
+      wallReflection.style.width=(187/1536*phot.width)+'px';
+      wallReflection.style.height=(130/864*phot.height)+'px';
+      wallReflection.style.opacity=(glow*.24).toFixed(3);
+    }else{wallReflection.style.display='none';wallReflection.style.opacity='0';}
     const unifiedFx=el('.unifiedfx'),unifiedMap=el('.unified-map');
     unifiedFx.style.display=useUnified?'block':'none';
     if(useUnified){

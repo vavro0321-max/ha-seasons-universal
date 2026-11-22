@@ -1,5 +1,13 @@
 # Zmeny
 
+## 1.10.7 (2026-11-22)
+- Jemné realistické kontaktné tiene pod stromčekom a vencom viazané na trávnatý terén.
+- Samostatné teplé svetelné škvrny na tráve od rozsvietených dekorácií a veľmi slabý odraz na neďalekej stene kostola.
+- Úroveň svetla sa mení s nocou, kalendárom, zapnutím výzdoby a snehovou pokrývkou; pri vypnutí dekorácií nezostávajú svetelné artefakty.
+- Mierne perspektívne naklonenie dekorácií a prirodzenejšie farebné prechody; schválené polohy a responzívna geometria 1.10.6 zostali zachované.
+- Rozšírené automatické testy fotografického kompozitingu a kalendárnych pravidiel.
+
+
 ## 1.10.6 (2026-11-22)
 - Upravené polohy realistických vianočných dekorácií presne podľa schváleného náhľadu: stromček pri kostole, veniec nižšie na tráve pri chodníku, oboje bližšie k sebe.
 - Kotvy na pôvodnej krajine: stromček (610, 720), veniec (690, 798) v rámci 1536 × 864; šírky 154 a 120. Polohy sa premietajú cez spoločnú responzívnu transformáciu fotografie a vrstiev.
