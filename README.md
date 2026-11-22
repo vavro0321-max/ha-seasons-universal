@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.12.3 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.12.4 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,17 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## V1.12.4 – technický audit funkčnosti
+
+Táto verzia prešla kontrolou existujúcich jednotkových testov **aj automatickými skúškami v skutočnom prehliadači Google Chrome** (mobil, tablet, otočenie, advent, 4 knôty, denný/nočný motív, výber zimného pozadia a rozdiel medzi polojasnom a zamračeným).
+
+- **Bez snehu:** voľba `snow_landscape: bare` skutočne vyberá zimnú fotografiu bez snehu a vypína všetky vrstvy snehovej pokrývky; rovnako `snow_cover: false`.
+- **Mobil:** oneskorené udalosti posúvania po otvorení šetriča ho už okamžite nezavrú. Zatvorenie dotykom zostáva zachované.
+- **Fotografie po aktualizácii:** JavaScript pridáva k obrázkom verziu `?v=1.12.4` na obídenie starej vyrovnávacej pamäte prehliadača. Pri ručnej inštalácii treba stále aktualizovať aj cestu k samotnému JS zdroju.
+- **Nové funkčné testy:** skript `test-browser-smoke.cjs` beží v Chrome v GitHub Actions a zachytáva nenačítané obrázky aj chyby JavaScriptu. Aktualizované sú simulátory a slovenský návod na inštaláciu.
+
+**Limity auditu:** GitHub testy nesimulujú konkrétne živé merania tvojej WS2900 ani správanie všetkých androidových prehliadačov. Sezónna zasnežená fotografia je ilustračná a nie je dôkazom, že na zemi práve leží sneh. Skutočný sneh/dážď vychádza z dostupných údajov počasia a môže mať chybu predpovede.
 
 ## Nové vo V1.12.3 – polooblačno má výrazne menej oblakov
 

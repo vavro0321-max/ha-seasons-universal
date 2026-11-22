@@ -74,3 +74,19 @@ jobs:
         run: node test-unified-landscape.cjs
       - name: Test missing photo fallback does not break dashboard
         run: node test-image-fallback.cjs
+
+  browser-smoke:
+    name: Real Chrome rendering and responsive smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser smoke runner
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.65.1
+      - name: Check Google Chrome availability
+        run: google-chrome --version
+      - name: Test responsive Advent and weather in real Chromium
+        run: node test-browser-smoke.cjs
