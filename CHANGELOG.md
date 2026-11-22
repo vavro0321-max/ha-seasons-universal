@@ -1,5 +1,12 @@
 # Zmeny
 
+## 1.12.1 (2026-11-22)
+- Zasnežené fotografie sú sezónny zimný motív aj keď aktuálne nesneží; voľba Bez snehu ostáva funkčná.
+- Padajúce vločky sa animujú výlučne pri aktuálnom hlásenom snežení alebo daždi so snehom z nezastaranej weather entity, pri teplote vhodnej na sneh.
+- Mráz, dátum v kalendári a ručne vybrané zasnežené pozadie nikdy samy nespustia animáciu sneženia.
+- Regresný test: jasné/polooblačné/zamračené počasie, mráz, manuálny sneh, zastaraná predpoveď, skutočné sneženie.
+
+
 ## 1.12.0 (2026-11-22)
 - Finálne plne zasnežené fotografické scény pre adventný deň, noc pred Mikulášom, noc od Mikuláša a obyčajnú zimu.
 - Štyri sviečky, separátne plamene s presnejším ukotvením na knôtoch; zachovaný automatický adventný kalendár.
