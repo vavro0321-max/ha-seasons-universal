@@ -1,5 +1,12 @@
 # Zmeny
 
+## 1.10.6 (2026-11-22)
+- Upravené polohy realistických vianočných dekorácií presne podľa schváleného náhľadu: stromček pri kostole, veniec nižšie na tráve pri chodníku, oboje bližšie k sebe.
+- Kotvy na pôvodnej krajine: stromček (610, 720), veniec (690, 798) v rámci 1536 × 864; šírky 154 a 120. Polohy sa premietajú cez spoločnú responzívnu transformáciu fotografie a vrstiev.
+- Jemne zosvetlené ihličie a prirodzenejšie svetielka oproti príliš tmavému testu V1.10.4.
+- Overovanie súradníc a kalendára aktualizované, režimy všetkých štyroch adventných nedieľ zachované.
+
+
 ## 1.10.5 (2026-11-22)
 - Zjednotená geometria fotografie, efektov aj adventných dekorácií; všetky vrstvy používajú identickú mierku a posun.
 - Responzívne priblíženie na výšku so súčasným zobrazením kostola a chodníka, bez nezávislého posunu dekorácií.
