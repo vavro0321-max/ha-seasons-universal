@@ -650,7 +650,14 @@ class HASeasonsUniversalCard extends HTMLElement {
   static getConfigElement(){return document.createElement('ha-seasons-universal-editor');}
   connectedCallback(){if(this._timer)return;for(const ev of ['pointerdown','touchstart','wheel','scroll'])window.addEventListener(ev,this._onActivity,true);window.addEventListener('keydown',this._onKey,true);window.addEventListener('hashchange',this._onNavigation);window.addEventListener('popstate',this._onNavigation);this._timer=window.setInterval(this._onTick,1000);this._onTick();}
   disconnectedCallback(){if(this._timer)window.clearInterval(this._timer);this._timer=null;for(const ev of ['pointerdown','touchstart','wheel','scroll'])window.removeEventListener(ev,this._onActivity,true);window.removeEventListener('keydown',this._onKey,true);window.removeEventListener('hashchange',this._onNavigation);window.removeEventListener('popstate',this._onNavigation);this._close();}
-  _onActivity(e){if(this._visible){if(e.cancelable)e.preventDefault();e.stopImmediatePropagation?.();e.stopPropagation();this._close();}this._last=Date.now();}
+  _onActivity(e){
+    // A browser can fire a delayed scroll while opening the overlay, especially
+    // after the mobile preview button was scrolled into view. That must not
+    // immediately close the freshly opened screensaver. Tap/key still closes it.
+    if(this._visible&&e.type==='scroll')return;
+    if(this._visible){if(e.cancelable)e.preventDefault();e.stopImmediatePropagation?.();e.stopPropagation();this._close();}
+    this._last=Date.now();
+  }
   _onKey(e){this._onActivity(e);}
   // Kamera in the user's dashboard is a Bubble Card pop-up (#kamery).
   // Check both the hash and named Lovelace camera views without touching the dashboard YAML.
