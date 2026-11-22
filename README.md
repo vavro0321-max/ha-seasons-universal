@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.12.4 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.12.5 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,15 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## V1.12.5 – núdzové prepnutie dňa a noci, výber funkčných senzorov
+
+Po rozšírenom audite sú opravené dve skutočné chyby:
+
+- **Výpadok `sun.sun`:** predtým sa o 23:00 alebo o 01:00 bez tejto entity zobrazoval súmrak/svetlá obloha. Ak aktuálna poloha Slnka chýba, šetrič používa približnú lokálnu dobu a rozpozná noc (20:00–06:00), ranný súmrak (06:00–09:00), deň (09:00–17:00) a večerný súmrak (17:00–20:00). Je to len núdzový odhad, nie presný astronomický výpočet.
+- **Nedostupná WS2900:** v automatickom režime sa preskočia senzory so stavom `unavailable`, nečíselné a príliš staré údaje; následne sa hľadá iný vhodný lokálny senzor. Explicitne zvolená entita zostáva vynútená podľa používateľskej konfigurácie.
+
+Nové regresné testy preverujú zlyhanie `sun.sun`, miestny čas, deň/noc a čerstvé i staré náhradné senzory. Záverečné vizuálne potvrdenie podľa skutočného počasia je možné len priamo v pripojenom Home Assistante.
 
 ## V1.12.4 – technický audit funkčnosti
 
