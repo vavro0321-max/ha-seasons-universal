@@ -7,10 +7,10 @@ vm.createContext(ctx);
 vm.runInContext(source+'\nglobalThis.geometry=landscapeHolidayPlacement;',ctx);
 const get=ctx.geometry;
 const native=get({width:1536,height:864},'cover',55,true);
-assert(Math.abs(native.tree.groundY-732)<.01,'Tree base must meet the lawn');
-assert(Math.abs(native.wreath.groundY-776)<.01,'Wreath base must rest next to path');
-assert(native.tree.left>560&&native.tree.left<600,'Tree stands immediately right of church');
-assert(native.wreath.left>native.tree.left,'Wreath should be right of the tree, clear of foreground fence');
+assert(Math.abs(native.tree.groundY-720)<.01,'Approved tree base must touch the church lawn');
+assert(Math.abs(native.wreath.groundY-798)<.01,'Approved wreath base must rest next to the path');
+assert(native.tree.left>520&&native.tree.left<545,'Tree stands directly beside the church as in the approved image');
+assert(native.wreath.left>native.tree.left&&native.wreath.left<native.tree.left+125,'Wreath must stay close to the tree and path');
 // Resolutions cover 16:9, 16:10, 4:3, ultra-wide, portrait tablets and phones.
 // Resize must recompute a SINGLE common photo/overlay/decor transform.
 for(const dims of [[1536,864],[1373,648],[780,360],[1280,800],[1024,768],
@@ -28,7 +28,7 @@ for(const dims of [[1536,864],[1373,648],[780,360],[1280,800],[1024,768],
      'Portrait photo remains entirely inside the viewport');
   }
   for(const [name,aspect,landmarkX,landmarkY] of [
-     ['tree',137/120,647,732],['wreath',93/174,790,776]]){
+     ['tree',137/120,610,720],['wreath',93/174,690,798]]){
    const p=layout[name];
    assert(p.left>=0&&p.left+p.width<=box.width+.01,
       name+' must remain visible: '+dims+' '+fit);
@@ -57,4 +57,4 @@ assert(raw.includes("tree.querySelector('.real-tree-unlit').style.filter=foliage
 assert(raw.includes("wreath.querySelector('.real-wreath-base').style.filter=foliageFilter"),'Real wreath receives night exposure correction');
 assert(raw.includes("tree.style.setProperty('--ground-glow'"),'Tree casts subtle illumination on ground');
 assert(raw.includes("wreath.style.setProperty('--ground-glow'"),'Wreath casts subtle illumination on ground');
-console.log('PASS: 1.10.5 shared photo/decor alignment, crop and rotation across 11 device sizes × 2 fits');
+console.log('PASS: 1.10.6 approved tree/wreath landmarks, shared photo/crop and rotation across 11 device sizes × 2 fits');
