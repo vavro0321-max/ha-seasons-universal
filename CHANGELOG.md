@@ -1,5 +1,14 @@
 # Zmeny
 
+## 1.11.0 (2026-11-22)
+- Oprava vyhodnocovania online oblačnosti a lokálneho slnečného žiarenia WS2900: pri dostatočne silnom, čerstvom slnečnom žiarení bez lokálneho dažďa sa regionálne „zamračené“ premení na „polooblačno“ (vrátane textu).
+- Časové kontroly starých alebo nedostupných senzorov; online režim `source: online` zostáva bez lokálneho prepisovania.
+- Fotorealistický adventný obrázok so štyrmi skutočnými sviečkami je použitý od prvej adventnej nedele počas dňa i noci, s nemennou geometriou a presne umiestnenými animovanými plameňmi. Denné zafarbenie sa vypočíta z toho istého zdroja bez skokov v polohe budov.
+- Po advente sa automaticky prepína zimný/vianočný motív podľa kalendára; 7. januára sa vracia bežná zimná krajina.
+- Diagnostický text pri korekcii oblačnosti uvádza `WS2900`; doplnené regresné testy predpovede, lokálnych dát a denných/nočných adventných režimov.
+- Skutočné stavy senzora WS2900 treba porovnať v Home Assistante; neexistuje priame spojenie z testovacieho GitHub prostredia na domácu stanicu.
+
+
 ## 1.10.8 (2026-11-22)
 - Nová fotografická adventná krajina na večer a noc s prirodzene začleneným stromčekom a vencom pri kostole a cestičke (`dist/assets/advent-photographic-evening.webp`).
 - Plamene štyroch sviečok, drobné svetelné body stromčeka a jemné svetlo na tráve zostávajú plne dynamické podľa adventného dátumu a súmraku.

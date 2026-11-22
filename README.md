@@ -1,4 +1,4 @@
-# HA Seasons Universal V1.10.8 – celoplošný šetrič Home Assistanta
+# HA Seasons Universal V1.11.0 – celoplošný šetrič Home Assistanta
 
 **HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
 
@@ -11,6 +11,32 @@
 Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
 
 ![Ukážka](docs/preview.jpg)
+
+## Nové vo V1.11.0 – finálna zima, deň/noc a presnejšie počasie
+
+**Advent:** 29.11.2026 až 24.12.2026. Fotorealistický obraz v krajine s kostolom, stromčekom a presne **4 sviečkami** sa používa vo dne aj v noci. Od 1. adventnej nedele horí večer 1 sviečka, od druhej 2, od tretej 3, od štvrtej 4. Plamene sú ukotvené priamo na knôtoch, nie nad sviečkami. Stromček je v obraze od prvej adventnej nedele; svetielka sa rozsvietia večer až od Mikuláša 6.12.
+
+**Vianoce a zima:** medzi 25.12. a 6.1. zostáva sviatočný režim so stromčekom, po 6.1. sa automaticky vráti bežná zimná krajina. V bežnej zime bez sneženia nie je automaticky nakreslený hustý sneh a denná/nočná expozícia sa riadi polohou Slnka.
+
+**Počasie:** predvolené `source: auto` preberá teplotu, dážď, slnečné žiarenie a vietor z lokálnej WS2900 (ak sú dostupné). Online entita `weather.forecast_cierne_11` alebo `weather.home` poskytuje aktuálny regionálny stav. Ak regionálne počasie tvrdí „zamračené“, ale WS2900 **čerstvo meria dostatočné slnečné žiarenie a neprší**, obraz a text prepnú na `Polooblačno · WS2900`. Slabé žiarenie sa nepoužíva na automatické dokazovanie zamračeného počasia (stanica môže byť zatienená). V noci sa oblačnosť posudzuje podľa online stavu. Staré merania sa ignorujú. Pri `source: online` lokálne slnečné žiarenie oblačnosť neprepisuje.
+
+Príklad voliteľného presného mapovania entít:
+
+```yaml
+type: custom:ha-seasons-universal-card
+source: auto
+scene: auto
+advent_photo: true
+station_max_age_minutes: 25
+entities:
+  weather: weather.forecast_cierne_11
+  temperature: sensor.ws2900_v2_02_01_outdoor_temperature
+  solar: sensor.ws2900_v2_02_01_solar_radiation
+  rain: sensor.ws2900_v2_02_01_rain_rate
+  wind: sensor.ws2900_v2_02_01_wind_speed
+```
+
+Na diagnostiku otvor **Vývojárske nástroje → Stavy** a pozri, či existujú `sensor.ws2900_v2_02_01_solar_radiation`, `sensor.ws2900_v2_02_01_rain_rate`, `sun.sun` a vybraná `weather.*` entita. Samotný GitHub test nedokáže skontrolovať živé domáce merania. Po aktualizácii obnov prehliadač alebo tablet kvôli cache.
 
 ## Nové vo V1.10.8 – fotografia pre adventné večery
 

@@ -8,17 +8,17 @@ const ctx={window:{customCards:[]},customElements:{get:()=>undefined,define:()=>
 vm.createContext(ctx);
 vm.runInContext(source+'\nglobalThis.adventPhotoTest={ADVENT_PHOTO_OVERLAY,holidayDecorAt,landscapeHolidayPlacement};',ctx);
 const {ADVENT_PHOTO_OVERLAY,holidayDecorAt,landscapeHolidayPlacement}=ctx.adventPhotoTest;
-assert(fs.existsSync('dist/assets/advent-photographic-evening.webp'),'Advent photograph must be installed');
-const b=fs.readFileSync('dist/assets/advent-photographic-evening.webp');
+assert(fs.existsSync('dist/assets/advent-photo-night-final.webp'),'Final approved four-candle photograph must be installed');
+const b=fs.readFileSync('dist/assets/advent-photo-night-final.webp');
 assert(b.length>75000&&b.toString('ascii',0,4)==='RIFF'&&b.toString('ascii',8,12)==='WEBP',
  'The Advent photo must be an actual WebP, not placeholder text');
-assert(raw.includes("const integratedAdvent=!usingCustom&&d.holiday.advent&&d.nightLight>.52"),
- 'Photographic scene must be restricted to Advent evenings and built-in backgrounds');
+assert(raw.includes("const integratedAdvent=!usingCustom&&d.holiday.advent&&"),
+ 'Photographic scene must run during Advent days AND nights for built-in backgrounds');
 assert(raw.includes("this._config.advent_photo!==false"),'User must be able to disable Advent photo');
 assert(raw.includes("this._config.show_christmas_tree!==false"),'Existing tree setting retained');
 assert(raw.includes("this._config.show_advent_wreath!==false"),'Existing wreath setting retained');
-assert(raw.includes("const image=integratedAdvent?'advent-photographic-evening.webp'"),
- 'Scene asset selection must be real, not a decorative preview');
+assert(raw.includes("const image=integratedAdvent?'advent-photo-night-final.webp'"),
+ 'Scene asset must be the approved four-candle photograph');
 assert(raw.includes("wreath.style.display=integratedAdvent||"),'No pasted duplicate wreath on photo');
 assert(raw.includes("tree.style.display=integratedAdvent||"),'No pasted duplicate tree on photo');
 assert(raw.includes("unifiedFx.style.display=useUnified&&!integratedAdvent"),'Do not double paint village effects');
@@ -40,4 +40,14 @@ for(const [w,h] of [[1536,864],[1373,648],[800,1280],[360,800],[1024,768]]){
  const p=landscapeHolidayPlacement({width:w,height:h},'cover',55,true).photo;
  assert(p.width>0&&p.height>0);
 }
-console.log('PASS integrated photographic Advent background, responsive positioning, four Sunday candles and Mikulas tree lights');
+assert(raw.includes("function recolorAdventDaylight(data,width,height,clouds)"),
+ 'Daylight photo must preserve geometry and transform only pixel colors');
+assert(raw.includes("const daylightAdvent=image==='advent-photo-night-final.webp'&&d.dayLight>=.55"),
+ 'Daylight conversion must activate for genuine daytime');
+assert(raw.includes("data-photo-candle=\"1\"")===false || ADVENT_PHOTO_OVERLAY.includes('data-photo-candle="1"'),
+ 'First candle is present as a true overlay');
+for(const id of [1,2,3,4]){
+ assert(ADVENT_PHOTO_OVERLAY.includes('data-photo-candle="'+id+'"'),
+   'Every candle has its own dynamic flame: '+id);
+}
+console.log('PASS approved photographic Advent DAY and NIGHT, four wick-aligned candles and automatic calendar');

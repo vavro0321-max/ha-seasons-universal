@@ -36,6 +36,8 @@ jobs:
         run: node --check dist/ha-seasons-universal.js
       - name: Test weather and seasonal logic
         run: node test-logic.cjs
+      - name: Test WS2900 and online weather reconciliation
+        run: node test-weather-sources.cjs
       - name: Test Advent wreath, Sunday candles and Christmas tree
         run: node test-advent.cjs
       - name: Test realistic holiday placement on the ground
