@@ -103,11 +103,17 @@ const launch=()=>new Promise((resolve,reject)=>{
     // The approved app icon is part of the actual HACS asset bundle, not an
     // external or data-URI image; verify the editor uses and loads it.
     await page.click('#editorShow');
-    await page.waitForFunction(()=>{
-      const editor=document.querySelector('#editorHost ha-seasons-universal-editor');
+    await page.waitForTimeout(500);
+    const iconDiagnostic=await page.evaluate(()=>{
+      const host=document.querySelector('#editorHost');
+      const editor=host?.querySelector('ha-seasons-universal-editor');
       const img=editor?.shadowRoot?.querySelector('.brand-icon');
-      return !!img&&img.complete&&img.naturalWidth>0;
+      return {editorPresent:!!editor,registered:!!customElements.get('ha-seasons-universal-editor'),
+        shadow:!!editor?.shadowRoot,html:host?.innerHTML.slice(0,350),img:!!img,
+        src:img?.src,complete:img?.complete,width:img?.naturalWidth};
     });
+    console.log('ICON DIAGNOSTIC',JSON.stringify(iconDiagnostic),'pageErrors',JSON.stringify(pageErrors));
+    assert(iconDiagnostic.editorPresent&&iconDiagnostic.img,'Editor must contain the approved icon');
     const iconLoaded=await page.evaluate(()=>{
       const editor=document.querySelector('#editorHost ha-seasons-universal-editor');
       const img=editor.shadowRoot.querySelector('.brand-icon');
