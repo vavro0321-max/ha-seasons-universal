@@ -1,5 +1,12 @@
 # Zmeny
 
+## 1.12.5 (2026-11-22)
+- Opravený falošne svetlý nočný režim pri výpadku alebo zastaraní entity `sun.sun`.
+- Automatický výber lokálnej meteostanice preskakuje neplatné, nedostupné a staré merania a využije funkčný náhradný senzor.
+- Ručne zvolené entity zostávajú zachované.
+- Regresný test `test-sensor-sun-fallback.cjs` overuje obe opravy.
+
+
 ## 1.12.4 (2026-11-22)
 - Kompletný audit Node.js testov, obrázkov a skutočného zobrazenia v Google Chrome; nový browser smoke CI job.
 - Oprava voľby zimnej krajiny Bez snehu: správna suchá fotografia aj vypnuté grafické vrstvy snehu.

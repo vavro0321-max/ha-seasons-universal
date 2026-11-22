@@ -40,6 +40,8 @@ jobs:
         run: node test-weather-sources.cjs
       - name: Test real-time weather changes and stale telemetry
         run: node test-reality-sync.cjs
+      - name: Test offline sun position and available backup station sensors
+        run: node test-sensor-sun-fallback.cjs
       - name: Test visibly fewer clouds for partly cloudy weather
         run: node test-partly-cloud-visibility.cjs
       - name: Test seasonal winter photo versus actual live snowfall
