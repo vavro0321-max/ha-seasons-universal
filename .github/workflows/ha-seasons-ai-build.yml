@@ -1,0 +1,72 @@
+name: HA Seasons AI - test and install package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-package:
+    name: Validate V1.3 and package for Home Assistant
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out clean project
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check project structure and JavaScript syntax
+        run: |
+          set -euo pipefail
+          test -f dist/ha-seasons-ai.js
+          test -f dist/holiday-engine.mjs
+          test -f dist/camera-guard.mjs
+          test -f dist/weather-engine.mjs
+          test -f dist/snow-engine.mjs
+          test -f dist/assets/advent-candles-1.webp
+          test -f dist/assets/advent-candles-2.webp
+          test -f dist/assets/advent-candles-3.webp
+          test -f dist/assets/advent-candles-4.webp
+          test -f dist/seasons/winter.webp
+          test -f dist/background-default.jpg
+          test ! -e dist/ha-seasons-universal.js
+          node --check dist/ha-seasons-ai.js
+          for file in dist/*.mjs; do node --check "$file"; done
+
+      - name: Test snow, weather, camera protection and holidays
+        run: |
+          set -euo pipefail
+          node dist/test-engine.mjs
+          node dist/test-camera-guard.mjs
+          node dist/test-holidays.mjs
+          node dist/test-advent-gallery.mjs
+
+      - name: Prepare installable Home Assistant files
+        run: |
+          set -euo pipefail
+          mkdir -p install/ha-seasons-ai-v1-3
+          cp dist/ha-seasons-ai.js dist/weather-engine.mjs dist/camera-guard.mjs \
+            dist/holiday-engine.mjs dist/snow-engine.mjs dist/background-default.jpg \
+            install/ha-seasons-ai-v1-3/
+          cp -R dist/assets dist/seasons install/ha-seasons-ai-v1-3/
+          cp README.md install/INSTALLATION-SK.md
+          printf '%s\n' 'Inštalácia: skopíruj ha-seasons-ai-v1-3 do /config/www/ v Home Assistant.' \
+            'Resource: /local/ha-seasons-ai-v1-3/ha-seasons-ai.js?v=1.3.0' \
+            'Karta: type: custom:ha-seasons-ai-card' > install/START-HERE.txt
+
+      - name: Upload installation ZIP contents
+        uses: actions/upload-artifact@v4
+        with:
+          name: HA-Seasons-AI-V1.3-Home-Assistant
+          path: install/
+          if-no-files-found: error
+          retention-days: 30
