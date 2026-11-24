@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {visualWeather,numberOrNull,moonPhaseFromHass,readWeather,conditionFromHass} from './weather-engine.mjs';
+import {snowStep} from './snow-engine.mjs';
+let count=0;
+function check(name,fn){fn(); console.log('PASS',name);count++;}
+check('0°C is valid, unknown is not',()=>{assert.equal(numberOrNull('0'),0);assert.equal(numberOrNull('unavailable'),null);assert.equal(numberOrNull(null),null)});
+check('sunny vs partlycloudy vs cloudy',()=>{const a=visualWeather({condition:'sunny',elevation:30});const b=visualWeather({condition:'partlycloudy',elevation:30});const c=visualWeather({condition:'cloudy',elevation:30});assert.ok(a.cloud<b.cloud&&b.cloud<c.cloud);assert.ok(a.sunOpacity>c.sunOpacity)});
+check('raining when warm',()=>{assert.equal(visualWeather({condition:'rainy',temperature:8}).precipitation,'rain')});
+check('snow while cold',()=>{assert.equal(visualWeather({condition:'snowy',temperature:-1}).precipitation,'snow')});
+check('mixed precipitation above 1°C is rain',()=>{assert.equal(visualWeather({condition:'snowy-rainy',temperature:4}).precipitation,'rain')});
+check('rain rate local station',()=>{assert.equal(visualWeather({condition:'sunny',temperature:8,rainRate:1}).precipitation,'rain')});
+check('not guessing snow from subzero rain rate',()=>{assert.equal(visualWeather({condition:'sunny',temperature:-2,rainRate:2}).precipitation,'none')});
+check('sun is invisible and moon visible at night',()=>{const r=visualWeather({condition:'clear-night',elevation:-18});assert.equal(r.sunOpacity,0);assert.ok(r.moonOpacity>.9)});
+check('moon phase sensor',()=>{assert.equal(moonPhaseFromHass({states:{'sensor.moon_phase':{state:'first_quarter'}}}).icon,'🌓')});
+check('weather state autodetection',()=>{assert.equal(conditionFromHass({states:{'weather.demo':{state:'fog'}}}).condition,'fog')});
+check('reading HA entities',()=>{const states={'sun.sun':{state:'above_horizon',attributes:{elevation:20,azimuth:140}},'weather.home':{state:'partlycloudy',attributes:{temperature:1}},'sensor.ws2900_v2_02_01_outdoor_temperature':{state:'-1',attributes:{unit_of_measurement:'°C'}}};const w=readWeather({states,config:{time_zone:'Europe/Bratislava'}});assert.equal(w.condition,'partlycloudy');assert.equal(w.temperature,-1)});
+check('accumulation -1 snowy 30min',()=>{assert.equal(snowStep({cover:30,temperature:-1,condition:'snowy',hours:.5}).cover,38)});
+check('holding at -4 cloudy',()=>{assert.equal(snowStep({cover:38,temperature:-4,condition:'cloudy',hours:.5}).cover,38)});
+check('melting +3 cloudy',()=>{assert.equal(snowStep({cover:38,temperature:3,condition:'cloudy',hours:.5}).cover,33)});
+check('melting +7 rainy',()=>{assert.equal(snowStep({cover:38,temperature:7,condition:'rainy',hours:.5}).cover,25)});
+check('invalid weather holds snow',()=>{assert.equal(snowStep({cover:38,temperature:null,condition:'unknown',hours:.5}).cover,38)});
+console.log(`Total: ${count} unit tests passed`);

@@ -1,511 +1,191 @@
-# HA Seasons Universal V1.12.6 – celoplošný šetrič Home Assistanta
+# HA Seasons AI V1.3 — čistý projekt
 
-<img src="dist/assets/app-icon.webp" width="96" height="96" alt="Oficiálna ikona HA Seasons Universal">
+Inštalácia: z tohto repozitára stiahni ZIP (Code → Download ZIP), rozbaľ ho a **obsah priečinka `dist/`** skopíruj do `/config/www/ha-seasons-ai-v1-3/` v Home Assistante. Zaregistruj JavaScript modul `/local/ha-seasons-ai-v1-3/ha-seasons-ai.js?v=1.3.0` a pridaj kartu `type: custom:ha-seasons-ai-card`.
 
-**HA Seasons Universal** is an adaptive, full-screen Home Assistant dashboard screensaver with seasonal scenery, live weather, rain and snow effects, and a visual card editor. It works with or without a local weather station and adapts automatically to landscape or portrait tablet layouts.
+Pôvodná implementácia HA Seasons Universal bola nahradená novou. História starých commitov a prípadné staré vetvy v GitHube zostávajú, pretože operácia mení iba obsah aktuálnej vetvy `main`.
 
-<!-- ha-marketplace:exclude-start -->
-[![Open HA Seasons Universal in your Home Assistant Marketplace](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=vavro0321-max&repository=ha-seasons-universal&category=plugin)
+# HA Seasons AI FINAL V1.3 — Advent a nové fotopozadie
 
-**Quick install:** Open the Marketplace badge above, add this public repository as a custom **Dashboard** repository and install it. Until this project is accepted into the public Marketplace catalog, search results will not include it automatically.
-<!-- ha-marketplace:exclude-end -->
+**Toto je čistý náhradný projekt:** repozitár má po inštalácii obsahovať iba aktuálne súbory v dist/ a dokumentáciu, nie staré HA Seasons Universal.
 
-Samostatný šetrič obrazovky pre ľubovoľný Lovelace dashboard. **Nemení jeho vzhľad, rozloženie, karty ani ovládanie.** Po 30 sekundách nečinnosti sa zobrazí celoplošná sezónna krajina. Jeden dotyk obnoví pôvodný dashboard (prvý dotyk nič v domácnosti nezapne).
+**Fotografický advent:** Od prvej adventnej nedele sa rozsvieti prvá sviečka, počas ďalších nedieľ druhá, tretia a štvrtá. Pri štandardnej krajine sa od súmraku zobrazí fotografická scéna s vencom, cez deň zostáva bežná svetlá krajina. Pri vlastných fotografiách sa použije univerzálny dekor, bez prepisovania používateľskej fotky. Vianočné svetlá na pozadí od 16. decembra.
 
-![Ukážka](docs/preview.jpg)
+# HA Seasons AI – V1.3.0 (sviatky + počasie + ochrana kamier)
 
-## V1.12.6 – ikona aplikácie
+**Dynamická krajina pre Home Assistant Green (Lovelace custom card).** Tento balík zachováva vizuálne schválený základ: chata, jazero, kostolík, hodiny, dátum, štyri karty **Vonku / Kúrenie / Meniny dnes / Osvetlenie**. Spodok zostáva čistý – žiadny ďalší informačný riadok.
 
-Pridaná schválená ikona **HA Seasons Universal** s motívom kostolíka, krajiny, ročných období a adventného venca so štyrmi sviečkami. Kompaktný obrázok je súčasťou inštalácie v `dist/assets/app-icon.webp` a zobrazuje sa v záhlaví grafického editora. Používa sa aj v dokumentácii a v záložke oboch testovacích stránok.
+## Čo funguje
 
-Týmto sa **nemení ikona celej mobilnej aplikácie Home Assistant ani ikona položky v katalógu HACS** – ich zobrazenie riadi platforma a tento doplnok ich bez podpory platformy nevie prepísať. V samotnom šetriči dekoratívne logo nezakrýva fotografiu.
+- Štyri predpripravené AI sezóny, automaticky podľa mesiaca; vlastné sezónne obrázky alebo jedna vlastná fotografia cez URL (`/local/...`).
+- Sneh ako vizuálne prelínanie zimného variantu (0–100 %); **pamäť snehu je helper v HA**.
+- Dynamické oblaky: jasno, polooblačno, oblačno, zamračené, sneženie. Plynulé zmeny intenzity, pohyb je voliteľný.
+- Dážď/sneženie ako vrstvy; intenzita dažďa z voliteľného senzora mm/h. Hmla pri stavoch fog/mist.
+- Deň/súmrak/noc podľa `sun.sun`: výška slnka, azimut. Slnko a mesiac reagujú na oblačnosť.
+- Fáza Mesiaca z `sensor.moon_phase`, inak iba všeobecná ilustračná ikona. **Umiestnenie Mesiaca na fotografii nie je skutočná astronomická poloha.**
+- Štyri živé karty: vonkajšia teplota, kúrenie, meniny, zapnuté svetlá.
+- **Zachované z V1.1:** šetrič sa automaticky spustí po **30 sekundách nečinnosti**; dotykom sa zavrie.
+- **Sviatky:** Vianoce od 16. decembra do 6. januára (s osobitnými dňami); adventný veniec od prvej adventnej nedele, sviečky 1–4, Nový rok, Traja králi, Veľká noc podľa pohyblivého dátumu, 1. máj, Deň matiek, sviatok všetkých svätých a ďalšie vybrané slovenské pamätné dni. Dekorácie sú jemné a **voliteľné**; bez Santu.
+- **Vianočné svetielka a kostolík:** po súmraku malé svetlá pri hornom okraji, na našich pribalených panorámach po súmraku aj jemné teplé zvýraznenie existujúceho kostolíka. Cez deň sú tieto svetlá vypnuté. Na vlastnej fotografii nepredpokladáme polohu kostola, takže tento lokálny efekt vypneme; ostatné sviatočné prvky ostávajú.
+- **Ochrana kamier:** na stránke/sekcii `#kamery`, počas otvoreného dialógového okna kamery alebo pri prehrávanom videu sa automaticky nespustí. Po zatvorení kamery začne úplne nový 30-sekundový odpočet.
+- Responzívne pre mobil/tablet. Úsporný režim vypína pohybové animácie.
 
-V tejto verzii je tiež opravená staršia chyba zobrazovania grafického editora pri texte s cestami k vlastným obrázkom. Opravu overuje test v skutočnom Chrome.
+## 1. Najprv otestujte
 
-## V1.12.5 – núdzové prepnutie dňa a noci, výber funkčných senzorov
+1. Rozbaľ ZIP na PC alebo mobile. (Predchádzajúcu funkčnú V1.0 si nechaj ako zálohu.)
+2. Otvor `TEST_STANDALONE.html` priamo v **Chrome** ako lokálny súbor (nie v textovom náhľade ChatGPT, ktorý môže zobraziť iba kód). Súbor obsahuje **všetky obrázky a JavaScript**, pracuje offline.
+3. Ak zariadenie neumožní spustiť lokálny HTML, spusti v rozbalenom adresári na PC `python -m http.server 8765`, potom v prehliadači otvor `http://localhost:8765/TEST.html`. Ak si na inom zariadení v tej istej sieti, použi IP PC namiesto localhost.
+4. Na spodnom testovacom paneli nastav: ročné obdobie, stav počasia, teplotu, výšku slnka, sneh a fázu mesiaca. Klikni **Simulovať 30 minút snehu** alebo **Ukážka deň → noc**.
+5. **Test automatického spúšťania:** po otvorení testu nedotýkaj sa obrazovky **30 sekúnd** → šetrič nabehne. Dotykom ho zavri. Klikni na **📹 Otvoriť kameru** a nechaj náhľad otvorený viac ako 30 sekúnd → šetrič sa NESMIE spustiť. Zavri kameru → začne nový odpočet 30 sekúnd. Tlačidlo **📺 Otvoriť sekciu Kamery** testuje blokovanie `#kamery`.
+6. Panel je **simulácia**, nie aktuálne hodnoty zo zariadení.
 
-Po rozšírenom audite sú opravené dve skutočné chyby:
+## 2. Inštalácia do Home Assistant Green (bez prepisovania starej verzie)
 
-- **Výpadok `sun.sun`:** predtým sa o 23:00 alebo o 01:00 bez tejto entity zobrazoval súmrak/svetlá obloha. Ak aktuálna poloha Slnka chýba, šetrič používa približnú lokálnu dobu a rozpozná noc (20:00–06:00), ranný súmrak (06:00–09:00), deň (09:00–17:00) a večerný súmrak (17:00–20:00). Je to len núdzový odhad, nie presný astronomický výpočet.
-- **Nedostupná WS2900:** v automatickom režime sa preskočia senzory so stavom `unavailable`, nečíselné a príliš staré údaje; následne sa hľadá iný vhodný lokálny senzor. Explicitne zvolená entita zostáva vynútená podľa používateľskej konfigurácie.
-
-Nové regresné testy preverujú zlyhanie `sun.sun`, miestny čas, deň/noc a čerstvé i staré náhradné senzory. Záverečné vizuálne potvrdenie podľa skutočného počasia je možné len priamo v pripojenom Home Assistante.
-
-## V1.12.4 – technický audit funkčnosti
-
-Táto verzia prešla kontrolou existujúcich jednotkových testov **aj automatickými skúškami v skutočnom prehliadači Google Chrome** (mobil, tablet, otočenie, advent, 4 knôty, denný/nočný motív, výber zimného pozadia a rozdiel medzi polojasnom a zamračeným).
-
-- **Bez snehu:** voľba `snow_landscape: bare` skutočne vyberá zimnú fotografiu bez snehu a vypína všetky vrstvy snehovej pokrývky; rovnako `snow_cover: false`.
-- **Mobil:** oneskorené udalosti posúvania po otvorení šetriča ho už okamžite nezavrú. Zatvorenie dotykom zostáva zachované.
-- **Fotografie po aktualizácii:** JavaScript pridáva k obrázkom verziu `?v=1.12.4` na obídenie starej vyrovnávacej pamäte prehliadača. Pri ručnej inštalácii treba stále aktualizovať aj cestu k samotnému JS zdroju.
-- **Nové funkčné testy:** skript `test-browser-smoke.cjs` beží v Chrome v GitHub Actions a zachytáva nenačítané obrázky aj chyby JavaScriptu. Aktualizované sú simulátory a slovenský návod na inštaláciu.
-
-**Limity auditu:** GitHub testy nesimulujú konkrétne živé merania tvojej WS2900 ani správanie všetkých androidových prehliadačov. Sezónna zasnežená fotografia je ilustračná a nie je dôkazom, že na zemi práve leží sneh. Skutočný sneh/dážď vychádza z dostupných údajov počasia a môže mať chybu predpovede.
-
-## Nové vo V1.12.3 – polooblačno má výrazne menej oblakov
-
-Pri stave **Polooblačno** sa teraz používa približne pätnásťkrát slabšia vrstva generovaných oblakov než pri stave **Zamračené** (0,022 vs. 0,34). Počas dňa sa obloha jemne rozjasní do modra a slnko bude viditeľnejšie. Zamračené naďalej znamená výrazne viac oblakov a tlmenejšie svetlo.
-
-Úprava sa mení automaticky podľa platného počasia z Home Assistanta, bez nastavenia pre konkrétny tablet. Počas dažďa a sneženia sa modré presvetlenie vypne; v noci tiež. Pôvodné oblaky, ktoré sú priamo súčasťou fotografie, sa týmto efektom úplne nevymažú – výrazný rozdiel tvorí hlavne obloha, vrstva generovaných oblakov a jas scény.
-
-## Nové vo V1.12.2 – aktuálny stav počasia a WS2900
-
-- **Slnečno / polojasno / zamračené:** keď lokálna WS2900 nameria slnečné žiarenie a online počasie hlási zamračené, údaj sa konzervatívne upraví na polojasno. Nízke žiarenie samo osebe **nedokazuje**, že je zamračené.
-- **Dážď:** aktuálna intenzita dažďa z WS2900 má prednosť pred nesúhlasným online stavom pri animácii. Názov počasia už neukazuje „Slnečno“, ak stanica naozaj meria dážď. Pri online „Prší“, ale nulovom lokálnom daždi a slnku, sa ukáže lokálne polojasno; táto nezhoda nie je dôkaz, že v okolí vôbec neprší.
-- **Nedostupné / staré údaje:** predpoveď staršia než 180 minút je ignorovaná. Pri starom online počasí sa nepoužíva ani jeho stará teplota, vietor či vlhkosť. Ak chýba predpoveď aj použiteľná stanica, zobrazí sa „Počasie nedostupné“ a neutrálny stav oblohy namiesto vymysleného slnečna.
-- **Zima:** zasnežená fotografia je sezónny vzhľad. Padajúce vločky sú nezávislá animácia viazaná na aktuálne hlásenie sneženia; teplota alebo dátum samotné vločky nespúšťajú. Nastavenie **Sneh na zemi → Automaticky v zime** teraz označuje skutočné správanie.
-- **Aktualizácia:** karta spracúva aktuálne stavy Home Assistanta pri prijatí nových entít a počas aktívneho šetriča sa obnovuje. Testy simulujú zmenu senzorov aj zastarané merania.
-
-**Dôležité obmedzenie:** bez priameho pripojenia k lokálnej inštancii Home Assistanta a skutočným meraniam WS2900 sa nedá potvrdiť, či aktuálny výjav zodpovedá počasiu pred tvojím domom. Automatické testy overujú logiku nad simulovanými stavmi, nie živú meteorologickú presnosť.
-
-## Nové vo V1.12.1 – zimná krajina nie je sneženie
-
-**Zimné obdobie** automaticky používa zasneženú krajinu cez deň aj v noci (vrátane adventných fotografií). Toto je *ilustračný sezónny vzhľad* a nepredstavuje meranie skutočnej snehovej pokrývky. Ak chceš zimnú krajinu bez snehu, v grafickom editore nastav **Sneh na zemi → Bez snehu**.
-
-**Padajúce vločky** sa zobrazujú iba pri aktuálnom hlásení `snowy` alebo `snowy-rainy` z povolenej, nie zastaranej entity `weather.*` a pri teplote najviac 2 °C (alebo keď teplota nie je známa). Po zmene počasia sa animácia vypne; ani mráz, ani december, ani ručne zvolená zasnežená fotografia ju nespustia. Animáciu môžeš nezávisle vypnúť voľbou **Padajúci dážď / sneh**.
-
-**Poznámka k WS2900:** bežný senzor `rain_rate` nedokáže spoľahlivo odlíšiť padajúci sneh od dažďa. Bez samostatného senzora sneženia používame aktuálny stav online počasia v Home Assistante; ten môže byť miestami nepresný. Fotografie a animácia sú oddelené, takže nesprávna predpoveď nepremení samotný zimný motív na iné ročné obdobie.
-
-## Nové vo V1.12.0 – finálna bohatá zasnežená krajina ❄️
-
-- Pridané **štyri skutočné zasnežené WebP fotografie**: adventný deň, adventná noc so stromčekom od Mikuláša, adventná noc s nesvietiacim stromčekom pred Mikulášom a bežná zimná krajina bez sviatočných dekorácií.
-- Stromček a veniec sú v týchto fotografiách priamo zakomponované do terénu. Na venci sú štyri červené sviečky; plamene sú samostatné efekty ukotvené pri ich knôtoch, ktoré sa rozsvecujú po jednej každú adventnú nedeľu len v noci.
-- Pri snežení sa použije naozaj **zasnežený obraz**, nie iba priesvitná biela vrstva. Zastavenie sneženia automaticky nepreukazuje prítomnosť snehu na zemi; preto je v grafickom editore voľba **Sneh na zemi: Automaticky / Zasnežená krajina / Bez snehu**. V režime Automaticky sa plne zasnežená fotografia používa počas zimného obdobia bez ohľadu na to, či práve padajú vločky.
-- Mimo adventu, najmä od 7. januára, zostane bežná zimná zasnežená fotografia **bez stromčeka a venca**.
-- Predošlé rozlišovanie polojasna podľa čerstvých údajov WS2900 a online predpovede zostáva zachované; chýbajúca meteoentita nebráni zobrazeniu.
-- Grafika používa spoločnú responzívnu geometriu na mobile aj tablete. Nemení rozloženie dashboardu ani neovláda reálne zariadenia.
-
-Automatické testy overujú kód, fotografie, kalendár a prepínače; finálny vzhľad a presnosť aktuálneho počasia treba ešte potvrdiť na miestnom HA zariadení.
-
-## Nové vo V1.11.0 – finálna zima, deň/noc a presnejšie počasie
-
-**Advent:** 29.11.2026 až 24.12.2026. Fotorealistický obraz v krajine s kostolom, stromčekom a presne **4 sviečkami** sa používa vo dne aj v noci. Od 1. adventnej nedele horí večer 1 sviečka, od druhej 2, od tretej 3, od štvrtej 4. Plamene sú ukotvené priamo na knôtoch, nie nad sviečkami. Stromček je v obraze od prvej adventnej nedele; svetielka sa rozsvietia večer až od Mikuláša 6.12.
-
-**Vianoce a zima:** medzi 25.12. a 6.1. zostáva sviatočný režim so stromčekom, po 6.1. sa automaticky vráti bežná zimná krajina. V bežnej zime bez sneženia nie je automaticky nakreslený hustý sneh a denná/nočná expozícia sa riadi polohou Slnka.
-
-**Počasie:** predvolené `source: auto` preberá teplotu, dážď, slnečné žiarenie a vietor z lokálnej WS2900 (ak sú dostupné). Online entita `weather.forecast_cierne_11` alebo `weather.home` poskytuje aktuálny regionálny stav. Ak regionálne počasie tvrdí „zamračené“, ale WS2900 **čerstvo meria dostatočné slnečné žiarenie a neprší**, obraz a text prepnú na `Polooblačno · WS2900`. Slabé žiarenie sa nepoužíva na automatické dokazovanie zamračeného počasia (stanica môže byť zatienená). V noci sa oblačnosť posudzuje podľa online stavu. Staré merania sa ignorujú. Pri `source: online` lokálne slnečné žiarenie oblačnosť neprepisuje.
-
-Príklad voliteľného presného mapovania entít:
+1. Vytvor zálohu konfigurácie Home Assistanta.
+2. Skopíruj z priečinka balíka tieto položky do **`/config/www/ha-seasons-ai-v1-3/`**:
+   - `ha-seasons-ai.js`
+   - `weather-engine.mjs`
+   - `camera-guard.mjs` (NEVYNECHAŤ!)
+   - **`holiday-engine.mjs` (NOVÉ V1.3; nevynechať!)**
+   - `background-default.jpg`
+   - celý priečinok `assets/`
+   - celý priečinok `seasons/`
+3. V Home Assistant v **Nastavenia → Nástenky (Dashboards) → Zdroje** pridaj nový zdroj (typ **JavaScript modul**) so URL:
+   `/local/ha-seasons-ai-v1-3/ha-seasons-ai.js?v=1.3.0`
+4. Vytvor testovaciu nástenku a pridaj ručnú kartu:
 
 ```yaml
-type: custom:ha-seasons-universal-card
-source: auto
-scene: auto
-advent_photo: true
-station_max_age_minutes: 25
+type: custom:ha-seasons-ai-card
+idle_seconds: 30
+block_when_camera_open: true
+camera_views:
+  - kamery
+  - kamera
+  - cameras
+  - camera
+holidays_enabled: true
+show_holiday_label: true
+holiday_animations: true
+holiday_church_lights: true
+preview_holiday: auto
+# Pre neštandardné popupy môžeš pridať:
+# camera_block_selectors: ".moje-kamery-popup"
+background_mode: seasonal
+preview_season: auto
+dynamic_weather: true
+show_clouds: true
+show_precipitation: true
+show_sun: true
+show_moon: true
+show_fog: true
+cloud_motion: true
+low_motion: false
+sky_height: 53
+dynamic_snow: true
+weather_entity: weather.home
+moon_entity: sensor.moon_phase
+rain_rate_entity: sensor.ws2900_v2_02_01_rain_rate
+snow_cover_entity: input_number.ha_seasons_snow_cover
 entities:
-  weather: weather.forecast_cierne_11
   temperature: sensor.ws2900_v2_02_01_outdoor_temperature
-  solar: sensor.ws2900_v2_02_01_solar_radiation
-  rain: sensor.ws2900_v2_02_01_rain_rate
-  wind: sensor.ws2900_v2_02_01_wind_speed
-```
-
-Na diagnostiku otvor **Vývojárske nástroje → Stavy** a pozri, či existujú `sensor.ws2900_v2_02_01_solar_radiation`, `sensor.ws2900_v2_02_01_rain_rate`, `sun.sun` a vybraná `weather.*` entita. Samotný GitHub test nedokáže skontrolovať živé domáce merania. Po aktualizácii obnov prehliadač alebo tablet kvôli cache.
-
-## Nové vo V1.10.8 – fotografia pre adventné večery
-
-Počas adventu **od prvej adventnej nedele do Štedrého dňa** používa šetrič po zotmení novú fotografickú krajinu s **vianočným stromčekom pri kostole a vencom pri ceste priamo zakomponovanými do obrázka**. Nejde už o samostatné prilepené obrázky s ostrými okrajmi. Z obrazového podkladu boli odstránené pevné hodiny a informačné karty; čas, dátum, počasie a ďalšie údaje naďalej zobrazuje Home Assistant naživo. Fotografický podklad je odvodený od schválenej ukážky, takže môže mať drobné odlišnosti od pôvodného screenshotu.
-
-**Automatické pravidlá zostali:** 29. novembra 2026 sa zobrazí veniec s prvou zapálenou sviečkou a nesvietiaci stromček. Každú ďalšiu adventnú nedeľu pribúda jeden plamienok. Od **6. decembra** sa stromček večer rozsvieti. Malé svetlá a plamene sa pridávajú ako presne ukotvené svetelné body k fotografii, nie ako druhý prekrývajúci obrázok. **Po 24. decembri** sa zostava vráti k bežnej vianočnej krajine s pôvodnými riadenými dekoráciami, do 6. januára. Počas dňa sa používa svetlá živá sezónna krajina, aby napriek nočnej predlohe nebol cez obed nočný obraz.
-
-Grafický editor má voliteľnú položku **Advent: fotografický motív večer** (predvolene zapnuté), prípadne YAML `advent_photo: true`. Ak je nastavená vlastná fotografia alebo niektorá dekorácia vypnutá, použije sa pôvodné univerzálne zobrazenie. Fotografia aj svetlá používajú rovnaké responzívne súradnice na mobile a tablete.
-
-Test: `dist/ADVENT-TEST.html`; kontrolný súbor: `test-photographic-advent.cjs`.
-
-## Nové vo V1.10.7 – prirodzené začlenenie adventnej výzdoby do fotografie
-
-Stromček aj veniec zostávajú na **schválených miestach pri kostole a ceste**. Nemajú sa zobrazovať ako dvojica obrázkov s ostrou hranou, ale ako súčasť pôvodnej krajiny. Pribudla kompozičná vrstva s rozostrenými kontaktnými tieňmi pod výzdobou, jemným teplým svetlom na tráve a sotva viditeľným odrazom rozsvieteného stromčeka na fasáde kostola. Objektom sa mení expozícia podľa dňa a noci; žlté osvetlenie zhasína spolu so svetlami. Pri vypnutých dekoráciách, pred Mikulášom (stromček) a mimo adventu (veniec) neostávajú v krajine žiadne cudzie svetelné škvrny.
-
-Umiestnenie aj svetelné efekty sú ukotvené **na spoločné súradnice fotografie**, preto sa automaticky škálujú spolu s panorámou pri otočení mobilu alebo tabletu. Na ľubovoľnom vlastnom obrázku sa zachová univerzálne rozloženie dekorácií bez dodatočného svetelného odrazu na neznámych budovách.
-
-Toto je vykresľovanie s vrstvením, **nie nové vygenerovanie celého fotografického pozadia**: presný vzhľad musí potvrdiť vizuálny test na skutočnom zariadení.
-
-## Nové vo V1.10.6 – dekorácie podľa schváleného vizuálneho návrhu
-
-Po vizuálnom odsúhlasení záberu z 22. novembra 2026 sú ornamenty natrvalo umiestnené podľa pôvodnej fotografie s kostolom vľavo: **stromček stojí tesne napravo od kostola na trávniku a veniec leží o niečo viac vpravo, nižšie na tráve pri zakrivenej cestičke**. Oba sú proporčne prispôsobené krajine a osvetlenie pôsobí prirodzenejšie v noci.
-
-Schválené kotviace body na panoráme 1536 × 864: stromček pri (610, 720), veniec pri (690, 798). Sú to súradnice fotografie, nie displeja. Karta automaticky premieta kotviace body pri orezaní pozadia a otočení mobilu alebo tabletu. Na ľubovoľných vlastných fotografiách sú miesta kostola a cesty neznáme, takže karta naďalej používa všeobecné rozloženie.
-
-Kód má automatické testy dátumov, 11 veľkostí displeja a kontrolu relatívnych súradníc. **Vizuálnu zhodu s návrhom treba overiť na reálnom zariadení**, pretože samotné testy nepokrývajú fotorealistickosť ani všetky okraje obrázkov.
-
-## Nové vo V1.10.5 – skutočne responzívna krajina na mobiloch a tabletoch
-
-Pri starších verziách sa na úzkej obrazovke fotografie orezali inak než stromček a veniec. To mohlo narušiť ich umiestnenie pri kostole a chodníku.
-
-Teraz **fotografia, grafické vrstvy a obe dekorácie používajú rovnaký výpočet mierky, polohy aj orezu**. Na displejoch 16:9, 16:10, 4:3 a širokých mobiloch sa krajina prispôsobí dostupnému priestoru. Pri zvislej orientácii sa vytvorí špeciálny spodný výrez kostola a cesty, aby dekorácie nezmizli z obrazovky; horná časť poskytne miesto pre hodiny a informačné karty. Pri otočení zariadenia sa všetko automaticky prepočíta.
-
-**Bez manuálneho nastavenia rozmerov:** používaj `layout: auto` a `scene: auto`. Na vlastnom obrázku, ktorého kostol a cestičku nepoznáme, zostáva univerzálne umiestnenie dekorácií; presné vizuálne ukotvenie na inej fotografii vyžaduje osobitné polohy. Formát 16:9 nie je možné rovnako celý zobraziť na každom displeji bez orezu alebo prázdnych okrajov, preto sa zorné pole pri rôznych pomeroch strán mierne líši.
-
-## Nové vo V1.10.4 – prirodzenejší vzhľad vianočnej výzdoby
-
-Podľa skutočnej snímky testovacej obrazovky sme upravili dve chyby: **veniec prekrýval drevený plot a stromček pôsobil akoby bol vo vzduchu**. Stromček má spodok ukotvený hlbšie na trávnatom svahu vedľa kostola; menší veniec stojí na trávnatej strane kľukatej cestičky, už nie pred plotom.
-
-Realistické obrázkové výrezy sa teraz **stmavujú spolu s nočnou krajinou**, preto ich zelená farba a ozdoby nevyzerajú nalepené na tmavom pozadí. Žiarovky a plamienky zostávajú viditeľné a do okolia pridávajú len jemný teplý svetelný nádych. Všetky výpočty rozsvecovania počas adventu sa zachovali; reálne svetlá v dome sa neovládajú.
-
-Dátumy aj polohy skontroluje `test-advent.cjs` a `test-holiday-placement.cjs`. Fotorealistický obrázok je stále iba návrh – skutočný efekt over cez `dist/ADVENT-TEST.html` pred nasadením na tablet.
-
-## Nové vo V1.10.3 – dekorácie už nevisia nad krajinou
-
-Stromček a veniec sa kotvia k terénu na zimnej fotografii. Na testovacom náhľade bolo vidno, že predchádzajúci stromček visel vo vzduchu a zasahoval do vstupu kostola. Stromček je teraz menší a posunutý nižšie a doprava, ku tráve medzi kostolom a existujúcim stromom. Veniec je menší, pri zakrivenej cestičke a má kontakt s terénom. Polohy sa prenášajú podľa orezu panorámy a pri režime na výšku zostávajú dekorácie viditeľné. Rozsvietenie počas adventu pokračuje bez zmeny.
-
-## Nové vo V1.10.2 – realistické adventné dekorácie
-
-Predošlé kreslené SVG stromček a veniec boli nahradené **fotografickými výrezmi s priehľadným pozadím**. Používajú sa samostatné obrázky pre rozsvietený a zhasnutý stromček, nezapálený veniec a plamienky. Vstavanú krajinu nepremaľovávajú. Na pôvodnej fotografii s kostolom je stromček **napravo od kostola medzi kostolom a najbližším stromom**, veniec **pri kľukatej ceste blízko stromčeka**.
-
-Zachované: od prvej adventnej nedele do 24. decembra pribúda sviečka každú nedeľu; jej plameň je viditeľný až po zotmení. Stromček je cez deň bez rozsvietených svetiel a od 6. decembra sa jeho osvetlenie rozsvieti každý večer. Dekorácie sa po 6. januári skryjú. Testovacia stránka `dist/ADVENT-TEST.html` umožňuje prezrieť všetky dátumy bez zmeny nastavení domácnosti.
-
-## Nové vo V1.10.1 – realistickejšie umiestnenie pri kostole
-
-Dekorácie už neležia v dvoch protiľahlých rohoch obrazovky. Na vstavanom pozadí s kostolíkom je **menší stromček umiestnený vľavo pri kostole, medzi kostolom a existujúcim stromom**. **Adventný veniec je zmenšený a položený do trávy pri kľukatej cestičke**, bližšie ku stromčeku. Mierka a poloha sa upravujú podľa toho, ako je sezónna fotografia na obrazovke orezaná. Kostol, dedina a hory sa nijako nepremaľovávajú.
-
-Pri používateľských vlastných fotografiách je poloha kostola neznáma, preto zostáva univerzálne rozloženie v rohoch. Dátumy sviečok a rozsvietenia stromčeka sa nemenia.
-
-## Nové vo V1.10.0 – adventný veniec a stromček 🎄
-
-- Vianočné obdobie začína **automaticky prvou adventnou nedeľou** (v roku 2026 je to **29. november**) a končí **6. januára**.
-- **Adventný veniec** je v krajine od prvej adventnej nedele do 24. decembra. Každú nedeľu pribudne **jedna horiaca sviečka** (1, 2, 3, 4).
-- Cez deň ostanú sviečky nezapálené. **Plamienky uvidíš večer a v noci** podľa západu slnka cez `sun.sun`, s plynulým prechodom súmraku.
-- **Vianočný stromček** sa objaví už v prvú adventnú nedeľu bez svetiel. Na **Mikuláša (6. decembra)** sa prvýkrát večer rozsvieti a svieti každý ďalší večer až do **6. januára**.
-- Zobrazenie venca i stromčeka môžeš samostatne vypnúť v grafickom editore. Obe dekorácie fungujú aj s vlastnou fotografiou; nemenia polohu kostola, budov ani chodcov a neovládajú skutočné svetlá v domácnosti.
-- Na Silvestra a Nový rok zostáva pôvodný motív Nového roka. Po 6. januári sa program vráti k zimnej krajine.
-
-```yaml
-type: custom:ha-seasons-universal-card
-scene: auto
-show_advent_wreath: true
-show_christmas_tree: true
-```
-
-Po aktualizácii obnov stránku tabletu, aby sa načítal nový JavaScript.
-
-## Nové vo V1.9.2 – rozdiel medzi oblakmi a skutočnou hmlou
-
-**Zamračené neznamená hmla.** Nová verzia používa hmlovú vrstvu výhradne vtedy, keď vybraná Home Assistant entita `weather.*` hlási stav `fog` alebo `mist`. Ani vysoká vlhkosť, nízky rosný bod či 100 % vlhkosť z meteostanice už nezapínajú vizuálnu hmlu.
-
-- `sunny`, `clear-night` → čistá krajina bez oblačných alebo hmlových vrstiev
-- `partlycloudy` → len niekoľko mrakov v hornej časti oblohy, nie nad domami
-- `cloudy` → oblačná obloha a jemne tlmené farby, ale **bez oparu na budovách, cestách a horách**
-- `fog`, `mist` → viditeľná hmla, pokiaľ `fog_effect` nie je vypnuté
-- `rainy`, `pouring`, `snowy` → pôvodný dážď/sneh a oblačné nebo, bez dodatočnej hmly
-
-Hustota oblačnosti sa teraz odráža v samostatných oblačných vrstvách, obmedzených na horných 28 % obrazovky. Saturácia pri zamračenom počasí zostáva bližšia pôvodnej fotografii, aby nevyzerala mliečne.
-
-**Diagnostika:** Ak je aj po aktualizácii a pri `fog_effect: false` obraz zahmlený, môže ísť o hmlu napevno zachytenú v samotnej použitej fotografii, o znečistenie skla alebo o starý JavaScript uložený v cache prehliadača. Samotný nový filter nedokáže odstrániť hmlu, ktorá už je súčasťou pixelov obrázka. Pre úplne čistý záber môžeš nahrať vlastnú fotografiu pomocou poľa `custom_image` alebo piatich sezónnych obrázkov.
-
-## V1.9.1 – vlastná fotografia, štyri sezóny a čistejšie nebo
-
-Používateľ si môže bez zásahu do JavaScriptu vybrať **vlastný obrázok** ako celoročné pozadie alebo nastaviť vlastné obrázky pre **jar, leto, jeseň a zimu**, prípadne zimu bez snehu. Obrázky sú zadávané cez grafický editor karty ako odkazy na miestne fotografie, napríklad `/local/moja-krajina.jpg`, alebo na HTTPS obrázky. Na Home Assistante patrí súbor `moja-krajina.jpg` do `/config/www/`.
-
-**Dôležité obmedzenie:** Pri jednej vlastnej fotografii vie karta automaticky upravovať farby podľa ročného obdobia, svetlo Slnka a Mesiaca, dážď, sneh a hmlu. Nedokáže však vierohodne odstrániť listy zo stromu alebo vytvoriť fotorealistickú snehovú pokrývku z ľubovoľnej letnej fotografie. Pre skutočne presný vzhľad sú potrebné vlastné fotografie jednotlivých období.
-
-Efekty fixné pre našu dedinu – osvetlené okná budov, pozície pôvodného tieňa stromu a ďalšie lokálne prvky – sa pri ľubovoľnom cudzom obrázku skryjú, aby nesvietili na nesprávnych miestach. Slnko a Mesiac ostávajú voliteľné. Používateľ môže intenzitu sezónneho zafarbenia nastaviť v grafickom editore. Ak je vlastná fotografia nedostupná, doplnok sa vráti k pôvodnému pozadiu.
-
-V1.9.1 ešte zobrazovala slabý odhadovaný opar podľa vlhkosti. **V1.9.2 toto správanie úplne odstránila**: hmla sa zapne výlučne pri hlásenom stave `fog` alebo `mist`. Opar natrvalo zakomponovaný do fotografie sa tým nemení.
-
-Príklad základného nastavenia:
-
-```yaml
-type: custom:ha-seasons-universal-card
-idle_seconds: 30
-source: auto
-custom_image: /local/moja-krajina.jpg
-custom_season_strength: 0.8
-fog_effect: true
-```
-
-Príklad so štyrmi reálnymi ročnými obdobiami:
-
-```yaml
-type: custom:ha-seasons-universal-card
-custom_images:
-  spring: /local/jar.jpg
-  summer: /local/leto.jpg
-  autumn: /local/jesen.jpg
-  winter: /local/zima.jpg
-  winter_dry: /local/zima-bez-snehu.jpg
-```
-
-Všetky vlastné fotografie sú voliteľné. Ak nie sú nastavené, zostáva pôvodná krajina s kostolíkom. Ak chceš hmlovú vrstvu úplne odstrániť, použi `fog_effect: false`. Dátum, denná/noc, počasie a ročné obdobia pokračujú bez zmeny.
-
-## Nové vo V1.8 – voliteľný vývoz odpadu a lepšia viditeľnosť v noci
-
-Šetrič **automaticky zobrazí upozornenie na najbližší vývoz komunálneho a separovaného odpadu, iba ak má Home Assistant príslušný platný senzor**. Bez týchto senzorov sa celý riadok automaticky skryje, takže doplnok funguje rovnako aj u iných používateľov.
-
-- Podporované formáty dátumových senzorov: `YYYY-MM-DD`, `DD.MM.YYYY`, aj dátum v atribúte `next_date` / `next_collection` a číselný počet dní.
-- Jeden alebo oba senzory môžu chýbať. Neplatné hodnoty `unknown` a `unavailable`, neplatné a staré dátumy sa nikdy nezobrazujú.
-- **DNES** a **ZAJTRA** sa zvýraznia teplejším rámikom, ďalšie vývozy zobrazia dátum a koľko dní zostáva.
-- Senzory sa zisťujú automaticky, najmä `sensor.najblizsi_komunalny_odpad` a `sensor.najblizsi_triedeny_zber`. V grafickom editore možno vybrať aj ľubovoľné vlastné senzory dátumu.
-- Nové nastavenie `show_waste: true` zapína vývoz iba tam, kde existujú údaje; `show_waste: false` ho skryje všade.
-- V noci sa viac rozoznajú hory, kostolík, domy a cesta: zjemnili sa tmavé vrstvy a nadvihli tmavé odtiene fotografie pomocou nočného kontrastu.
-- Výpočty polohy Slnka, denného jasu a plynulého stmievania sa nemenia. Použité sú stále rovnaké fotografie všetkých ročných období.
-
-Príklad pre Home Assistant s vlastnými senzormi:
-
-```yaml
-type: custom:ha-seasons-universal-card
-idle_seconds: 30
-source: auto
-show_waste: true
-night_brightness: 1.1
-entities:
-  waste_municipal: sensor.najblizsi_komunalny_odpad
-  waste_recycling: sensor.najblizsi_triedeny_zber
-```
-
-**Dôležité:** Nie je nutné pripájať tieto senzory, pokiaľ sú automaticky nájdené. Ak odpady v Home Assistante nemáš, nič nenastavuj – riadok sa nevytvorí. Funkcia iba zobrazuje termíny; neposiela oznámenia a nevytvára kalendár.
-
-## Nové vo V1.7.1 – čistá krajina bez pohybujúcich sa postáv
-
-Na základe spätnej väzby bola funkcia Living World odstránená: ľudia a autá sa
-pohybovali cez budovy a nesprávne sa nezakrývali za prekážkami. Táto verzia
-**nevykresľuje ľudí, autá ani vtáky** a v grafickom editore už ich nastavenia
-nie sú. Nemusíš upravovať existujúci dashboard: aj keď v starom YAML zostali
-kľúče `living_world` alebo `living_density`, verzia V1.7.1 ich ignoruje.
-
-Zachované zostáva celé pôvodné prostredie: päť sezónnych panorám (jar, leto,
-jeseň, zima so snehom a bez snehu), živé údaje Home Assistanta, slnko, Mesiac,
-súmrak, osvetlenie domov, oblačnosť, hmla, padajúci dážď/sneh, čas, kúrenie
-a pozastavenie šetriča pri otvorenej záložke Kamery.
-
-Pri aktualizácii v Marketplace použi **Obnoviť informácie → Preinštalovať**
-a obnov stránku na tablete, aby sa nenačítal starý JavaScript.
-
-## Nové vo V1.6.1 – viditeľnejšia, ale stále nočná krajina
-
-- V noci sú kostolík, dedina, cesta a hory lepšie viditeľné. Modrastá nočná atmosféra zostáva zachovaná.
-- Jasná noc pri splne je svetlejšia než polooblačná alebo zamračená noc.
-- Silné tmavé filtre boli zmiernené a prechod súmrak → noc → svitanie je plynulý.
-- **Denný jas sa nemení**, naďalej závisí od výšky Slnka a (ak je dostupná) meteostanice WS2900.
-- V grafickom editore karty pribudol posuvník **Jas nočnej krajiny**. Predvolená hodnota je **110 %**, prípustný rozsah je **80–135 %**. Hodnota je násobiteľ nočného osvetlenia, nie fyzického jasu displeja.
-
-```yaml
-type: custom:ha-seasons-universal-card
-idle_seconds: 30
-source: auto
-night_brightness: 1.1  # predvolené; pre jasnejšiu noc skúste 1.2 alebo 1.25
-```
-
-Na existujúcom dashboarde sa nová predvolená hodnota zapne automaticky bez úpravy YAML. Po aktualizácii modulu obnov stránku na tablete.
-
-## Nové vo V1.6 – štyri schválené fotografie + dynamické počasie
-
-Používame štvoricu používateľom schválených pohľadov na rovnakú dedinu s kostolíkom vľavo. Každý záber je uložený samostatne vo veľkosti **1536 × 864**: `universal-landscape-spring.webp`, `universal-landscape-summer.webp`, `universal-landscape-autumn.webp`, `universal-landscape-winter.webp`. Piaty, odvodený `universal-landscape-winter-dry.webp`, slúži pre **zimu bez snehu** pri teplom suchom počasí. Pôvodné súbory zostávajú ako záloha.
-
-- **Jar:** strom kvitne počas celej jari. **Leto:** zelený strom. **Jeseň:** holé vetvy. **Zima:** bez lístia, zasnežená alebo suchá podľa podmienok.
-- **Slnko:** vypočítané podľa `sun.sun` a jeho výšky; teplé svitanie a západ, plynulé zosvetľovanie/stmievanie. Poloha grafického slnka v panoráme je ilustračná.
-- **Počasie:** jasná, polooblačná a zamračená obloha, statické oblaky na oblohe a hmla výlučne podľa `weather.fog`/`weather.mist`, dážď podľa intenzity a hlásené sneženie.
-- **Mesiac a noc:** mesačný svit podľa fázy a oblačnosti, hviezdy pri jasnej noci a postupne rozsvietené okná kostola/dediny.
-- **Sneh a námraza:** orientačný vzhľad podľa vonkajšej teploty a hláseného sneženia, bez tvrdenia, že ide o meranú vrstvu.
-- **Kamery:** šetrič sa pri otvorenom `#kamery` nespustí; po návrate sa 30 sekúnd odpočítava odznova.
-
-Nastavenie `unified_scene: true` sa ponecháva. **Nezapínať znovu starý šetrič** z karty `ha-seasons-background`. Po Marketplace aktualizácii obnov cache stránky na tablete.
-
-Ukážka YAML:
-
-```yaml
-type: custom:ha-seasons-universal-card
-idle_seconds: 30
-source: auto
-scene: auto
-phase: auto
-unified_scene: true
-image_fit: cover
-fog_effect: true
-snow_cover: true
-moonlight_effect: true
-night_lights: true
-pause_on_camera: true
-```
-
-**Poznámka:** sezónne fotografie sú podobne komponované, ale nie pixelovo totožné; pri zmene ročného obdobia sa môže mierne posunúť poloha detailov. Počas jedného dňa sa však fotografia nemení podľa svetla, mení sa len nasvietenie a počasie.
-
-## Nové vo V1.3 – živá nočná krajina a sneh
-
-- Jasná, polooblačná a zamračená noc majú odlišné osvetlenie a oblohu.
-- Fáza Mesiaca a oblačnosť ovplyvňujú mesačné svetlo: pri splne a jasnej noci je krajina svetlejšia. Bez senzora Mesiaca sa fáza odhaduje.
-- Okná domov a kostolíka sa po zotmení jemne rozsvietia, bez prepínania alebo zdvojenia fotografie.
-- Plynulá simulovaná námraza/snehová pokrývka sa mení podľa vonkajšej teploty. **Nie je to meranie skutočnej snehovej pokrývky**; na to treba samostatný senzor alebo spoľahlivé údaje o stave snehu.
-- Padajúci sneh sa zobrazí len pri hlásenom snežení; mráz sám nespúšťa sneženie.
-- V grafickom editore sú tri nové prepínače: svetlá v dedine, mesačné osvetlenie a snehová pokrývka.
-
-Nové prepínače majú v existujúcich kartách predvolenú hodnotu **zapnuté**, takže **YAML nemusíš meniť**. Aktualizuj doplnok cez Marketplace/HACS a obnov cache stránky na tablete.
-
-## Nové vo V1.2 – plynulý deň, noc a svitanie
-
-- Od rána do večera sa osvetlenie mení **plynulo podľa výšky slnka** zo senzora `sun.sun`.
-- Približne pred západom sa krajina stlmí a dostane jemné teplé farby.
-- Po západe postupne tmavne, **najtmavšia je hlboká noc**, pred východom postupne svitá.
-- Hviezdy a Mesiac sa prirodzene zjavujú a miznú podľa polohy slnka a oblačnosti.
-- WS2900 stále koriguje denný jas, ale v noci ho slnečné žiarenie nerozjasňuje.
-- **V každom okamihu je len jedna krajina**, takže stromy a domy pri prechode medzi dňom a nocou nepreskakujú.
-- Ak v Home Assistante chýba výška slnka, používa sa len orientačný časový odhad.
-
-Bežná konfigurácia sa **nemení**, stačí aktualizovať doplnok v Marketplace/HACS a obnoviť stránku (prípadne vymazať cache prehliadača).
-
-## Predchádzajúce vydanie V1.5
-
-Pôvodné dve fotografie `universal-landscape.webp` a `universal-landscape-leafless.webp` zostávajú v repozitári ako historické a záložné podklady. V1.6 používa päť nových samostatných sezónnych fotografií vyššie; pri zmene ročného obdobia sa prepne fotografia, nie poloha žiadnych Home Assistant ovládacích prvkov.
-
-## Nové vo V1.5 – jedna spoločná krajina podľa dodanej fotografie
-
-Pôvodnú fotografiu s kostolíkom **naľavo**, dedinou, cestou a horami používame ako spoločné pozadie. Zdrojová fotografia `dist/assets/universal-landscape.webp` je pre jar, leto a skorú jeseň; pixelovo podobná odvodená verzia `dist/assets/universal-landscape-leafless.webp` odstráni lístie od 10. novembra a v zime. Poloha kostolíka, hôr a domov zostáva zachovaná.
-
-Doplnok ďalej používa plynulý deň/noc, mesačný svit, oblačnosť, teplotne odhadovanú námrazu a sneh, nočné svetlá a pozastavenie šetriča na `#kamery`. Teraz pribudla:
-- statická hmla výhradne pri `weather.* = fog` alebo `mist` (od V1.9.2 sa odhad podľa vlhkosti nepoužíva)
-- suchšia hnedá neskoro-jesenná tráva a zimná vegetácia
-- letné/jarné/jesenné farby z tej istej fotografie
-
-**Oba obrázky sú už nahrané** priamo na GitHub a po preinštalovaní cez Marketplace sa použije nové spoločné pozadie. Ak sa po aktualizácii stále ukazuje staré pozadie, obnov stránku tabletu a jej vyrovnávaciu pamäť.
-
-Nastavenia v YAML (všetko je už štandardne zapnuté):
-
-```yaml
-type: custom:ha-seasons-universal-card
-idle_seconds: 30
-source: auto
-scene: auto
-unified_scene: true
-fog_effect: true
-season_colors: true
-night_lights: true
-moonlight_effect: true
-snow_cover: true
-pause_on_camera: true
-entities:
-  weather: weather.forecast_cierne_11
-  temperature: sensor.ws2900_v2_02_01_outdoor_temperature
-  humidity: sensor.ws2900_v2_02_01_humidity
-  dewpoint: sensor.ws2900_v2_02_01_dewpoint
-```
-
-Poznámka: od V1.9.2 sa hmla zobrazuje len pri hlásení `fog`/`mist`, zatiaľ čo snehová vrstva môže zostať vizuálnym odhadom, nie meraním výšky snehu.
-
-## Nové vo V1.4 – ročné obdobia majú odlišnú krajinu
-
-Pri kontrole pôvodných podkladov sme našli chybu: fotografické obrázky pre **jar, leto a jeseň** mali takmer rovnaké zelené lístie, takže aj v novembri vyzerala dedina letne. Dátumový výber jesene fungoval, ale grafika nebola dostatočne jesenná.
-
-Oprava používa selektívnu úpravu farebnosti rastlín priamo v prehliadači, aby zostali zachované pôvodné hory, kostolík, cesta aj obloha. Pozadie sa pri prechode deň–noc stále nemení na inú fotografiu.
-
-- **Jar:** svieža svetlejšia zeleň a jemné kvety na strome.
-- **Leto:** sýta zelená tráva a listy.
-- **Jeseň:** počas septembra sa postupne objavuje zlaté lístie, v októbri a novembri prevládajú žlté, oranžové a hnedé odtiene aj na tráve.
-- **Zima:** holý strom aj bez snehu; pri teplom suchom počasí je zem bez snehového efektu. Pri mraze sa môže zobraziť ilustračná námraza a pri hlásenom snežení padajúci sneh. Skutočnú snehovú pokrývku program nemeria.
-
-Nová voľba v grafickom editore **„Výrazné farby ročných období (jar, leto, jeseň)”** je zapnutá predvolene. Pri potrebe vypnutia použi `season_colors: false`. Pri prepínaní počiatočnej fotografie sa môže úprava farieb načítať s krátkym oneskorením (najmä na slabšom tablete), no pôvodný obrázok zostáva viditeľný.
-
-```yaml
-type: custom:ha-seasons-universal-card
-idle_seconds: 30
-source: auto
-scene: auto
-season_colors: true
-```
-
-Dňa **21. novembra 2026** musí `scene: auto` zvoliť **autumn**, bez ohľadu na to, či je deň alebo noc. Je to vizuálna sezónna úprava; skutočnú farbu lístia v okolí domu nemeriame.
-
-## Nové vo V1.3.1 – Kamery bez šetriča
-
-Pri otvorenom pop-upe `#kamery` alebo pohľade `/lovelace/kamery` sa celoplošný šetrič **automaticky pozastaví**. Po návrate na Domov alebo iný pohľad začne nových 30 sekúnd nečinnosti. Kamera sa tým nevypína ani neprerušuje.
-
-Nastavenie je **predvolene zapnuté** a je prístupné aj v grafickom editore karty. V YAML môžeš použiť:
-
-```yaml
-type: custom:ha-seasons-universal-card
-idle_seconds: 30
-pause_on_camera: true
-```
-
-Ak by si ho niekedy chcel vypnúť, nastav `pause_on_camera: false`. Táto funkcia rozpoznáva hash `#kamery`, `#kamera`, `#camera`, `#cameras` a rovnako pomenované Lovelace pohľady.
-
-## Funkcie
-- Dátum, čas, vonkajšia teplota, kúrenie, meniny a počty zapnutých svetiel
-- Jar, leto, jeseň, zima; Veľká noc, máj, Dušičky, Mikuláš, Vianoce, Nový rok
-- Deň, svitanie, západ slnka, noc; Mesiac podľa senzora, inak označený približný výpočet
-- Jasno, polooblačno, zamračené; dážď a sneh s pokojnou animáciou
-- Dva zdroje počasia: lokálna meteostanica alebo entita `weather.*` z internetovej služby
-- **Jedna fotografia v jednej chvíli** (žiadne prekrývanie dvoch krajín)
-- Pri automatickej detekcii sa použijú dostupné entity; chýbajúce informácie sa zobrazia ako `—`
-
-## Grafický editor v Home Assistante (nové vo V1.1)
-
-Po inštalácii otvor **Upraviť dashboard → Pridať kartu → HA Seasons Universal**, potom prejdi do **grafického editora karty**. Nastavíš bez YAML:
-
-- spustenie po 5–3600 sekundách;
-- rozloženie **Automaticky / Kompaktné / Široké**;
-- sklenený alebo minimalistický štýl, veľkosť hodín, priehľadnosť a posun/orez obrázka;
-- zdroj počasia **automaticky / meteostanica / online**;
-- automatické či manuálne ročné obdobie a čas dňa;
-- zapnutie/vypnutie jednotlivých informačných polí a animácií;
-- konkrétne entity počasia, senzorov, kúrenia a svetiel.
-
-Grafika sa automaticky preusporiada podľa orientácie tabletu **na šírku aj na výšku**, s menšími prvkami na nízkych a úzkych displejoch. Používa jediný obrázok krajiny; na tablete môžu byť krajné časti pri pomere strán `cover` orezané, ale nie zdvojené.
-
-### Pridanie do akéhokoľvek dashboardu
-
-Do dashboardu vlož **jednu manuálnu kartu** (môže byť na konci ľubovoľného zobrazenia):
-
-```yaml
-type: custom:ha-seasons-universal-card
-idle_seconds: 30
-source: auto
-```
-
-Šetrič neprepisuje existujúci `background:`. Karta má len 1 px výšky a ovláda celoplošné zobrazenie. Je aktívna len na pohľade dashboardu, ktorý kartu obsahuje.
-
-### Pre druhý HA bez meteostanice
-
-```yaml
-type: custom:ha-seasons-universal-card
-idle_seconds: 30
-source: online
-entities:
-  weather: weather.forecast_home
-```
-
-Vymeniť `weather.forecast_home` za skutočnú entitu zo svojho Home Assistanta. Pri `source: auto` si vyhľadá dostupnú entitu `weather.*` a, ak existujú, aj lokálne senzory. `source: online` miestne senzory ignoruje.
-
-### Voliteľná presná konfigurácia
-
-```yaml
-type: custom:ha-seasons-universal-card
-idle_seconds: 30
-source: station
-entities:
-  weather: weather.forecast_cierne_11
-  temperature: sensor.ws2900_v2_02_01_outdoor_temperature
-  rain: sensor.ws2900_v2_02_01_rain_rate
-  solar: sensor.ws2900_v2_02_01_solar_radiation
-  wind: sensor.ws2900_v2_02_01_wind_speed
-  gust: sensor.ws2900_v2_02_01_wind_gust
   heating: switch.thermostat_switch
   nameday: sensor.meniny_dnes
-  moon: sensor.moon_faza
-  lights:
-    - light.led_spodok_kuchyna
-    - switch.stromcek
 ```
 
-## Inštalácia
+5. Over existenciu entít v **Nástroje pre vývojárov → Stavy**; uprav `weather.home` podľa skutočnej entity (`weather.forecast_cierne_11`, ak ju máš). `sensor.moon_phase`, senzor intenzity dažďa a meniny sú voliteľné. Pri chýbajúcom zdroji bude efekt obmedzený a karta zobrazí `—`, nie vymyslenú hodnotu.
+6. Reštartuj len podľa potreby pri zmene YAML balíka. Pri zmene JavaScript modulu obnov nástenku (v Chrome Ctrl+F5).
+7. **Dôležité:** pre novú verziu používaj **iba jeden aktívny JS resource / jednu kartu**. Ak máš už V1.0 registrovanú v rovnakej nástenke, deaktivuj/odstráň starý resource a ponechaj novú V1.3. Existujúci helper snehu nemeníš, ďalší nevytváraj.
 
-**Home Assistant Marketplace (2026.11+) / HACS:** Repo musí byť zverejnené vo vlastnom **verejnom GitHub repozitári**, napríklad `ha-seasons-universal`. V HA otvor **Nastavenia → Marketplace → Add from link**, zadaj jeho URL, nainštaluj Dashboard a vlož kartu cez grafické rozhranie. Po inštalácii Marketplace automaticky načíta modul z `/local/community/ha-seasons-universal/ha-seasons-universal.js`. Na starších verziách HA použite HACS → Custom repositories → Dashboard. **ZIP nie je zverejnený repozitár**.
+### Ako rozpozná otvorené kamery
 
-**Ručná inštalácia:** Skopíruj obsah `dist/` do `/config/www/ha-seasons-universal/`, pridaj Dashboard zdroj typu JavaScript Module `/local/ha-seasons-universal/ha-seasons-universal.js?v=1.6.0`, obnov stránku a pridaj manuálnu kartu.
+- Sekcia `#kamery` a cesty ako `/lovelace/kamery` sú blokované. Názvy sa dajú zmeniť cez `camera_views` v editore karty, napr. `bezpecnost`.
+- Bežné modálne okná (vrátane Home Assistant *More Info* a browser_mod popupov) pozastavia automatický šetrič, aby neprekrýval otvorené ovládanie.
+- Vložené viditeľné video, ktoré sa práve prehráva (napr. živá kamera), tiež šetrič zablokuje.
+- Šetrič sa nespustí, keď je karta v režime úprav alebo prehliadač nie je aktívny. Po návrate sa odpočet začne odznova.
+- **Obmedzenie:** karta je aktívna iba na nástenke/zobrazení, kde je vložená. Nie je to celosystémový Android šetrič; pri otvorení samostatnej sekcie s kamerami karta môže byť odpojená, čo takisto zabráni otvoreniu šetriča. Pri exotických kamerových popupoch alebo prehrávačoch s neprístupným vnútrom použite voliteľný `camera_block_selectors` alebo pridajte názov danej sekcie do `camera_views`.
+- Vybrané prehliadače a vlastné kamerové karty môžu mať špecifické správanie. **Over na skutočnom tablete aj so všetkými kamerami**, skôr než odstrániš zálohu.
 
-Test bez senzorov: `/local/ha-seasons-universal/TEST.html` (pri ručnej inštalácii). Test používa simulované hodnoty a nemení žiadnu entitu.
+**POZOR:** Karta zobrazuje celoplošný šetrič po nečinnosti na stránke, kde je vložená. Stlačenie/dotyk ho zavrie. Neslúži ako systémový Android šetrič mimo prehliadača.
 
-## Poznámky
+## 3. Pamäť snehu – vyber si JEDEN spôsob
 
-- Zrážkový senzor WS2900 vie zaznamenať dážď, nie padajúci sneh. Sneženie bez samostatného senzora je iba odhad podľa entity počasia.
-- Bez stanice intenzita dažďa nie je miestne meranie; ide o orientačný efekt podľa `weather.*`.
-- Šetrič nedokáže rozsvietiť vypnutú fyzickú obrazovku tabletu.
-- Fotografie niektorých špeciálnych sviatočných scén sú zatiaľ staršie kreslené SVG. Na ich spracovanie sa používa **jediný** obraz, nie skladanie dvoch panorám.
-- V prípade akýchkoľvek problémov stačí odstrániť túto jednu kartu a JS resource; pôvodný dashboard zostáva bez zmeny.
+**A. Nemáš helper snehu:** vlož `ha_seasons_snow_package.yaml` do `/config/packages/ha_seasons_snow.yaml`. V `configuration.yaml` musí byť zapnuté (ak už sekcia `homeassistant:` existuje, iba zlúč jej obsah, nevytváraj druhú):
 
-## Technické poznámky
+```yaml
+homeassistant:
+  packages: !include_dir_named packages
+```
 
-- Jedna karta na jeden Lovelace pohľad je odporúčaný spôsob použitia. Šetrič nevytvára globálnu automatizáciu na všetkých dashboardoch.
-- Grafický editor volá štandardné `getConfigElement()` a `config-changed`; konfigurácia sa ukladá do dashboardu.
-- Jediné externé údaje číta z existujúcich entít Home Assistanta; modul sám nevyžaduje ani neodosiela údaje na vlastný server.
-- Na zariadeniach s redukovanými animáciami systém vypne pohyb lístia.
-- Ak sa šetrič nespúšťa, skontroluj režim úprav dashboardu, aktívny pohľad, stav načítania JS a to, či obrazovka neprešla do fyzického režimu spánku.
+**B. Helper `input_number.ha_seasons_snow_cover` už existuje:** nepridávaj package vytvárajúci tento helper znova. Použi namiesto neho súbor `snow_automation_ONLY_if_helper_exists.yaml` ako automatizáciu, prípadne z pôvodného balíka ponechaj **iba jednu** aktuálnu automatizáciu.
+
+**Nikdy nedrž aktívne automatizácie snehu z V0.4/V0.5/V0.6 a V1.0/V1.1/V1.3 súčasne.** Pred migráciou vypni staré. Výpočet sa spúšťa každých 30 minút, pri chýbajúcich podkladoch stav zostane bez zmeny. Ide o vizuálny odhad, **nie meteorologické meranie vrstvy snehu**.
+
+## 4. Vlastné obrázky a AI
+
+V editore karty môže každý zadať URL jednej fotografie, alebo URL vlastných sezónnych fotografií, napr. `/local/moje-pozadia/spring.webp`. Pri vlastnej fotografii je dobré zvoliť výšku oblohy (`sky_height`, 16–70 %) tak, aby oblaky neprekrývali stavby. Pôvodné fotografie sú záloha; svoje fotografie nahrávaj s oprávnením na ich použitie.
+
+Na **PC alebo serveri** môžeš z vlastnej fotografie vytvoriť sezónne varianty pomocou skriptu `ai_generate_seasons.py`. Sú potrebné `pip install -r requirements-ai.txt`, vlastný `OPENAI_API_KEY` v systémovej premennej a explicitné potvrdenie plateného AI API volania. Najprv spusti:
+
+```bash
+python ai_generate_seasons.py --input moja_fotka.jpg --output moje_sezony --dry-run
+```
+
+Po overení nákladov a promptov je platené spustenie možné cez `--yes`. Výsledné 4 obrázky treba skontrolovať a následne skopírovať do `www`. **API kľúč sa nikdy nevkladá do Home Assistanta ani do dashboardu.** Samotná karta nevolá AI ani neposiela fotografie na internet. Tlačidlo „Generovať AI“ priamo v dashboarde v tejto verzii nie je.
+
+## 5. Vizuálne limity a výkon
+
+- Pôvodná fotografia obsahuje reálne slnko a oblaky; vrstvový efekt ich **nevie z fotografie vymazať**. Pri dvojitom slnku vypni `show_sun: false` alebo používaj AI podklady s neutrálnou oblohou.
+- Mesiac sa zobrazuje podľa fázy, ale jeho poloha je orientačná.
+- Oblaky sú univerzálna transparentná horná vrstva. Na niektorých záberoch môže byť vhodná menšia výška `sky_height`.
+- Pre slabšie zariadenia nastav `low_motion: true` a `cloud_motion: false`.
+- Sezónne obrázky sú približne rovnako komponované, ale AI môže meniť drobné detaily, čo je pri prelínaní viditeľné.
+- `weather.home` je spravidla stav z predpovede/poskytovateľa; nie vždy potvrdzuje skutočný stav oblohy v danom okamihu.
+
+## 6. Overenie balíka
+
+- **16** pôvodných testov počasia a snehu prešlo.
+- **8** testov rozpoznávania kamier/ciest prešlo.
+- Interaktívny samostatný HTML bol overený v Chromium pri rozlíšení **1280×720 a 390×844**: autoštart po uplynutí 30 s (simulovaný čas), blokovanie otvoreného dialógu, nový 30 s odpočet po jeho zatvorení, blokovanie sekcie `#kamery` a blokovanie prehrávaného videa.
+- JavaScript prešiel syntax kontrolou; pôvodné obrázky a snehová automatizácia ostali nezmenené.
+- **Na tvojom reálnom Home Assistant Green to ešte nie je fyzicky nasadené ani overené.**
+
+
+## 7. Sviatky – presné správanie vo V1.3
+
+Efekty sa aktivujú podľa lokálneho dátumu `hass.config.time_zone` (typicky `Europe/Bratislava`) a nemenia rozloženie štyroch kariet. **Nie je potrebný internet ani AI API** pri bežnom používaní.
+
+- **16.–23. december:** adventná/vianočná atmosféra, jemné svetielka a počet zapálených adventných sviec podľa uplynulých adventných nedieľ. Nejde o reálne plamene.
+- **24.–26. december:** vianočná atmosféra, bez Santu, jemné osvetlenie kostolíka v predvolenej krajine.
+- **27.–30. december a 2.–5. január:** vianočné obdobie, **31. december a 1. január:** novoročné svetielka, **6. január:** Traja králi.
+- **Veľká noc:** od Kvetnej nedele po Veľkonočný pondelok; termín sa vypočíta každý rok podľa gregoriánskeho kalendára.
+- **Ďalšie dátumy:** Valentín, 8. marec, 1. a 8. máj, druhá májová nedeľa (Deň matiek), 1. jún (Deň detí), 5. júl, 29. august, 1. a 15. september, 1. a 17. november, 6. december (Mikuláš). Menšie udalosti používajú iba jemný kvetinový, hviezdny alebo textový motív; nie vždy ide o deň pracovného pokoja.
+
+### Voliteľné nastavenia
+
+```yaml
+holidays_enabled: true         # false: úplne vypne sviatky
+show_holiday_label: true       # false: bez názvu v hornom rohu
+holiday_animations: true       # false: svetielka neblikajú
+holiday_church_lights: true    # iba predvolené fotografie
+preview_holiday: auto          # test: advent, christmas, newyear, easter, spring, remembrance, national, none
+# preview_date: '2026-12-24'  # IBA na test; po skúške vymazať!
+```
+
+### Test
+
+V `TEST_STANDALONE.html` vyber **Sviatok** alebo nastav **Dátum (test)** na `2026-12-15`, `2026-12-16`, `2026-12-20`, `2026-12-24`, `2026-04-05` či `2027-01-01`; otvor šetrič a sleduj dekoračné vrstvy. Dolný panel v samostatnom teste môžeš skryť tlačidlom **Skryť panel**. Hodiny ukazujú aktuálny čas, ale dátum rešpektuje nastavený testovací dátum.
+
+**Poznámka:** Plynulé stmavovanie podľa `sun.sun` sa zachováva; samostatné nočné fotografie nie sú generované automaticky. Oblaky a slnko už nakreslené v základnej fotografii nemožno odstrániť jednoduchým efektom. Sviatočný motív je grafická vrstva, nie nová AI fotografia pre každú udalosť.
+
+## 8. Overenie V1.3
+
+- Unit testy `node test-holidays.mjs`, `node test-engine.mjs` a `node test-camera-guard.mjs` prešli.
+- Grafická skúška v Chromium pre mobil (390×844) a desktop (1280×720) overila Vianoce, adventné sviece, Veľkú noc, vypnutý sviatok a blokovanie otvorenej kamery; bez JavaScript chýb.
+- **Tvoje reálne Home Assistant Green a Lenovo Tab M11 zatiaľ nie sú overené**. Starú funkčnú verziu ponechaj do ukončenia testov.
+
+
+## Dôležité pri náhrade starého projektu
+
+- V HA nie je možné prepísať už aktívny dashboard len úpravou GitHubu. Je potrebné aktualizovať zdroj JavaScript na `/local/ha-seasons-ai-v1-3/ha-seasons-ai.js?v=1.3.0` a skopírovať priečinok `dist` z projektu do `/config/www/ha-seasons-ai-v1-3/`.
+- Odstráň starý `ha-seasons-universal.js` z Nástenky → Zdroje až keď overíš novú kartu. Všetky novšie HA Seasons AI verzie používajú `type: custom:ha-seasons-ai-card`.
+- Nikdy neaktivuj dve automatiky snehu súčasne.
+- Git história starých commitov v existujúcom repozitári zostane, pracovný strom vetvy `main` je nový čistý projekt.

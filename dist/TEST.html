@@ -1,32 +1,72 @@
-<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HA Seasons Universal – test</title><link rel="icon" type="image/webp" href="./assets/app-icon.webp">
-<style>body{background:#0b1a2a;color:#f2f7ff;font:16px system-ui;margin:0;padding:26px;max-width:800px}h1{font-size:25px}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:8px;background:#18304b;border-radius:14px;padding:15px}select,input{width:100%;min-height:36px}button{background:#40a3ec;border:0;border-radius:12px;font-size:18px;color:#001a2c;padding:13px 20px;cursor:pointer;margin-top:16px}.muted{color:#b2c7d7}output{font-weight:700}</style></head><body>
-<h1>HA Seasons Universal V1.12.4 – test počasia</h1><p class="muted">Testovacie hodnoty sú simulované. Nemenia zariadenia ani nastavenia Home Assistanta.</p>
-<main>
-<label class="field">Oblačnosť<select id="weather"><option value="sunny">Jasno</option><option value="partlycloudy">Polooblačno</option><option value="cloudy">Zamračené</option><option value="rainy">Dážď</option><option value="pouring">Silný dážď</option><option value="snowy">Sneženie</option></select></label>
-<label class="field">Intenzita zrážok <output id="rainOut">0 mm/h</output><input id="rain" type="range" min="0" max="25" value="0" step="0.1"></label>
-<label class="field">Slnečné žiarenie <output id="solarOut">600 W/m²</output><input id="solar" type="range" min="0" max="1000" value="600" step="10"></label>
-<label class="field">Vietor <output id="windOut">8 km/h</output><input id="wind" type="range" min="0" max="90" value="8" step="1"></label>
-<label class="field">Teplota <output id="tempOut">11 °C</output><input id="temp" type="range" min="-15" max="35" value="11" step="1"></label>
-<label class="field">Fáza dňa<select id="phase"><option value="day">Deň</option><option value="dawn">Svitanie</option><option value="dusk">Západ slnka</option><option value="night">Noc</option></select></label>
-</main>
-<p><button id="open">Otvoriť šetrič</button> <button id="editorShow" type="button">Zobraziť grafický editor</button></p><div id="editorHost" style="max-width:660px"></div><p class="muted">Dotknutím obrazovky sa vrátiš na tento test. Pri zmene hodnôt otvor šetrič znova.</p><ha-seasons-universal-card id="card"></ha-seasons-universal-card>
-<script type="module" src="./ha-seasons-universal.js"></script>
+<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0d1a2b"><title>HA Seasons AI V1.3 — sviatky, počasie a kamery</title><style>
+:root{font-family:system-ui,'Segoe UI',Arial,sans-serif;color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0d1a2b;color:#f1f7ff}main{width:min(900px,96vw);margin:25px auto;padding:16px 0 260px}h1{font-size:clamp(24px,4vw,34px)}p{line-height:1.6;color:#c6d7e5}
+.test-toolbar{position:fixed;bottom:0;left:0;right:0;z-index:2147483600;background:rgba(10,27,44,.96);border-top:1px solid #6c8298;padding:11px max(12px,env(safe-area-inset-right)) calc(11px + env(safe-area-inset-bottom));box-shadow:0 -8px 24px #0006;max-height:57vh;overflow:auto;backdrop-filter:blur(10px)}
+.test-toolbar .top{display:flex;align-items:center;justify-content:space-between;gap:10px}.test-toolbar h2{font-size:15px;margin:0}.settings{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:11px}label{display:grid;gap:4px;font-size:11px;line-height:1.2;color:#d2e5f4}select,input{background:#213c53;color:#fff;border:1px solid #8ca5b9;border-radius:9px;padding:8px;width:100%;font:inherit;font-size:14px;min-height:36px}button{background:#a0d6f5;color:#061a2b;font-weight:700;border:0;padding:10px 13px;border-radius:9px;cursor:pointer;font-size:13px}button.secondary{background:#314e68;color:#ecf8ff}.test-toolbar .buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.status{font-size:12px;color:#d8eaf8;padding-top:6px}.minimized .settings,.minimized .buttons,.minimized .status{display:none}
+.camera-test-dialog{position:fixed;z-index:2147483400;top:16px;right:16px;width:min(400px,calc(100vw - 32px));background:#101d29;border:2px solid #5ba3d2;border-radius:16px;box-shadow:0 12px 70px #000c;padding:14px;color:white}
+.camera-test-dialog[hidden]{display:none}.fake-camera{height:145px;background:radial-gradient(circle at 50% 50%,#224b63,#07131e);display:grid;place-items:center;border-radius:9px;margin:11px 0;font-size:33px}.camera-test-dialog button{width:100%;}
+@media(max-width:760px){.settings{grid-template-columns:repeat(3,minmax(0,1fr))}.test-toolbar{max-height:65vh}}
+@media(max-width:390px){.settings{grid-template-columns:repeat(2,minmax(0,1fr))}button{font-size:12px;padding:9px 10px}}
+</style></head><body><main><h1>HA Seasons AI V1.3 – sviatky, počasie a kamery</h1><p>Toto je <strong>simulácia</strong>. Šetrič sa automaticky spustí po 30 sekundách nečinnosti, ale <strong>nie keď sú kamery otvorené</strong>. Ovládačom dole môžeš tiež meniť ročné obdobia a počasie. Uvidíš skutočnú kartu šetriča na tvojej krajine.</p><p>Ťuknutím na krajinu šetrič zatvoríš; tlačidlom <b>Otvoriť šetrič</b> ho znovu spustíš.</p><div id="mount"></div></main>
+<section class="test-toolbar" id="toolbar" aria-label="Ovládanie počasia – simulácia"><div class="top"><h2>🌤️ Fotografický Advent a počasie (simulácia, nie živé dáta)</h2><button class="secondary" id="collapse">Skryť panel</button></div>
+<div class="settings"><label>Ročné obdobie<select id="season"><option value="winter">❄️ Zima</option><option value="spring">🌸 Jar</option><option value="summer">☀️ Leto</option><option value="autumn">🍁 Jeseň</option><option value="auto">Automaticky</option></select></label>
+<label>Počasie<select id="weather"><option value="sunny">☀️ Jasno</option><option value="partlycloudy">🌤️ Polooblačno</option><option value="cloudy">☁️ Oblačno</option><option value="rainy">🌧️ Dážď</option><option value="pouring">🌧️ Silný dážď</option><option value="snowy" selected>❄️ Sneží</option><option value="fog">🌫️ Hmla</option><option value="clear-night">🌙 Jasná noc</option></select></label>
+<label>Teplota (°C)<input id="temp" type="number" value="-1" step="0.5" min="-30" max="40"></label><label>Slnko – výška °<input id="sun" type="range" min="-22" max="45" value="-2" step="1"><span id="sunval">−2°</span></label><label>Pokrytie snehom<input id="cover" type="range" min="0" max="100" value="30" step="1"><span id="coverval">30 %</span></label>
+<label>Sviatok<select id="holiday"><option value="auto">Automaticky podľa dátumu</option><option value="none">Bez sviatku</option><option value="advent">🕯️ Advent</option><option value="christmas">🎄 Vianoce</option><option value="newyear">✨ Nový rok</option><option value="easter">🌸 Veľká noc</option><option value="spring">🌷 Jar / máj</option><option value="remembrance">🕯️ Všetkých svätých</option><option value="national">🇸🇰 Pamätný deň</option></select></label><label>Dátum (test)<input id="holidayDate" type="date" value="2026-12-24"></label><label>Fáza mesiaca<select id="moon"><option value="full_moon">🌕 Spln</option><option value="waxing_crescent">🌒 Dorastajúci kosáčik</option><option value="first_quarter">🌓 Prvá štvrť</option><option value="last_quarter">🌗 Posledná štvrť</option><option value="new_moon">🌑 Nov</option></select></label></div>
+<div class="buttons"><button id="show">⛶ Otvoriť šetrič</button><button id="advance">⏩ Simulovať 30 minút snehu</button><button class="secondary" id="sample">🌅 Ukážka deň → noc</button><button class="secondary" id="reset">↺ Reset</button><button id="cameraToggle">📹 Otvoriť kameru</button><button id="cameraRouteToggle" class="secondary">📺 Otvoriť sekciu Kamery</button></div><div class="status" role="status" id="status">Pripravené · obrázky z tvojho projektu</div></section>
+<div class="camera-test-dialog" id="cameraModal" role="dialog" aria-modal="true" aria-label="Simulácia otvorenej kamery" hidden>
+  <strong>📹 Kamera otvorená – šetrič zablokovaný</strong>
+  <div class="fake-camera">📷</div>
+  <p>Simulácia otvoreného náhľadu kamery. Počas tohto okna sa 30-sekundový odpočet neaktivuje.</p>
+  <button id="cameraClose">Zavrieť kameru</button>
+</div>
 <script type="module">
-const ids=['weather','rain','solar','wind','temp','phase'];const card=document.querySelector('#card');const now=new Date();
-const make=()=>{const w=document.querySelector('#weather').value,p=document.querySelector('#phase').value;const rain=+document.querySelector('#rain').value,solar=+document.querySelector('#solar').value,wind=+document.querySelector('#wind').value,temp=+document.querySelector('#temp').value;
- for(const k of ['rain','solar','wind','temp'])document.querySelector('#'+k+'Out').textContent=document.querySelector('#'+k).value+({rain:' mm/h',solar:' W/m²',wind:' km/h',temp:' °C'}[k]);
- const states={
-  'weather.home':{state:w,attributes:{temperature:temp,temperature_unit:'°C',wind_speed:wind,wind_speed_unit:'km/h'}},
-  'sun.sun':{state:p==='night'?'below_horizon':'above_horizon',attributes:{elevation:p==='night'?-12:p==='day'?38:5,azimuth:p==='dawn'?90:p==='dusk'?265:180,rising:p==='dawn',next_rising:new Date(now.getTime()+5e7).toISOString(),next_setting:new Date(now.getTime()+3e7).toISOString()}},
-  'sensor.ws2900_v2_02_01_outdoor_temperature':{state:String(temp),attributes:{unit_of_measurement:'°C'}},
-  'sensor.ws2900_v2_02_01_rain_rate':{state:String(rain),attributes:{unit_of_measurement:'mm/h'}},
-  'sensor.ws2900_v2_02_01_solar_radiation':{state:String(solar),attributes:{unit_of_measurement:'W/m²'}},
-  'sensor.ws2900_v2_02_01_wind_speed':{state:String(wind),attributes:{unit_of_measurement:'km/h'}},
-  'sensor.meniny_dnes':{state:'Testovacie meniny',attributes:{}},
-  'switch.thermostat_switch':{state:'on',attributes:{}},
-  'light.test':{state:'on',attributes:{}}
- };
- card.setConfig({source:'auto',phase:p,idle_seconds:3600,entities:{weather:'weather.home',nameday:'sensor.meniny_dnes'}});card.hass={states,config:{time_zone:'Europe/Bratislava'}};};
-document.querySelector('#editorShow').addEventListener('click',()=>{const host=document.querySelector('#editorHost');host.replaceChildren();const e=document.createElement('ha-seasons-universal-editor');e.setConfig({type:'custom:ha-seasons-universal-card',idle_seconds:30,source:'auto',layout:'auto'});e.hass=card._hass;host.append(e);});
-ids.forEach(id=>document.getElementById(id).addEventListener('input',make));document.querySelector('#open').addEventListener('click',()=>{make();card.showForDemo();});make();
+import './ha-seasons-ai.js';
+import {snowStep} from './snow-engine.mjs';
+const $=id=>document.getElementById(id);
+let demoTimer=null;
+let mount=$('mount'),card=document.createElement('ha-seasons-ai-card');
+let snow=30;
+const config={type:'custom:ha-seasons-ai-card',idle_seconds:30,block_when_camera_open:true,camera_views:['kamery','kamera','cameras','camera'],background_mode:'seasonal',preview_season:'winter',dynamic_weather:true,show_clouds:true,show_precipitation:true,show_sun:true,show_moon:true,show_fog:true,cloud_motion:true,dynamic_snow:true,sky_height:53,holidays_enabled:true,show_holiday_label:true,holiday_animations:true,holiday_church_lights:true};
+function entity(s,attrs={}){return {state:String(s),attributes:attrs,last_updated:new Date().toISOString()};}
+function update(){const weather=$('weather').value,elevation=Number($('sun').value),t=Number($('temp').value),cover=Number($('cover').value);
+  const states={
+    'sensor.ws2900_v2_02_01_outdoor_temperature':entity(t,{unit_of_measurement:'°C'}),
+    'weather.home':entity(weather,{temperature:t}),
+    'sun.sun':entity(elevation>=0?'above_horizon':'below_horizon',{elevation,azimuth:240}),
+    'sensor.moon_phase':entity($('moon').value),
+    'sensor.ws2900_v2_02_01_rain_rate':entity(['rainy','pouring'].includes(weather)?(weather==='pouring'?4:1):0,{unit_of_measurement:'mm/h'}),
+    'input_number.ha_seasons_snow_cover':entity(cover),
+    'switch.thermostat_switch':entity('on'),
+    'sensor.meniny_dnes':entity('Ukážka'),
+    'light.obyvacka':entity('on'),
+    'light.kuchyna':entity('off')};
+  card.setConfig({...config,preview_season:$('season').value,preview_holiday:$('holiday').value,preview_date:$('holidayDate').value});
+  card.hass={states,config:{time_zone:'Europe/Bratislava'}};
+  $('coverval').textContent=cover+' %';$('sunval').textContent=elevation+'°';
+  if(card._visible)card._render();
+}
+function setDefault(){clearInterval(demoTimer);demoTimer=null;snow=30;$('season').value='winter';$('weather').value='snowy';$('temp').value='-1';$('sun').value='-2';$('cover').value='30';$('moon').value='full_moon';$('holiday').value='auto';$('holidayDate').value='2026-12-24';update();$('status').textContent='Reset: −1 °C, sneží, pokrytie 30 %';}
+for(const id of ['season','weather','temp','sun','cover','moon','holiday','holidayDate'])$(id).addEventListener('input',()=>{clearInterval(demoTimer);demoTimer=null;update();});
+$('show').onclick=()=>{update();const reason=card._blockReason();if(reason){$('status').textContent='Šetrič sa neotvorí: '+reason;return;}card.showForDemo();};
+$('advance').onclick=()=>{const result=snowStep({cover:Number($('cover').value),temperature:Number($('temp').value),condition:$('weather').value,hours:0.5,rainRate:0});snow=result.cover;$('cover').value=String(snow);update();$('status').textContent=`Sneh: ${result.reason}, zmena ${result.delta>0?'+':''}${result.delta} % · spolu ${snow} %`;};
+$('reset').onclick=()=>{setDefault();$('cameraModal').hidden=true;if(location.hash==='#kamery')location.hash='';};
+$('cameraToggle').onclick=()=>{$('cameraModal').hidden=false;$('status').textContent='KAMERA OTVORENÁ: odpočet je zablokovaný.';};
+$('cameraClose').onclick=()=>{$('cameraModal').hidden=true;$('status').textContent='Kamera zavretá. Počítam nových 30 s nečinnosti.';};
+$('cameraRouteToggle').onclick=()=>{
+  if(location.hash==='#kamery'){location.hash='';$('cameraRouteToggle').textContent='📺 Otvoriť sekciu Kamery';$('status').textContent='Sekcia Kamery zavretá. Počítam nových 30 s.';}
+  else{location.hash='kamery';$('cameraRouteToggle').textContent='📺 Zavrieť sekciu Kamery';$('status').textContent='SEKCIA KAMERY: odpočet je zablokovaný.';}
+};
+$('collapse').onclick=()=>{const m=$('toolbar').classList.toggle('minimized');$('collapse').textContent=m?'Zobraziť panel':'Skryť panel';};
+$('sample').onclick=()=>{if(demoTimer)clearInterval(demoTimer);card.showForDemo();let val=40;$('sun').value=String(val);update();$('status').textContent='Ukážka dňa prechádza do noci';demoTimer=setInterval(()=>{val-=2;$('sun').value=String(Math.max(-22,val));if(val<=-22){clearInterval(demoTimer);demoTimer=null;}$('weather').value=val<0?'clear-night':'partlycloudy';update();},550);};
+mount.appendChild(card);setDefault();
+// Unlike earlier tests, DO NOT force-open after loading. The user can observe
+// the real 30-second idle timer, or manually open via the Show button.
+setInterval(()=>{
+  if(card._visible)return;
+  const reason=card._blockReason();
+  if(reason){$('status').textContent='Blokované: '+reason+' – šetrič nenabehne.';return;}
+  if(!$('cameraModal').hidden)return;
+  const remaining=Math.max(0,Math.ceil((30000-(Date.now()-card._lastActive))/1000));
+  $('status').textContent='Automatika: šetrič sa otvorí po '+remaining+' s nečinnosti.';
+},1000);
 </script></body></html>

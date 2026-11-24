@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {isCameraRoute,cameraBlockReason} from './camera-guard.mjs';
+let count=0;
+const check=(label,fn)=>{fn();console.log('PASS',label);count++};
+check('#kamery section',()=>assert.equal(isCameraRoute('/dashboard-domov/0','#kamery'),true));
+check('/lovelace/kamery view',()=>assert.equal(isCameraRoute('/lovelace/kamery',''),true));
+check('#cameras in English',()=>assert.equal(isCameraRoute('/dashboard/0','#cameras'),true));
+check('custom camera route',()=>assert.equal(isCameraRoute('/dashboard/bezpecnost','',['bezpecnost']),true));
+check('normal home dashboard',()=>assert.equal(isCameraRoute('/dashboard-domov/0','#domov'),false));
+check('ordinary route with camera string inside a word is not a camera view',()=>assert.equal(isCameraRoute('/lovelace/kameraman',''),false));
+check('blocked by camera route without DOM traversal',()=>assert.equal(cameraBlockReason({}, {pathname:'/lovelace/0',hash:'#kamery'}),'camera-view'));
+check('guard can be explicitly disabled',()=>assert.equal(cameraBlockReason({}, {pathname:'/lovelace/0',hash:'#kamery'},{block_when_camera_open:false}),''));
+console.log(`${count} camera route/guard tests passed`);
