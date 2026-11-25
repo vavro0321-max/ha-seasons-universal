@@ -1,0 +1,23 @@
+name: Validate HACS Dashboard installation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-hacs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      - name: Validate dashboard plugin in HACS
+        uses: hacs/action@main
+        with:
+          category: plugin
