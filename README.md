@@ -1,5 +1,10 @@
 # HA Seasons AI V1.3 – inštalácia cez HACS / Marketplace
 
+![Náhľad HA Seasons AI – fotografia chaty a jazera](https://raw.githubusercontent.com/vavro0321-max/ha-seasons-universal/main/dist/background-default.jpg)
+
+*Ukážka východiskovej fotografie; na nástenke sa dopĺňajú hodiny, počasie a sezónne efekty.*
+
+
 **Oprava aktualizácie:** Repozitár obsahuje koreňový `hacs.json` s `filename: ha-seasons-ai.js`. Aplikácia je typ **Dashboard (plugin)**. Všetky súbory vrátane modulov a obrázkov sú v `dist/`, aby ich HACS nainštaloval spoločne.
 
 **Ak už máš starú HA Seasons Universal nainštalovanú cez HACS / Marketplace:** v Marketplace otvor jej detail, obnov informácie o repozitári a vyber **Aktualizovať**. Nie je potrebné odstraňovať celý Marketplace ani inštalovať projekt ručne. Po aktualizácii znovu načítaj dashboard (prípadne vymaž cache prehliadača).
