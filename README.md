@@ -1,3 +1,15 @@
+# HA Seasons AI V1.3 – inštalácia cez HACS / Marketplace
+
+**Oprava aktualizácie:** Repozitár obsahuje koreňový `hacs.json` s `filename: ha-seasons-ai.js`. Aplikácia je typ **Dashboard (plugin)**. Všetky súbory vrátane modulov a obrázkov sú v `dist/`, aby ich HACS nainštaloval spoločne.
+
+**Ak už máš starú HA Seasons Universal nainštalovanú cez HACS / Marketplace:** v Marketplace otvor jej detail, obnov informácie o repozitári a vyber **Aktualizovať**. Nie je potrebné odstraňovať celý Marketplace ani inštalovať projekt ručne. Po aktualizácii znovu načítaj dashboard (prípadne vymaž cache prehliadača).
+
+HACS nainštaluje kartu do `/config/www/community/ha-seasons-universal/` a spravuje zdroj JavaScriptu. Zdroj novej karty je `/hacsfiles/ha-seasons-universal/ha-seasons-ai.js` (alternatívne `/local/community/ha-seasons-universal/ha-seasons-ai.js`). V YAML pridaj `type: custom:ha-seasons-ai-card`. Starý typ `custom:ha-seasons-universal` ani starý resource `ha-seasons-universal.js` nebudú fungovať s novou kartou. Ak starý zdroj zostal ručne pridaný, odstráň ho **až po overení**, že nový zdroj je načítaný. Nepridávaj druhý zhodný zdroj.
+
+**Dôležité:** Automatické stiahnutie cez HACS nespúšťa automatizáciu snehu. Ak ju chceš, musíš samostatne pridať `ha_seasons_snow_package.yaml` (alebo náhradu, ak helper snehu už existuje) a ponechať aktívnu len jednu automatizáciu. Obsah `dist/` HACS spravuje automaticky; ručná inštalácia nižšie je alternatíva, nie ďalší povinný krok.
+
+---
+
 # HA Seasons AI V1.3 — čistý projekt
 
 Inštalácia: z tohto repozitára stiahni ZIP (Code → Download ZIP), rozbaľ ho a **obsah priečinka `dist/`** skopíruj do `/config/www/ha-seasons-ai-v1-3/` v Home Assistante. Zaregistruj JavaScript modul `/local/ha-seasons-ai-v1-3/ha-seasons-ai.js?v=1.3.0` a pridaj kartu `type: custom:ha-seasons-ai-card`.
