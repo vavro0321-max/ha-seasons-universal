@@ -2,7 +2,8 @@
 import {readWeather} from './weather-engine.mjs';
 import { cameraBlockReason, isCameraRoute } from './camera-guard.mjs';
 import {holidayForDate} from './holiday-engine.mjs';
-const VERSION = '1.3.0';
+import {wasteReadings} from './waste-engine.mjs';
+const VERSION = '1.3.1';
 const CLOUD_SOFT = new URL('./assets/clouds-soft.svg', import.meta.url).href;
 const CLOUD_HEAVY = new URL('./assets/clouds-heavy.svg', import.meta.url).href;
 const RAIN_ASSET = new URL('./assets/rain.svg', import.meta.url).href;
@@ -100,6 +101,16 @@ const SCREEN_STYLE = `
 .info{display:flex;min-width:0;align-items:center;justify-content:center;flex-direction:column;gap:5px;background:rgba(9,24,43,.48);border:1px solid rgba(220,235,253,.36);border-radius:18px;min-height:clamp(92px,15vh,155px);padding:10px 7px;box-sizing:border-box;backdrop-filter:blur(7px);box-shadow:0 6px 20px #0004}
 .info .emoji{font-size:clamp(21px,3.8vh,34px)}.info .label{font-size:clamp(10px,1.45vw,15px);letter-spacing:.07em;text-transform:uppercase;color:#e3ebf5}
 .info .value{font-size:clamp(17px,2.25vw,28px);font-weight:730;line-height:1.14;overflow-wrap:anywhere;max-width:100%}
+.waste-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:min(100%,820px);gap:10px;margin-top:clamp(8px,1.8vh,17px)}
+.waste-row[hidden]{display:none!important}
+.waste-pill{display:flex;align-items:center;justify-content:center;gap:10px;min-width:0;min-height:45px;box-sizing:border-box;padding:6px 12px;border:1px solid rgba(220,235,253,.32);border-radius:14px;background:rgba(9,24,43,.54);backdrop-filter:blur(7px);box-shadow:0 4px 16px #0003}
+.waste-emoji{font-size:clamp(19px,2.5vh,26px);flex:none}.waste-info{display:flex;flex-direction:column;gap:2px;min-width:0;align-items:flex-start;text-align:left}
+.waste-label{font-weight:600;color:#d9e7f4;letter-spacing:.025em;font-size:clamp(10px,1.1vw,13px)}
+.waste-value{font-weight:780;color:#fff;font-size:clamp(12px,1.5vw,17px);overflow-wrap:anywhere}
+.waste-pill[data-status="today"]{border-color:rgba(251,113,133,.85);background:rgba(120,24,43,.63)}
+.waste-pill[data-status="tomorrow"]{border-color:rgba(251,191,36,.75);background:rgba(119,78,17,.54)}
+.waste-pill[data-status="missing"] .waste-value{color:#cbd5e1}
+@media(max-width:530px){.waste-row{gap:7px}.waste-pill{gap:6px;min-height:46px;padding:5px 6px}.waste-emoji{font-size:18px}.waste-label{font-size:10px}.waste-value{font-size:12px}}
 @media (orientation:portrait){.content{top:max(env(safe-area-inset-top,0px),6vh);width:92vw}.cards{grid-template-columns:repeat(2,minmax(0,1fr));max-width:680px;margin-top:4vh}.info{min-height:clamp(88px,12vh,130px)}.info .value{font-size:clamp(15px,3.8vw,25px)}}
 @media (max-height:560px) and (orientation:landscape){.content{top:2vh}.clock{font-size:clamp(42px,15vh,82px)}.date{font-size:14px;margin-top:2px}.cards{margin-top:14px}.info{min-height:75px;padding:6px 4px;gap:2px;border-radius:13px}.info .emoji{font-size:17px}.info .label{font-size:11px}.info .value{font-size:clamp(13px,2.2vw,18px)}}
 @media (max-width:360px) and (orientation:portrait){.content{top:4vh}.clock{font-size:56px}.cards{gap:8px;margin-top:18px}.info{min-height:88px}}
@@ -167,7 +178,7 @@ class HASeasonsFinal extends HTMLElement {
   }
   static getStubConfig(){return {type:'custom:ha-seasons-ai-card',idle_seconds:30,background_mode:'seasonal'};}
   static getConfigElement(){return document.createElement('ha-seasons-ai-editor');}
-  setConfig(config){this._config={idle_seconds:30,block_when_camera_open:true,camera_views:['kamery','kamera','cameras','camera'],background_mode:'seasonal',preview_season:'auto',background_fit:'cover',background_x:50,background_y:50,background_dim:0.14,holidays_enabled:true,show_holiday_label:true,holiday_animations:true,holiday_church_lights:true,photographic_advent:true,preview_holiday:'auto',dynamic_snow:true,snow_cover_entity:DEFAULT_SNOW_ENTITY,...(config||{})}; if(this._visible)this._render();}
+  setConfig(config){this._config={idle_seconds:30,block_when_camera_open:true,camera_views:['kamery','kamera','cameras','camera'],background_mode:'seasonal',preview_season:'auto',background_fit:'cover',background_x:50,background_y:50,background_dim:0.14,holidays_enabled:true,show_holiday_label:true,holiday_animations:true,holiday_church_lights:true,photographic_advent:true,preview_holiday:'auto',dynamic_snow:true,snow_cover_entity:DEFAULT_SNOW_ENTITY,show_waste:true,...(config||{})}; if(this._visible)this._render();}
   getCardSize(){return 1;}
   set hass(hass){this._hass=hass;if(this._visible)this._render();}
   connectedCallback(){if(this._timer)return;this._lastActive=Date.now();
@@ -205,7 +216,7 @@ class HASeasonsFinal extends HTMLElement {
     if(!force&&(document.hidden||this._editing()||this._blockReason()))return;
     this._visible=true;
     const host=document.createElement('div');host.setAttribute('data-ha-seasons-final',VERSION);
-    host.attachShadow({mode:'open'}).innerHTML=`<style>${SCREEN_STYLE}${ATMOSPHERE_STYLE}${HOLIDAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="background"></div><div class="background background-next"></div><div class="snow-background"></div><div class="advent-photograph" aria-hidden="true"></div><div class="atmosphere-night"></div><div class="atmosphere-twilight"></div><div class="weather-sky"><div class="celestial sun"></div><div class="celestial moon"></div><div class="clouds cloud-back"></div><div class="clouds cloud-front"></div></div><div class="weather-fog"></div><div class="weather-rain"></div><div class="falling-snow"></div><div class="shade"></div><div class="holiday-scene" aria-hidden="true"><div class="holiday-lights"></div><div class="holiday-stars"></div><div class="holiday-petals"></div><div class="holiday-glow"></div><div class="holiday-candles"><span class="candle"></span><span class="candle"></span><span class="candle"></span><span class="candle"></span></div></div><div class="holiday-caption" aria-hidden="true"></div><div class="content"><div class="clock"></div><div class="date"></div><div class="cards"><div class="info"><div class="emoji">🌡️</div><div class="label">Vonku</div><div class="value" data-field="temperature"></div></div><div class="info"><div class="emoji">♨️</div><div class="label">Kúrenie</div><div class="value" data-field="heating"></div></div><div class="info"><div class="emoji">🎁</div><div class="label">Meniny dnes</div><div class="value" data-field="nameday"></div></div><div class="info"><div class="emoji">💡</div><div class="label">Osvetlenie</div><div class="value" data-field="lighting"></div></div></div></div></div>`;
+    host.attachShadow({mode:'open'}).innerHTML=`<style>${SCREEN_STYLE}${ATMOSPHERE_STYLE}${HOLIDAY_STYLE}</style><div class="screen" role="dialog" aria-label="HA Seasons – šetrič obrazovky"><div class="background"></div><div class="background background-next"></div><div class="snow-background"></div><div class="advent-photograph" aria-hidden="true"></div><div class="atmosphere-night"></div><div class="atmosphere-twilight"></div><div class="weather-sky"><div class="celestial sun"></div><div class="celestial moon"></div><div class="clouds cloud-back"></div><div class="clouds cloud-front"></div></div><div class="weather-fog"></div><div class="weather-rain"></div><div class="falling-snow"></div><div class="shade"></div><div class="holiday-scene" aria-hidden="true"><div class="holiday-lights"></div><div class="holiday-stars"></div><div class="holiday-petals"></div><div class="holiday-glow"></div><div class="holiday-candles"><span class="candle"></span><span class="candle"></span><span class="candle"></span><span class="candle"></span></div></div><div class="holiday-caption" aria-hidden="true"></div><div class="content"><div class="clock"></div><div class="date"></div><div class="cards"><div class="info"><div class="emoji">🌡️</div><div class="label">Vonku</div><div class="value" data-field="temperature"></div></div><div class="info"><div class="emoji">♨️</div><div class="label">Kúrenie</div><div class="value" data-field="heating"></div></div><div class="info"><div class="emoji">🎁</div><div class="label">Meniny dnes</div><div class="value" data-field="nameday"></div></div><div class="info"><div class="emoji">💡</div><div class="label">Osvetlenie</div><div class="value" data-field="lighting"></div></div></div><div class="waste-row"><div class="waste-pill" data-waste-status="municipal"><span class="waste-emoji" aria-hidden="true">🗑️</span><span class="waste-info"><span class="waste-label">Komunálny odpad</span><span class="waste-value" data-waste="municipal">—</span></span></div><div class="waste-pill" data-waste-status="sorted"><span class="waste-emoji" aria-hidden="true">♻️</span><span class="waste-info"><span class="waste-label">Triedený zber</span><span class="waste-value" data-waste="sorted">—</span></span></div></div></div></div>`;
     this._host=host;this._root=host.shadowRoot;document.body.appendChild(host);
     this._screen=host.shadowRoot.querySelector('.screen');
     this._onDismiss=e=>{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation?.();
@@ -380,6 +391,16 @@ class HASeasonsFinal extends HTMLElement {
     this._root.querySelector('.shade').style.background=`rgba(0,8,19,${clamp(fixed(this._config.background_dim,0.14),0,0.8)})`;
     const values=readings(this._hass||{states:{}},this._config);
     for(const [field,value]of Object.entries(values))this._root.querySelector(`[data-field="${field}"]`).textContent=value;
+    const wasteRow=this._root.querySelector('.waste-row');
+    wasteRow.hidden=this._config.show_waste===false;
+    if(!wasteRow.hidden){
+      const waste=wasteReadings(this._hass||{states:{}},this._config,now);
+      for(const [key,entry] of Object.entries(waste)){
+        const pill=wasteRow.querySelector(`[data-waste-status="${key}"]`);
+        pill.dataset.status=entry.status;
+        pill.querySelector(`[data-waste="${key}"]`).textContent=entry.value;
+      }
+    }
   }
 }
 class HASeasonsFinalEditor extends HTMLElement {
@@ -413,6 +434,11 @@ class HASeasonsFinalEditor extends HTMLElement {
       <label class="field">Senzor zrážok (mm/h)<input data-prop="rain_rate_entity" value="${esc(c.rain_rate_entity||'sensor.ws2900_v2_02_01_rain_rate')}"></label>
       <label class="field">Senzor fázy Mesiaca<input data-prop="moon_entity" value="${esc(c.moon_entity||'sensor.moon_phase')}"></label>
       <p class="hint">Slnko sa riadi sun.sun (výška/azimut) a mesiac sa zobrazuje v noci podľa dostupnej fázy. Poloha mesiaca je iba dekoratívna; presnú polohu na oblohe nepočítame. Obloha a sneh sú vizuálne aproximácie fotografií.</p>
+      <strong>Odvoz odpadu (komunálny a triedený)</strong>
+      <label class="field">Zobraziť termíny odvozu<select data-bool="show_waste"><option value="true" ${c.show_waste!==false?'selected':''}>Zapnuté</option><option value="false" ${c.show_waste===false?'selected':''}>Vypnuté</option></select></label>
+      <label class="field">Senzor komunálneho odpadu<input data-prop="waste_municipal_entity" value="${esc(c.waste_municipal_entity||'sensor.najblizsi_komunalny_odpad')}"></label>
+      <label class="field">Senzor triedeného zberu<input data-prop="waste_recycling_entity" value="${esc(c.waste_recycling_entity||'sensor.najblizsi_triedeny_zber')}"></label>
+      <p class="hint">Šetrič predvolene automaticky načíta obe entity. Ak niektorá chýba, zobrazí —. Zber dnes alebo zajtra sa farebne zvýrazní.</p>
       <strong>Dynamický sneh (HA Green)</strong>
       <label class="field">Dynamický sneh<select data-bool="dynamic_snow"><option value="true" ${c.dynamic_snow!==false?'selected':''}>Zapnutý</option><option value="false" ${c.dynamic_snow===false?'selected':''}>Vypnutý</option></select></label>
       <label class="field">Entita počasia<input data-prop="weather_entity" value="${esc(c.weather_entity||'weather.home')}"></label>
