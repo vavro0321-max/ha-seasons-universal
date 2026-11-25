@@ -1,5 +1,26 @@
 # HA Seasons AI V1.3 – inštalácia cez HACS / Marketplace
 
+## Vývoz komunálneho a triedeného odpadu (V1.3.1)
+
+Šetrič teraz pod štyrmi pôvodnými kartami zobrazuje dve malé položky: **Komunálny odpad** a **Triedený zber**. Bez zmeny YAML automaticky číta tieto entity:
+
+- `sensor.najblizsi_komunalny_odpad`
+- `sensor.najblizsi_triedeny_zber`
+
+Pri inom názve senzora môžeš zadať v karte:
+
+```yaml
+show_waste: true
+waste_municipal_entity: sensor.najblizsi_komunalny_odpad
+waste_recycling_entity: sensor.najblizsi_triedeny_zber
+```
+
+Podporované sú dátumy `YYYY-MM-DD`, `DD.MM.YYYY` a slovenské texty `Dnes` / `Zajtra`. Ak senzor nemá platné údaje, zobrazí sa `—`. Nastavením `show_waste: false` sa oba panely skryjú. Zobrazenie odvozu **nepotrebuje novú automatizáciu**; iba existujúce senzory v Home Assistante.
+
+Po aktualizácii cez HACS obnov stránku / vymaž cache WebView, ak sa zmena hneď nezobrazí.
+
+
+
 ![Náhľad HA Seasons AI – fotografia chaty a jazera](https://raw.githubusercontent.com/vavro0321-max/ha-seasons-universal/main/dist/background-default.jpg)
 
 *Ukážka východiskovej fotografie; na nástenke sa dopĺňajú hodiny, počasie a sezónne efekty.*
