@@ -29,6 +29,7 @@ jobs:
           set -euo pipefail
           test -f dist/ha-seasons-ai.js
           test -f dist/holiday-engine.mjs
+          test -f dist/waste-engine.mjs
           test -f dist/camera-guard.mjs
           test -f dist/weather-engine.mjs
           test -f dist/snow-engine.mjs
@@ -48,6 +49,7 @@ jobs:
           node dist/test-engine.mjs
           node dist/test-camera-guard.mjs
           node dist/test-holidays.mjs
+          node dist/test-waste.mjs
           node dist/test-advent-gallery.mjs
 
       - name: Prepare installable Home Assistant files
@@ -55,7 +57,7 @@ jobs:
           set -euo pipefail
           mkdir -p install/ha-seasons-ai-v1-3
           cp dist/ha-seasons-ai.js dist/weather-engine.mjs dist/camera-guard.mjs \
-            dist/holiday-engine.mjs dist/snow-engine.mjs dist/background-default.jpg \
+            dist/holiday-engine.mjs dist/waste-engine.mjs dist/snow-engine.mjs dist/background-default.jpg \
             install/ha-seasons-ai-v1-3/
           cp -R dist/assets dist/seasons install/ha-seasons-ai-v1-3/
           cp README.md install/INSTALLATION-SK.md
