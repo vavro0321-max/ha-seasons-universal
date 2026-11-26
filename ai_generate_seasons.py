@@ -12,7 +12,7 @@ SEASONS = {
     "spring": "Early spring, natural fresh vegetation and subtle blossoms",
     "summer": "Summer, full natural green vegetation",
     "autumn": "Autumn, natural amber and red foliage",
-    "winter": "Winter without lying snow, dormant vegetation where appropriate",
+    "winter": "Leafless winter without lying snow: remove autumn and green leaves from deciduous trees and bushes, retain conifers, preserve their branches and geometry",
 }
 PRESERVE = (
     "Edit the provided image, do not generate a different location. Preserve exact camera position, "
@@ -29,6 +29,7 @@ NIGHT = (
     "No daylight sun, no artificial blanket of darkness, no moon or stars added. "
 )
 SNOW = (
+     "Remove remaining autumn and green leaves from deciduous trees and shrubs; keep evergreen conifers. "
     "Add realistic settled snow ONLY on existing outdoor roofs, vegetation, ground and appropriate "
     "horizontal surfaces. Preserve paths, bodies of water and all exact object outlines. "
     "Never add snow inside rooms or on inappropriate surfaces. No falling snow or haze. "
@@ -56,10 +57,13 @@ def main():
     keys = ["single"] if single else list(SEASONS)
     source_hash = hashlib.sha256(a.input.read_bytes()).hexdigest()
     fingerprint = {"source_sha256": source_hash, "mode": a.mode, "model": a.model,
-                   "quality": a.quality, "generator": 1}
+                   "quality": a.quality, "generator": 2}
     plan = []
     names = {}
     source_copy = "original" + a.input.suffix.lower()
+    if single:
+        plan.extend([("winter-dry.png", source_copy, PRESERVE + SEASONS["winter"] + ". " + DRY),
+                     ("winter-night.png", "winter-dry.png", PRESERVE + NIGHT)])
     for key in keys:
         prefix = "" if single else key + "-"
         day = source_copy if single else prefix + "day.png"
@@ -67,7 +71,7 @@ def main():
             plan.append((day, source_copy, PRESERVE + SEASONS[key] + ". " + DRY))
         night, snow, night_snow = [prefix + name + ".png" for name in ("night", "snow", "night-snow")]
         plan.extend([(night, day, PRESERVE + NIGHT),
-                     (snow, day, PRESERVE + SNOW + " Natural daylight."),
+                     (snow, "winter-dry.png" if single else day, PRESERVE + SNOW + " Natural daylight."),
                      (night_snow, snow, PRESERVE + NIGHT + " Preserve settled snow.")])
         names[key] = (day, night, snow, night_snow)
     if a.dry_run or not a.yes:
@@ -110,6 +114,8 @@ def main():
     if single:
         for k, f in zip(("background_image", "night_image", "snow_image", "night_snow_image"), names["single"]):
             config[k] = url + "/" + f
+        config["snow_free_image"] = url + "/winter-dry.png"
+        config["winter_night_image"] = url + "/winter-night.png"
     else:
         for i, k in enumerate(("seasonal_images", "seasonal_night_images", "seasonal_snow_images", "seasonal_night_snow_images")):
             config[k] = {season: url + "/" + files[i] for season, files in names.items()}
