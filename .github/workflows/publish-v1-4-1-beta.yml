@@ -1,0 +1,33 @@
+name: Publish HA Seasons AI V1.4.1 Beta
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-v1-4-1-beta.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: v1.4.1-beta
+      TARGET: ef83b7200edac53d981a0ec48d37cf38ce60e2ab
+    steps:
+      - name: Publish verified beta source
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release already exists; leaving it unchanged."
+            exit 0
+          fi
+          gh release create "$TAG" --target "$TARGET" --prerelease \
+            --title "HA Seasons AI V1.4.1 Beta" \
+            --notes "History-based snow cover, early winter, improved visibility and optional matching AI night/snow photos. CI passed. Actual HA device and AI generation are not yet verified. Custom photos require separately generated variants."
