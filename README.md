@@ -1,3 +1,24 @@
+# V1.4.1 – história snehu a predčasná zima
+
+Karta automaticky načíta posledných 7 dní z lokálnej histórie Home Assistanta (Recorder/History), najviac raz za 15 minút počas otvoreného šetriča. Používa nastavenú entitu počasia a vonkajšej teploty. Pri snežení a teplote <= 0 °C sa odhad pokrytia zvyšuje, pri mraze bez sneženia zostáva a pri oteplení sa znižuje. Samotný mráz nikdy nevytvára sneh. Pri chýbajúcej histórii používa existujúci helper, bez vytvárania nového helpera alebo duplikovania automatizácie. Vyberá vyšší z historického odhadu a helpera, aby nezmizol starší sneh mimo časového okna. Ide o odhad, nie skutočné meranie; chýbajúce intervaly sa nepočítajú.
+
+Pri evidovanom pokrytí od 5 % alebo aktuálnom snežení pri mraze karta automaticky použije zimnú scénu aj v novembri. Pre predvolenú krajinu použije existujúce zimné fotografie. Pri snehu nepoužije samostatnú adventnú fotografiu, ktorá by mohla sneh zakryť; grafické sviatočné prvky ostávajú. Ak chýba zodpovedajúca zasnežená nočná fotografia, použije denný zimný variant s jemným nočným filtrom, aby sneh nezmizol.
+
+Voliteľné nastavenia v existujúcej karte:
+```yaml
+snow_history: true
+snow_history_days: 7
+winter_on_snow: true
+# snow_observed_entity: input_number.skutocny_sneh
+```
+Voliteľná entita skutočného pokrytia v % (0–100) má prednosť pred oboma odhadmi. Ak ju použiješ, jej stav musí predstavovať aktuálne pokrytie zeme, nie centimetre. Pri ručnom riadení helperom sa dá história vypnúť nastavením snow_history: false. História je lokálna; karta ju neodosiela na internet.
+
+Generátor V1.4.1 výslovne odstraňuje listy z listnatých stromov, ale zachováva ihličnany. Režim single teraz pripravuje 5 platených AI úprav vrátane zimného podkladu bez snehu (snow_free_image) a jeho nočnej verzie (winter_night_image). Použi nový prázdny výstupný priečinok; staré AI obrázky sa nezmenia automaticky. Režim seasonal má 16 úprav. Bez dodaných zimných variantov karta nevie odstrániť lístie z ľubovoľnej fotografie; nepoužíva cudziu krajinu ako náhradu vlastného obrázka.
+
+Overené: syntax JavaScriptu a 7 logických testov odhadu/priority snehu. Skutočná história konkrétneho HA, generovanie cez živé AI API a vizuálny test na tablete ešte neboli overené.
+
+---
+
 # HA Seasons AI V1.4 – čitateľný obraz a AI nočná fotografia
 
 **V1.4 (testovacia vetva):** karta podporuje skutočné nočné a zasnežené varianty ľubovoľnej vlastnej fotografie. V noci bez pripraveného variantu použije len jemný filter (18 %), nie 86 %. Pri načítanom nočnom variante sa tmavý a súmrakový filter vypne. Oblaky sú výrazne slabšie a obmedzené na hornú časť obrazu; hmla len pri stave fog/mist. Zrážky sa riadia dostupnými entitami. Snehové vločky len pri snežení a teplote <= 0 °C. Štyri informačné karty, odpady, časový režim, kamery a sviatočný kalendár sa zachovávajú.
@@ -10,7 +31,7 @@ python -m pip install -U openai
 python ai_generate_seasons.py --input dist/background-default.jpg --output moje-pozadia --mode single --dry-run
 ```
 
-Pre vlastnú fotografiu zmeň --input. Režim single pripraví 3 platené varianty (noc, sneh cez deň, sneh v noci); originál je denný obrázok. Režim seasonal pripraví 16 variantov pre všetky štyri ročné obdobia. Najprv over ceny API a nastav OPENAI_API_KEY iba v lokálnom prostredí; až potom namiesto --dry-run použi --yes. Generátor zachová hotové obrázky a odmietne použiť adresár patriaci inému originálu. Výsledky vizuálne skontroluj: AI môže mierne zmeniť geometriu alebo kompozíciu; sneh je prelínanie fotografií, nie meranie ani fyzikálna simulácia.
+Pre vlastnú fotografiu zmeň --input. Režim single pripraví 5 platených variantov (noc, zimný deň bez snehu, zimná noc bez snehu, sneh cez deň, sneh v noci); originál je denný obrázok mimo zimy. Režim seasonal pripraví 16 variantov pre všetky štyri ročné obdobia. Najprv over ceny API a nastav OPENAI_API_KEY iba v lokálnom prostredí; až potom namiesto --dry-run použi --yes. Generátor zachová hotové obrázky a odmietne použiť adresár patriaci inému originálu. Výsledky vizuálne skontroluj: AI môže mierne zmeniť geometriu alebo kompozíciu; sneh je prelínanie fotografií, nie meranie ani fyzikálna simulácia.
 
 Skopíruj vygenerované obrázky z moje-pozadia do /config/www/ha-seasons-custom/ (alebo nastav --url na inú lokálnu cestu). Vygenerovaný card-settings.json je platný JSON/YAML; prenes jeho nastavenia do existujúcej karty, ponechaj pôvodné entities a ostatné nastavenia. Napríklad:
 
