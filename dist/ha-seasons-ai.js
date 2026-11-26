@@ -3,7 +3,7 @@ import {readWeather} from './weather-engine.mjs';
 import { cameraBlockReason, isCameraRoute } from './camera-guard.mjs';
 import {holidayForDate} from './holiday-engine.mjs';
 import {wasteReadings} from './waste-engine.mjs';
-const VERSION = '1.3.1';
+const VERSION = '1.4.0';
 const CLOUD_SOFT = new URL('./assets/clouds-soft.svg', import.meta.url).href;
 const CLOUD_HEAVY = new URL('./assets/clouds-heavy.svg', import.meta.url).href;
 const RAIN_ASSET = new URL('./assets/rain.svg', import.meta.url).href;
@@ -32,7 +32,7 @@ function imageForSeason(config, now=new Date(),hass){
   if(config.background_mode==='single')return String(config.background_image||DEFAULT_IMAGE);
   const forced=String(config.preview_season||'auto');
   const season=SEASONS.includes(forced)?forced:seasonForDate(now,hass?.config?.time_zone||'Europe/Bratislava');
-  return String(config.seasonal_images?.[season]||DEFAULT_SEASON_IMAGES[season]);
+  return String(config.seasonal_images?.[season]||config.background_image||DEFAULT_SEASON_IMAGES[season]);
 }
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
@@ -174,11 +174,11 @@ class HASeasonsFinal extends HTMLElement {
     this._config={};this._hass=null;this._visible=false;this._lastActive=Date.now();
     this._onActivity=this._onActivity.bind(this);this._tick=this._tick.bind(this);
     this._onVisibilityChange=()=>{this._lastActive=Date.now();};
-    this._closeTimer=null;this._cameraWasBlocked=false;this._lastBlockReason='';this._bgTokenCounter=0;this._transitionTimer=null;this._wantedBackground=null;this._activeBackground=null;
+    this._closeTimer=null;this._cameraWasBlocked=false;this._lastBlockReason='';this._bgTokenCounter=0;this._transitionTimer=null;this._wantedBackground=null;this._activeBackground=null;this._failedBackgrounds=new Set();
   }
   static getStubConfig(){return {type:'custom:ha-seasons-ai-card',idle_seconds:30,background_mode:'seasonal'};}
   static getConfigElement(){return document.createElement('ha-seasons-ai-editor');}
-  setConfig(config){this._config={idle_seconds:30,block_when_camera_open:true,camera_views:['kamery','kamera','cameras','camera'],background_mode:'seasonal',preview_season:'auto',background_fit:'cover',background_x:50,background_y:50,background_dim:0.14,holidays_enabled:true,show_holiday_label:true,holiday_animations:true,holiday_church_lights:true,photographic_advent:true,preview_holiday:'auto',dynamic_snow:true,snow_cover_entity:DEFAULT_SNOW_ENTITY,show_waste:true,...(config||{})}; if(this._visible)this._render();}
+  setConfig(config){this._failedBackgrounds.clear();this._config={idle_seconds:30,block_when_camera_open:true,camera_views:['kamery','kamera','cameras','camera'],background_mode:'seasonal',preview_season:'auto',background_fit:'cover',background_x:50,background_y:50,background_dim:0.03,holidays_enabled:true,show_holiday_label:true,holiday_animations:true,holiday_church_lights:true,photographic_advent:true,preview_holiday:'auto',dynamic_snow:true,snow_cover_entity:DEFAULT_SNOW_ENTITY,show_waste:true,...(config||{})}; if(this._visible)this._render();}
   getCardSize(){return 1;}
   set hass(hass){this._hass=hass;if(this._visible)this._render();}
   connectedCallback(){if(this._timer)return;this._lastActive=Date.now();
@@ -227,7 +227,7 @@ class HASeasonsFinal extends HTMLElement {
     for(const ev of ['pointerdown','touchstart','click'])this._screen.addEventListener(ev,this._onDismiss,{capture:true});
     this._render();
   }
-  _loadBackground(src){
+  _loadBackground(src,fallback=DEFAULT_IMAGE){
     this._wantedBackground=src;
     const token=++this._bgTokenCounter;
     const picture=new Image();
@@ -249,8 +249,8 @@ class HASeasonsFinal extends HTMLElement {
     };
     picture.onerror=()=>{
       if(token!==this._bgTokenCounter)return;
-      const fallback=String(this._config.background_image||DEFAULT_IMAGE);
-      if(src!==fallback)this._loadBackground(fallback);
+      this._failedBackgrounds.add(src);
+      if(src!==fallback&&!this._failedBackgrounds.has(fallback))this._loadBackground(fallback,DEFAULT_IMAGE);
       else if(src!==DEFAULT_IMAGE)this._loadBackground(DEFAULT_IMAGE);
     };
     picture.src=src;
@@ -287,7 +287,7 @@ class HASeasonsFinal extends HTMLElement {
     // Church position is known only for bundled 1536x864 photographs. Never
     // paint a glow on an arbitrary user's image unless they specify placement.
     const custom=Boolean(this._config.background_mode==='single'||this._config.background_image||
-      this._config.snow_free_image||Object.values(this._config.seasonal_images||{}).some(Boolean));
+      this._config.snow_free_image||this._config.night_image||Object.values(this._config.seasonal_images||{}).some(Boolean)||Object.values(this._config.seasonal_night_images||{}).some(Boolean));
     // Bundled landscape: use the 1–4-candle photorealistic variants ONLY at dusk/night.
     // Custom photos must never be replaced by an unrelated house/landscape.
     const photo=this._root.querySelector('.advent-photograph');
@@ -333,37 +333,46 @@ class HASeasonsFinal extends HTMLElement {
     this._renderHoliday(new Date());
     const now=new Date();
     const season=SEASONS.includes(this._config.preview_season)?this._config.preview_season:seasonForDate(now,this._hass?.config?.time_zone||'Europe/Bratislava');
-    const dynamic=this._config.dynamic_snow!==false&&this._config.background_mode!=='single';
+    const dynamic=this._config.dynamic_snow!==false;
+    const wx=readWeather(this._hass||{states:{}},this._config,now);
+    const cfg=this._config;
+    const single=cfg.background_mode==='single';
+    const custom=Boolean(single||cfg.background_image||cfg.snow_free_image||Object.values(cfg.seasonal_images||{}).some(Boolean));
     const coverEntity=state(this._hass,this._config.snow_cover_entity||DEFAULT_SNOW_ENTITY);
     const coverReading=validEntityNumber(coverEntity);
     const cover=coverReading===null?0:clamp(coverReading,0,100);
-    const image=dynamic&&season==='winter'
-      ?String(this._config.snow_free_image||this._config.seasonal_images?.winter_dry||DEFAULT_DRY_WINTER_IMAGE)
-      :imageForSeason(this._config,now,this._hass);
+    const dayImage=dynamic&&!single&&season==='winter'
+      ?String(cfg.snow_free_image||cfg.seasonal_images?.winter_dry||(custom?imageForSeason(cfg,now,this._hass):DEFAULT_DRY_WINTER_IMAGE))
+      :imageForSeason(cfg,now,this._hass);
+    const nightImage=String((single?cfg.night_image:cfg.seasonal_night_images?.[season]||cfg.night_image)||'');
+    const useNight=cfg.dynamic_weather!==false&&wx.night>=0.5&&nightImage&&!this._failedBackgrounds.has(nightImage);
+    const image=useNight?nightImage:dayImage;
+    const realNight=Boolean(nightImage&&this._activeBackground===nightImage);
+    const daySnow=String((single?cfg.snow_image:cfg.seasonal_snow_images?.[season]||cfg.snow_image)||(!custom?DEFAULT_SEASON_IMAGES.winter:''));
+    const nightSnow=String((single?cfg.night_snow_image:cfg.seasonal_night_snow_images?.[season]||cfg.night_snow_image)||'');
     const bg=this._root.querySelector('.background');
     const next=this._root.querySelector('.background-next');
     for(const layer of [bg,next,this._root.querySelector('.snow-background')]){
       layer.style.backgroundSize=this._config.background_fit==='contain'?'contain':'cover';
       layer.style.backgroundPosition=`${clamp(fixed(this._config.background_x,50),0,100)}% ${clamp(fixed(this._config.background_y,50),0,100)}%`;
     }
-    if(image!==this._wantedBackground)this._loadBackground(image);
+    if(image!==this._wantedBackground&&!this._failedBackgrounds.has(image))this._loadBackground(image,dayImage);
     const snowLayer=this._root.querySelector('.snow-background');
     const weatherEntity=pickWeatherEntity(this._hass,this._config.weather_entity||this._config.entities?.weather);
     const weatherState=String(weatherEntity?.state||'');
     const temperatureEntity=state(this._hass,this._config.entities?.temperature||'sensor.ws2900_v2_02_01_outdoor_temperature');
     let temperature=validEntityNumber(temperatureEntity);
     if(temperature!==null&&['°f','f'].includes(String(temperatureEntity?.attributes?.unit_of_measurement||'').toLowerCase()))temperature=(temperature-32)*5/9;
-    const snowingNow=dynamic&&['snowy','snowy-rainy'].includes(weatherState)&&temperature!==null&&temperature<=1;
-    const wx=readWeather(this._hass||{states:{}},this._config,now);
+    const snowingNow=wx.precipitation==='snow'&&wx.temperature!==null&&wx.temperature<=0;
     const sky=this._root.querySelector('.weather-sky');
     const clouds=sky.querySelectorAll('.clouds');
     const cloudEnabled=this._config.show_clouds!==false && this._config.dynamic_weather!==false;
     const motion=this._config.cloud_motion!==false && this._config.low_motion!==true;
-    sky.style.height=`${clamp(fixed(this._config.sky_height,53),16,70)}%`;
+    sky.style.height=`${clamp(fixed(this._config.sky_height,34),16,70)}%`;
     clouds[0].style.backgroundImage=`url(${JSON.stringify(CLOUD_SOFT)})`;
     clouds[1].style.backgroundImage=`url(${JSON.stringify(CLOUD_HEAVY)})`;
-    clouds[0].style.opacity=cloudEnabled?String(clamp(wx.cloud*0.55,0,.6)):'0';
-    clouds[1].style.opacity=cloudEnabled?String(clamp(Math.pow(wx.cloud,1.3)*0.78,0,.78)):'0';
+    clouds[0].style.opacity=cloudEnabled?String(clamp(wx.cloud*0.18,0,.18)):'0';
+    clouds[1].style.opacity=cloudEnabled?String(clamp(Math.pow(wx.cloud,1.3)*0.22,0,.22)):'0';
     clouds.forEach(c=>{c.style.animationPlayState=motion?'running':'paused';c.style.filter=`brightness(${clamp(1-wx.cloudDark*.48,.5,1)})`;});
     const dynamicWeather=this._config.dynamic_weather!==false;
     const sun=sky.querySelector('.sun'),moon=sky.querySelector('.moon');
@@ -371,9 +380,9 @@ class HASeasonsFinal extends HTMLElement {
     sun.style.opacity=dynamicWeather&&this._config.show_sun!==false?String(wx.sunOpacity):'0';
     moon.style.left='78%';moon.style.top='28%';moon.textContent=wx.moonPhase.icon;
     moon.style.opacity=dynamicWeather&&this._config.show_moon!==false?String(wx.moonOpacity):'0';
-    this._root.querySelector('.atmosphere-night').style.opacity=dynamicWeather?String(wx.night*.86):'0';
-    this._root.querySelector('.atmosphere-twilight').style.opacity=dynamicWeather?String(wx.twilight*.9):'0';
-    this._root.querySelector('.weather-fog').style.opacity=dynamicWeather&&this._config.show_fog!==false?String(wx.fog*.65):'0';
+    this._root.querySelector('.atmosphere-night').style.opacity=dynamicWeather&&!realNight?String(wx.night*clamp(fixed(cfg.night_dim,.18),0,.5)):'0';
+    this._root.querySelector('.atmosphere-twilight').style.opacity=dynamicWeather&&!realNight?String(wx.twilight*.25):'0';
+    this._root.querySelector('.weather-fog').style.opacity=dynamicWeather&&this._config.show_fog!==false?String(wx.fog*.28):'0';
     const rainLayer=this._root.querySelector('.weather-rain');
     rainLayer.style.backgroundImage=`url(${JSON.stringify(RAIN_ASSET)})`;
     rainLayer.style.opacity=dynamicWeather&&this._config.show_precipitation!==false&&wx.precipitation==='rain'?String(wx.intensity*.87):'0';
@@ -382,13 +391,13 @@ class HASeasonsFinal extends HTMLElement {
     this._root.querySelector('.falling-snow').style.animationPlayState=this._config.low_motion===true?'paused':'running';
     // Preserve user-selected images and let the visual snow respond to persisted HA helper.
     // For the winter image at 100%, don't double-overlay a full winter image.
-    const winterSrc=String(this._config.snow_image||this._config.seasonal_images?.winter||DEFAULT_SEASON_IMAGES.winter);
-    if(dynamic&&cover>0){
+    const winterSrc=realNight?nightSnow:daySnow;
+    if(dynamic&&cover>0&&winterSrc){
       const safeUrl=JSON.stringify(winterSrc);if(snowLayer.dataset.current!==winterSrc){snowLayer.style.backgroundImage=`url(${safeUrl})`;snowLayer.dataset.current=winterSrc;}
       snowLayer.style.opacity=String(cover/100);
     }else snowLayer.style.opacity='0';
 
-    this._root.querySelector('.shade').style.background=`rgba(0,8,19,${clamp(fixed(this._config.background_dim,0.14),0,0.8)})`;
+    this._root.querySelector('.shade').style.background=`rgba(0,8,19,${clamp(fixed(this._config.background_dim,0.03),0,0.8)})`;
     const values=readings(this._hass||{states:{}},this._config);
     for(const [field,value]of Object.entries(values))this._root.querySelector(`[data-field="${field}"]`).textContent=value;
     const wasteRow=this._root.querySelector('.waste-row');
@@ -414,10 +423,12 @@ class HASeasonsFinalEditor extends HTMLElement {
       return `<label class="field">${label} – /local/...<input data-season="${season}" value="${esc(c.seasonal_images?.[season]||'')}" placeholder="Predvolená AI fotografia"></label>`;
     }).join('');
     const field=(label,key,placeholder='')=>`<label class="field">${label}<input data-key="${key}" value="${esc(c.entities?.[key]||'')}" placeholder="${placeholder}"></label>`;
-    this.shadowRoot.innerHTML=`<style>${EDITOR_STYLE}</style><div class="wrap"><strong>HA Seasons AI V1.2 — sviatky + počasie + automatický šetrič</strong>
+    this.shadowRoot.innerHTML=`<style>${EDITOR_STYLE}</style><div class="wrap"><strong>HA Seasons AI V1.4 — sviatky + počasie + automatický šetrič</strong>
       <label class="field">Režim pozadia<select data-prop="background_mode"><option value="seasonal" ${c.background_mode!=='single'?'selected':''}>Automatické ročné obdobia</option><option value="single" ${c.background_mode==='single'?'selected':''}>Jeden obrázok celý rok</option></select></label>
       <label class="field">Vlastný obrázok / núdzové pozadie<input data-prop="background_image" value="${esc(c.background_image||'')}" placeholder="/local/moja-fotografia.jpg"></label>
       <label class="field">Test ročného obdobia<select data-prop="preview_season"><option value="auto" ${!c.preview_season||c.preview_season==='auto'?'selected':''}>Automaticky podľa dátumu</option>${['spring','summer','autumn','winter'].map(x=>`<option value="${x}" ${c.preview_season===x?'selected':''}>${{spring:'Jar',summer:'Leto',autumn:'Jeseň',winter:'Zima'}[x]}</option>`).join('')}</select></label>
+      <label class="field">Vlastný nočný obrázok<input data-prop="night_image" value="${esc(c.night_image||'')}" placeholder="/local/moje-pozadia/night.png"></label>
+      <label class="field">Vlastný zasnežený nočný obrázok<input data-prop="night_snow_image" value="${esc(c.night_snow_image||'')}" placeholder="/local/moje-pozadia/night-snow.png"></label>
       <p class="hint">Pri automatickom režime sa používajú hotové sezónne fotografie. Vlastné AI verzie vytvorí samostatný generátor na PC a skopírujú sa do <code>/config/www/</code>. Kľúč AI nikdy nepatrí do tejto karty.</p>
       <strong>🎄 Sviatky a sezónne dekorácie</strong>
       <label class="field">Sviatočné efekty<select data-bool="holidays_enabled"><option value="true" ${c.holidays_enabled!==false?'selected':''}>Zapnuté</option><option value="false" ${c.holidays_enabled===false?'selected':''}>Vypnuté</option></select></label>
@@ -430,7 +441,7 @@ class HASeasonsFinalEditor extends HTMLElement {
       <p class="hint">Sviatky sa určujú podľa časového pásma Home Assistanta. Veľká noc sa počíta každý rok; vianočná výzdoba začína 16. decembra, bez Santu. Vlastná fotografia dostane jemnú sviatočnú výzdobu, no efekt osvetlenia kostolíka sa používa len na našich predvolených podkladoch.</p>
       <strong>Dynamické počasie (oblaky, dážď, slnko, mesiac)</strong>
       ${['dynamic_weather','show_clouds','show_precipitation','show_sun','show_moon','show_fog','cloud_motion','low_motion'].map(k=>`<label class="field">${({dynamic_weather:'Aktivovať dynamické počasie',show_clouds:'Oblaky',show_precipitation:'Dážď a snehové vločky',show_sun:'Slnko (obrázok už môže obsahovať slnko)',show_moon:'Mesiac',show_fog:'Hmla',cloud_motion:'Jemný pohyb oblakov',low_motion:'Úsporný režim bez pohybu'})[k]}<select data-bool="${k}"><option value="true" ${(k==='low_motion'?c[k]===true:c[k]!==false)?'selected':''}>Zapnuté</option><option value="false" ${(k==='low_motion'?c[k]!==true:c[k]===false)?'selected':''}>Vypnuté</option></select></label>`).join('')}
-      <label class="field">Výška oblasti oblohy (%)<input data-num="sky_height" type="range" min="16" max="70" value="${clamp(fixed(c.sky_height,53),16,70)}"></label>
+      <label class="field">Výška oblasti oblohy (%)<input data-num="sky_height" type="range" min="16" max="70" value="${clamp(fixed(c.sky_height,34),16,70)}"></label>
       <label class="field">Senzor zrážok (mm/h)<input data-prop="rain_rate_entity" value="${esc(c.rain_rate_entity||'sensor.ws2900_v2_02_01_rain_rate')}"></label>
       <label class="field">Senzor fázy Mesiaca<input data-prop="moon_entity" value="${esc(c.moon_entity||'sensor.moon_phase')}"></label>
       <p class="hint">Slnko sa riadi sun.sun (výška/azimut) a mesiac sa zobrazuje v noci podľa dostupnej fázy. Poloha mesiaca je iba dekoratívna; presnú polohu na oblohe nepočítame. Obloha a sneh sú vizuálne aproximácie fotografií.</p>
@@ -454,7 +465,7 @@ class HASeasonsFinalEditor extends HTMLElement {
       <label class="field">Ďalšie selektory popupov kamier (voliteľné)<input data-prop="camera_block_selectors" value="${esc(c.camera_block_selectors||'')}" placeholder=".moje-kamery-popup"></label>
       <p class="hint">Predvolené spustenie: 30 sekúnd nečinnosti. Ak je otvorená sekcia #kamery, modálne okno alebo prehrávané video, odpočet sa pozastaví. Po zatvorení kamier začne celých nových 30 sekúnd. Šetrič pôsobí iba na HA stránke, kde je karta vložená.</p>
       <div class="row"><label class="field">Posun vodorovne<input data-num="background_x" type="range" min="0" max="100" value="${clamp(fixed(c.background_x,50),0,100)}"></label><label class="field">Posun zvisle<input data-num="background_y" type="range" min="0" max="100" value="${clamp(fixed(c.background_y,50),0,100)}"></label></div>
-      <label class="field">Stmavenie (0–80 %)<input data-num="background_dim" type="range" min="0" max="0.8" step="0.02" value="${clamp(fixed(c.background_dim,0.14),0,0.8)}"></label><strong>Voliteľné entity</strong>${field('Vonkajšia teplota','temperature','sensor.ws2900...')}${field('Kúrenie','heating','switch.thermostat_switch')}${field('Meniny','nameday','sensor.meniny_dnes')}${field('Svetlá – oddelené čiarkou','lights','light.kuchyna,light.obyvacka')}</div>`;
+      <label class="field">Stmavenie (0–80 %)<input data-num="background_dim" type="range" min="0" max="0.8" step="0.02" value="${clamp(fixed(c.background_dim,0.03),0,0.8)}"></label><strong>Voliteľné entity</strong>${field('Vonkajšia teplota','temperature','sensor.ws2900...')}${field('Kúrenie','heating','switch.thermostat_switch')}${field('Meniny','nameday','sensor.meniny_dnes')}${field('Svetlá – oddelené čiarkou','lights','light.kuchyna,light.obyvacka')}</div>`;
     for(const el of this.shadowRoot.querySelectorAll('[data-prop],[data-key],[data-num],[data-season],[data-bool],[data-camera-views]'))el.addEventListener(el.type==='range'?'input':'change',()=>{
       const next={...this._config},prop=el.dataset.prop,key=el.dataset.key,num=el.dataset.num,season=el.dataset.season,boolean=el.dataset.bool,cameraViews=el.hasAttribute('data-camera-views');
       if(cameraViews)next.camera_views=el.value.split(/[,;]+/).map(s=>s.trim()).filter(Boolean);
@@ -471,4 +482,4 @@ class HASeasonsFinalEditor extends HTMLElement {
 if(!customElements.get('ha-seasons-ai-card'))customElements.define('ha-seasons-ai-card',HASeasonsFinal);
 if(!customElements.get('ha-seasons-ai-editor'))customElements.define('ha-seasons-ai-editor',HASeasonsFinalEditor);
 window.customCards=window.customCards||[];
-if(!window.customCards.some(x=>x.type==='ha-seasons-ai-card'))window.customCards.push({type:'ha-seasons-ai-card',name:'HA Seasons AI V1.2 – sviatky',description:'AI sezóny, sviatky, počasie, sneh a blokovanie šetriča pri otvorených kamerách',preview:true});
+if(!window.customCards.some(x=>x.type==='ha-seasons-ai-card'))window.customCards.push({type:'ha-seasons-ai-card',name:'HA Seasons AI V1.4 – sviatky',description:'AI sezóny, sviatky, počasie, sneh a blokovanie šetriča pri otvorených kamerách',preview:true});
