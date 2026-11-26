@@ -1,3 +1,40 @@
+# HA Seasons AI V1.4 – čitateľný obraz a AI nočná fotografia
+
+**V1.4 (testovacia vetva):** karta podporuje skutočné nočné a zasnežené varianty ľubovoľnej vlastnej fotografie. V noci bez pripraveného variantu použije len jemný filter (18 %), nie 86 %. Pri načítanom nočnom variante sa tmavý a súmrakový filter vypne. Oblaky sú výrazne slabšie a obmedzené na hornú časť obrazu; hmla len pri stave fog/mist. Zrážky sa riadia dostupnými entitami. Snehové vločky len pri snežení a teplote <= 0 °C. Štyri informačné karty, odpady, časový režim, kamery a sviatočný kalendár sa zachovávajú.
+
+## Jednorazová príprava vlastného obrázka (Windows/PC alebo server)
+Stiahni repozitár a na PC otvor terminál v rozbalenom priečinku. Vyžaduje Python a vlastný OpenAI API kľúč s aktivovanou fakturáciou. ChatGPT predplatné nezahŕňa automaticky API volania. Obrázok je pri generovaní odoslaný do OpenAI. Na samotnom tablete ani HA Green sa AI nespúšťa a kľúč tam nepatrí.
+
+```bash
+python -m pip install -U openai
+python ai_generate_seasons.py --input dist/background-default.jpg --output moje-pozadia --mode single --dry-run
+```
+
+Pre vlastnú fotografiu zmeň --input. Režim single pripraví 3 platené varianty (noc, sneh cez deň, sneh v noci); originál je denný obrázok. Režim seasonal pripraví 16 variantov pre všetky štyri ročné obdobia. Najprv over ceny API a nastav OPENAI_API_KEY iba v lokálnom prostredí; až potom namiesto --dry-run použi --yes. Generátor zachová hotové obrázky a odmietne použiť adresár patriaci inému originálu. Výsledky vizuálne skontroluj: AI môže mierne zmeniť geometriu alebo kompozíciu; sneh je prelínanie fotografií, nie meranie ani fyzikálna simulácia.
+
+Skopíruj vygenerované obrázky z moje-pozadia do /config/www/ha-seasons-custom/ (alebo nastav --url na inú lokálnu cestu). Vygenerovaný card-settings.json je platný JSON/YAML; prenes jeho nastavenia do existujúcej karty, ponechaj pôvodné entities a ostatné nastavenia. Napríklad:
+
+```yaml
+background_mode: single
+background_image: /local/ha-seasons-custom/original.jpg
+night_image: /local/ha-seasons-custom/night.png
+snow_image: /local/ha-seasons-custom/snow.png
+night_snow_image: /local/ha-seasons-custom/night-snow.png
+background_dim: 0.03
+sky_height: 34
+dynamic_snow: true
+photographic_advent: false
+```
+
+Režim seasonal používa mapy seasonal_images, seasonal_night_images, seasonal_snow_images a seasonal_night_snow_images podľa ročného obdobia. Pri vlastnom obrázku sa nesmie použiť nesúvisiaca predvolená zimná fotka. Pri nedostupnej nočnej fotografii sa karta vráti na dennú s jemným filtrom. Pri chýbajúcom zasneženom variante sa snehová vrstva nezobrazí. Existujúci helper pokrytia snehom sa číta aj v single režime.
+
+### Sneh na HA Green
+Ak helper input_number.ha_seasons_snow_cover už existuje (rozsah 0–100), použi iba jednu aktívnu automatizáciu. Nová voliteľná automatizácia je v snow_automation_ONLY_if_helper_exists.yaml. Uprav názvy entity počasia a teploty (predvolené pre Čierne/WS2900, v °C). Každých 30 minút pridáva sneh len pri mraze a hlásenom snežení a pri kladnej teplote ho postupne odoberá. Ide o vizuálny odhad. Ak helper chýba, vytvor ho cez Nastavenia → Pomocníci → Číslo (0–100, krok 1). Nikdy nespúšťaj dve automatiky snehu naraz.
+
+**Stav:** AI varianty nie sú súčasťou testovacej vetvy a nevygenerujú sa samotnou aktualizáciou HACS. Automatické prepínanie už pripravených variantov funguje v karte; generovanie je explicitný samostatný krok. Nasadenie na reálnom tablete a platené generovanie zatiaľ neboli overené.
+
+---
+
 # HA Seasons AI V1.3 – inštalácia cez HACS / Marketplace
 
 ## Vývoz komunálneho a triedeného odpadu (V1.3.1)
