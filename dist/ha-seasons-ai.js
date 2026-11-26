@@ -407,7 +407,7 @@ class HASeasonsFinal extends HTMLElement {
     const dayImage=dynamic&&season==='winter'&&(!single||cfg.snow_free_image)
       ?String(cfg.snow_free_image||cfg.seasonal_images?.winter_dry||(custom?imageForSeason(cfg,now,this._hass,season):DEFAULT_DRY_WINTER_IMAGE))
       :imageForSeason(cfg,now,this._hass,season);
-    const nightImage=String((single?cfg.night_image:cfg.seasonal_night_images?.[season]||cfg.night_image)||'');
+    const nightImage=String((single?(season==='winter'?cfg.winter_night_image||(!cfg.snow_free_image?cfg.night_image:''):cfg.night_image):cfg.seasonal_night_images?.[season]||cfg.night_image)||'');
     const hasSnowNight=Boolean((single?cfg.night_snow_image:cfg.seasonal_night_snow_images?.[season]||cfg.night_snow_image));
     const useNight=cfg.dynamic_weather!==false&&wx.night>=0.5&&nightImage&&!this._failedBackgrounds.has(nightImage)&&(!dynamic||cover===0||hasSnowNight);
     const image=useNight?nightImage:dayImage;
@@ -492,6 +492,7 @@ class HASeasonsFinalEditor extends HTMLElement {
       <label class="field">Vlastný obrázok / núdzové pozadie<input data-prop="background_image" value="${esc(c.background_image||'')}" placeholder="/local/moja-fotografia.jpg"></label>
       <label class="field">Test ročného obdobia<select data-prop="preview_season"><option value="auto" ${!c.preview_season||c.preview_season==='auto'?'selected':''}>Automaticky podľa dátumu</option>${['spring','summer','autumn','winter'].map(x=>`<option value="${x}" ${c.preview_season===x?'selected':''}>${{spring:'Jar',summer:'Leto',autumn:'Jeseň',winter:'Zima'}[x]}</option>`).join('')}</select></label>
       <label class="field">Vlastný nočný obrázok<input data-prop="night_image" value="${esc(c.night_image||'')}" placeholder="/local/moje-pozadia/night.png"></label>
+      <label class="field">Zimný nočný obrázok bez lístia<input data-prop="winter_night_image" value="${esc(c.winter_night_image||'')}" placeholder="/local/moje-pozadia/winter-night.png"></label>
       <label class="field">Vlastný zasnežený nočný obrázok<input data-prop="night_snow_image" value="${esc(c.night_snow_image||'')}" placeholder="/local/moje-pozadia/night-snow.png"></label>
       <p class="hint">Pri automatickom režime sa používajú hotové sezónne fotografie. Vlastné AI verzie vytvorí samostatný generátor na PC a skopírujú sa do <code>/config/www/</code>. Kľúč AI nikdy nepatrí do tejto karty.</p>
       <strong>🎄 Sviatky a sezónne dekorácie</strong>
