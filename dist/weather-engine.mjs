@@ -44,8 +44,8 @@ export function moonPhaseFromHass(hass,configured='sensor.moon_phase'){
 export function visualWeather({condition='unknown',temperature=null,rainRate=null,elevation=-18,azimuth=null,moon='🌕'}={}){
   const cloud=cloudTargets[condition]??0;
   const t=numberOrNull(temperature),rain=numberOrNull(rainRate);
-  const cold=t!==null&&t<=1;
-  const snowing=condition==='snowy'||(condition==='snowy-rainy'&&cold);
+  const cold=t!==null&&t<=0;
+  const snowing=cold&&['snowy','snowy-rainy'].includes(condition);
   const raining=['rainy','pouring','lightning-rainy','hail'].includes(condition)
     ||(condition==='snowy-rainy'&&!cold)
     ||(!snowing&&rain!==null&&rain>0.12&&t!==null&&t>1);
