@@ -1,0 +1,30 @@
+alias: HA Seasons - postupné pribúdanie a topenie snehu
+description: "Vizuálny odhad; použiť iba s existujúcim helperom 0–100 a jedinou automatikou snehu."
+triggers:
+  - trigger: time_pattern
+    minutes: "/30"
+conditions:
+  - condition: template
+    value_template: "{{ is_number(states('input_number.ha_seasons_snow_cover')) and is_number(states('sensor.ws2900_v2_02_01_outdoor_temperature')) }}"
+actions:
+  - variables:
+      t: "{{ states('sensor.ws2900_v2_02_01_outdoor_temperature') | float }}"
+      cover: "{{ states('input_number.ha_seasons_snow_cover') | float }}"
+      weather: "{{ states('weather.forecast_cierne_11') }}"
+  - variables:
+      next_cover: >-
+        {% if t <= 0 and weather in ['snowy', 'snowy-rainy'] %}
+          {{ [100, cover + 8] | min }}
+        {% elif t > 0 %}
+          {{ [0, cover - ([2, t * 1.5] | max)] | max }}
+        {% else %}
+          {{ cover }}
+        {% endif %}
+  - condition: template
+    value_template: "{{ (next_cover | float - cover | float) | abs >= 0.1 }}"
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.ha_seasons_snow_cover
+    data:
+      value: "{{ next_cover | float | round(0) }}"
+mode: single
