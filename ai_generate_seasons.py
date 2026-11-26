@@ -99,7 +99,7 @@ def main():
             result = client.images.edit(model=a.model, image=f, prompt=prompt,
                                         quality=a.quality, output_format="png", n=1)
         data = base64.b64decode(result.data[0].b64_json, validate=True)
-        if not data.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+        if not data.startswith(bytes.fromhex("89504e470d0a1a0a")):
             raise ValueError("Expected PNG image; output not written")
         temp = target.with_suffix(".tmp")
         temp.write_bytes(data)
