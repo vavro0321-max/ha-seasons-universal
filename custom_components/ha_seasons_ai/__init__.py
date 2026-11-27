@@ -129,6 +129,10 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         source = image_root / image_id / "original"
         if not await hass.async_add_executor_job(source.is_file):
             raise HomeAssistantError("Uploaded image not found")
+        if image_id in active:
+            return
+        if active:
+            raise HomeAssistantError("A different image is already generating")
         active.add(image_id)
         hass.async_create_background_task(generate(image_id), "HA Seasons AI generation")
 
