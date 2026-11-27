@@ -1,3 +1,40 @@
+# V1.5.0 beta – automatické AI fotografie na HA Green (experimentálne)
+
+Nová voliteľná serverová integrácia pripraví z jednej fotografie nahratej cez **Image upload** štyri ročné obdobia (deň/noc) a dva zasnežené zimné varianty. Celkom najviac 10 platených úprav na ID obrázka. Originál sa zobrazuje počas prípravy, po dokončení karta automaticky vyberá varianty podľa dátumu, slnka a histórie snehu. PC nemusí bežať. Predvolene vypnuté; bez súhlasu API nevolá.
+
+## Inštalácia testovacej vetvy
+1. Zálohuj HA. Skopíruj `custom_components/ha_seasons_ai/` do `/config/custom_components/ha_seasons_ai/`. Obsah `dist/` skopíruj do samostatného `/config/www/ha-seasons-ai-v1-5/`. V testovacej konfigurácii nahradíš pôvodný JS resource jediným `/local/ha-seasons-ai-v1-5/ha-seasons-ai.js?v=1.5.0` (typ modul). Nepoužívaj súčasne starý JS resource; staré súbory môžeš ponechať na návrat. HACS typ Dashboard neinštaluje backend.
+2. V `/config/secrets.yaml` nastav `ha_seasons_openai_key: "VLASTNY_API_KLUC"`. Kľúč nikde nezverejňuj. V `configuration.yaml` pridaj:
+
+```yaml
+ha_seasons_ai:
+  api_key: !secret ha_seasons_openai_key
+  allow_paid_generation: false
+  model: gpt-image-2.5-flare
+  quality: medium
+```
+
+3. Over konfiguráciu, reštartuj HA. Najprv skontroluj službu ha_seasons_ai.generate. Po overení cien a súhlase s odoslaním fotografie do OpenAI nastav allow_paid_generation: true a znova reštartuj.
+4. V karte nastav URL fotografie z Image upload a opt-in:
+
+```yaml
+type: custom:ha-seasons-ai-card
+idle_seconds: 30
+background_mode: seasonal
+background_image: /api/image/serve/ID/original
+auto_ai: true
+dynamic_snow: true
+snow_history: true
+winter_on_snow: true
+```
+
+5. Otvor uložený dashboard ako administrátor. Karta periodicky overí stav. Bežný používateľ môže zobrazovať hotové varianty, ale nesmie spúšťať platenú službu. Alternatívne administrátor môže spustiť službu ručne s image_id (32 hex znakov). Stav je `/local/ha-seasons-auto/ID/status.json`. Originál zostáva do dokončenia. Pri chybe, prerušení alebo existujúcom stavovom súbore nie je automatický retry; ďalšie platené pokusy treba výslovne posúdiť. Nové ID predstavuje nový platený balík. Vypnutie auto_ai zastaví nové požiadavky z karty, ale už odoslanú úlohu nepreruší.
+6. **Súkromie:** fotka sa pri generovaní odosiela OpenAI, výstupy pod www môžu byť dostupné bez prihlásenia. Nepoužívaj citlivé osobné fotografie. Predplatné ChatGPT nie je API kredit. Model/účet musí podporovať Images Edits.
+
+**Stav:** experimentálna vetva. Nevykonané živé API volania ani nasadenie na HA Green. Požadované fotografie sa zatiaľ nevytvorili. AI môže mierne zmeniť kompozíciu. HACS aktualizácia sama backend nenainštaluje. Nepovažovať za stabilnú verziu.
+
+---
+
 # V1.4.1 – história snehu a predčasná zima
 
 Karta automaticky načíta posledných 7 dní z lokálnej histórie Home Assistanta (Recorder/History), najviac raz za 15 minút počas otvoreného šetriča. Používa nastavenú entitu počasia a vonkajšej teploty. Pri snežení a teplote <= 0 °C sa odhad pokrytia zvyšuje, pri mraze bez sneženia zostáva a pri oteplení sa znižuje. Samotný mráz nikdy nevytvára sneh. Pri chýbajúcej histórii používa existujúci helper, bez vytvárania nového helpera alebo duplikovania automatizácie. Vyberá vyšší z historického odhadu a helpera, aby nezmizol starší sneh mimo časového okna. Ide o odhad, nie skutočné meranie; chýbajúce intervaly sa nepočítajú.
