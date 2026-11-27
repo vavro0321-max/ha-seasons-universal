@@ -3,7 +3,7 @@ import {readWeather} from './weather-engine.mjs';
 import { cameraBlockReason, isCameraRoute } from './camera-guard.mjs';
 import {holidayForDate} from './holiday-engine.mjs';
 import {wasteReadings} from './waste-engine.mjs';
-const VERSION = '1.4.1';
+const VERSION = '1.5.0-beta';
 const CLOUD_SOFT = new URL('./assets/clouds-soft.svg', import.meta.url).href;
 const CLOUD_HEAVY = new URL('./assets/clouds-heavy.svg', import.meta.url).href;
 const RAIN_ASSET = new URL('./assets/rain.svg', import.meta.url).href;
@@ -237,6 +237,7 @@ class HASeasonsFinal extends HTMLElement {
   }
   _tick(){
     if(!this.isConnected)return;
+    this._refreshAutoAI();
     if(this._visible){this._render();return;}
     const now=Date.now();
     if(document.hidden||this._editing()||!this._hass){this._lastActive=now;return;}
@@ -375,6 +376,48 @@ class HASeasonsFinal extends HTMLElement {
       if(this._visible)this._render();
     });
   }
+  _autoImageId(){
+    if(this._config.auto_ai!==true)return null;
+    const src=String(this._config.background_image||'');
+    return src.match(/^\/api\/image\/serve\/([a-f0-9]{32})\/original$/)?.[1]||
+      src.match(/^media-source:\/\/image_upload\/([a-f0-9]{32})$/)?.[1]||null;
+  }
+  _refreshAutoAI(){
+    const id=this._autoImageId(),hass=this._hass;
+    if(this._autoId!==id){this._autoId=id;this._autoReady=false;this._autoNext=0;this._autoRequested=false;}
+    if(!id||!hass||this._autoReady||Date.now()<(this._autoNext||0))return;
+    this._autoNext=Date.now()+30000;
+    fetch('/local/ha-seasons-auto/'+id+'/status.json',{cache:'no-store'}).then(async response=>{
+      if(this._autoId!==id)return;
+      if(response.ok){
+        const status=await response.json();
+        if(this._autoId!==id)return;
+        if(status.state==='ready'){
+          this._autoReady=true;this._failedBackgrounds.clear();
+          if(this._visible)this._render();
+        }
+        return; // Running, failed and interrupted jobs are never retried automatically.
+      }
+      if(response.status===404&&!this._autoRequested&&hass.user?.is_admin&&hass.services?.ha_seasons_ai?.generate){
+        this._autoRequested=true;
+        await hass.callService('ha_seasons_ai','generate',{image_id:id});
+      }
+    }).catch(error=>console.warn('HA Seasons automatic AI unavailable',error));
+  }
+  _autoConfig(){
+    const cfg=this._config,id=this._autoImageId();
+    if(!id)return cfg;
+    const original='/api/image/serve/'+id+'/original';
+    if(!this._autoReady||this._autoId!==id)return {...cfg,background_mode:'single',background_image:original};
+    const base='/local/ha-seasons-auto/'+id+'/';
+    const days={},nights={};
+    for(const season of SEASONS){days[season]=base+season+'-day.png';nights[season]=base+season+'-night.png';}
+    return {...cfg,background_mode:'seasonal',background_image:original,seasonal_images:days,
+      seasonal_night_images:nights,snow_free_image:days.winter,
+      seasonal_snow_images:{winter:base+'winter-snow.png'},
+      seasonal_night_snow_images:{winter:base+'winter-night-snow.png'},
+      photographic_advent:false,show_sun:false};
+  }
   _render(){if(!this._root)return;
     const nowLive=new Date();
     // In preview only, display the selected test date rather than today's date.
@@ -393,7 +436,7 @@ class HASeasonsFinal extends HTMLElement {
     const calendarSeason=SEASONS.includes(this._config.preview_season)?this._config.preview_season:seasonForDate(now,this._hass?.config?.time_zone||'Europe/Bratislava');
     const dynamic=this._config.dynamic_snow!==false;
     const wx=readWeather(this._hass||{states:{}},this._config,now);
-    const cfg=this._config;
+    const cfg=this._autoConfig();
     const single=cfg.background_mode==='single';
     const custom=Boolean(single||cfg.background_image||cfg.snow_free_image||Object.values(cfg.seasonal_images||{}).some(Boolean));
     const coverEntity=state(this._hass,this._config.snow_cover_entity||DEFAULT_SNOW_ENTITY);
