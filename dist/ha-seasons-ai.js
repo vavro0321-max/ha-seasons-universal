@@ -3,7 +3,7 @@ import {readWeather} from './weather-engine.mjs';
 import { cameraBlockReason, isCameraRoute } from './camera-guard.mjs';
 import {holidayForDate} from './holiday-engine.mjs';
 import {wasteReadings} from './waste-engine.mjs';
-const VERSION = '1.4.1';
+const VERSION = '1.5.0-beta';
 const CLOUD_SOFT = new URL('./assets/clouds-soft.svg', import.meta.url).href;
 const CLOUD_HEAVY = new URL('./assets/clouds-heavy.svg', import.meta.url).href;
 const RAIN_ASSET = new URL('./assets/rain.svg', import.meta.url).href;
@@ -237,6 +237,7 @@ class HASeasonsFinal extends HTMLElement {
   }
   _tick(){
     if(!this.isConnected)return;
+    if(!document.hidden&&!this._editing())this._refreshAutoAI();
     if(this._visible){this._render();return;}
     const now=Date.now();
     if(document.hidden||this._editing()||!this._hass){this._lastActive=now;return;}
@@ -375,6 +376,48 @@ class HASeasonsFinal extends HTMLElement {
       if(this._visible)this._render();
     });
   }
+  _autoImageId(){
+    if(this._config.auto_ai!==true)return null;
+    const src=String(this._config.background_image||'');
+    return src.match(/^\/api\/image\/serve\/([a-f0-9]{32})\/original$/)?.[1]||
+      src.match(/^media-source:\/\/image_upload\/([a-f0-9]{32})$/)?.[1]||null;
+  }
+  _refreshAutoAI(){
+    const id=this._autoImageId(),hass=this._hass;
+    if(this._autoId!==id){this._autoId=id;this._autoReady=false;this._autoNext=0;this._autoRequested=false;}
+    if(!id||!hass||this._autoReady||Date.now()<(this._autoNext||0))return;
+    this._autoNext=Date.now()+30000;
+    fetch('/local/ha-seasons-auto/'+id+'/status.json',{cache:'no-store'}).then(async response=>{
+      if(this._autoId!==id)return;
+      if(response.ok){
+        const status=await response.json();
+        if(this._autoId!==id)return;
+        if(status.state==='ready'){
+          this._autoReady=true;this._failedBackgrounds.clear();
+          if(this._visible)this._render();
+        }
+        return; // Running, failed and interrupted jobs are never retried automatically.
+      }
+      if(response.status===404&&!this._autoRequested&&hass.user?.is_admin&&hass.services?.ha_seasons_ai?.generate){
+        this._autoRequested=true;
+        await hass.callService('ha_seasons_ai','generate',{image_id:id});
+      }
+    }).catch(error=>console.warn('HA Seasons automatic AI unavailable',error));
+  }
+  _autoConfig(){
+    const cfg=this._config,id=this._autoImageId();
+    if(!id)return cfg;
+    const original='/api/image/serve/'+id+'/original';
+    if(!this._autoReady||this._autoId!==id)return {...cfg,background_mode:'single',background_image:original};
+    const base='/local/ha-seasons-auto/'+id+'/';
+    const days={},nights={};
+    for(const season of SEASONS){days[season]=base+season+'-day.png';nights[season]=base+season+'-night.png';}
+    return {...cfg,background_mode:'seasonal',background_image:original,seasonal_images:days,
+      seasonal_night_images:nights,snow_free_image:days.winter,
+      seasonal_snow_images:{winter:base+'winter-snow.png'},
+      seasonal_night_snow_images:{winter:base+'winter-night-snow.png'},
+      photographic_advent:false,show_sun:false};
+  }
   _render(){if(!this._root)return;
     const nowLive=new Date();
     // In preview only, display the selected test date rather than today's date.
@@ -393,7 +436,7 @@ class HASeasonsFinal extends HTMLElement {
     const calendarSeason=SEASONS.includes(this._config.preview_season)?this._config.preview_season:seasonForDate(now,this._hass?.config?.time_zone||'Europe/Bratislava');
     const dynamic=this._config.dynamic_snow!==false;
     const wx=readWeather(this._hass||{states:{}},this._config,now);
-    const cfg=this._config;
+    const cfg=this._autoConfig();
     const single=cfg.background_mode==='single';
     const custom=Boolean(single||cfg.background_image||cfg.snow_free_image||Object.values(cfg.seasonal_images||{}).some(Boolean));
     const coverEntity=state(this._hass,this._config.snow_cover_entity||DEFAULT_SNOW_ENTITY);
@@ -487,14 +530,15 @@ class HASeasonsFinalEditor extends HTMLElement {
       return `<label class="field">${label} – /local/...<input data-season="${season}" value="${esc(c.seasonal_images?.[season]||'')}" placeholder="Predvolená AI fotografia"></label>`;
     }).join('');
     const field=(label,key,placeholder='')=>`<label class="field">${label}<input data-key="${key}" value="${esc(c.entities?.[key]||'')}" placeholder="${placeholder}"></label>`;
-    this.shadowRoot.innerHTML=`<style>${EDITOR_STYLE}</style><div class="wrap"><strong>HA Seasons AI V1.4.1 — sviatky + počasie + automatický šetrič</strong>
+    this.shadowRoot.innerHTML=`<style>${EDITOR_STYLE}</style><div class="wrap"><strong>HA Seasons AI V1.5.0 beta — sviatky + počasie + automatický šetrič</strong>
       <label class="field">Režim pozadia<select data-prop="background_mode"><option value="seasonal" ${c.background_mode!=='single'?'selected':''}>Automatické ročné obdobia</option><option value="single" ${c.background_mode==='single'?'selected':''}>Jeden obrázok celý rok</option></select></label>
       <label class="field">Vlastný obrázok / núdzové pozadie<input data-prop="background_image" value="${esc(c.background_image||'')}" placeholder="/local/moja-fotografia.jpg"></label>
       <label class="field">Test ročného obdobia<select data-prop="preview_season"><option value="auto" ${!c.preview_season||c.preview_season==='auto'?'selected':''}>Automaticky podľa dátumu</option>${['spring','summer','autumn','winter'].map(x=>`<option value="${x}" ${c.preview_season===x?'selected':''}>${{spring:'Jar',summer:'Leto',autumn:'Jeseň',winter:'Zima'}[x]}</option>`).join('')}</select></label>
       <label class="field">Vlastný nočný obrázok<input data-prop="night_image" value="${esc(c.night_image||'')}" placeholder="/local/moje-pozadia/night.png"></label>
       <label class="field">Zimný nočný obrázok bez lístia<input data-prop="winter_night_image" value="${esc(c.winter_night_image||'')}" placeholder="/local/moje-pozadia/winter-night.png"></label>
       <label class="field">Vlastný zasnežený nočný obrázok<input data-prop="night_snow_image" value="${esc(c.night_snow_image||'')}" placeholder="/local/moje-pozadia/night-snow.png"></label>
-      <p class="hint">Pri automatickom režime sa používajú hotové sezónne fotografie. Vlastné AI verzie vytvorí samostatný generátor na PC a skopírujú sa do <code>/config/www/</code>. Kľúč AI nikdy nepatrí do tejto karty.</p>
+      <label class="field">Automaticky vytvoriť AI sezóny z obrázka (platené API)<select data-bool="auto_ai"><option value="false" ${c.auto_ai!==true?'selected':''}>Vypnuté</option><option value="true" ${c.auto_ai===true?'selected':''}>Zapnuté – max. 10 úprav na obrázok</option></select></label>
+      <p class="hint">Vyžaduje serverovú integráciu ha_seasons_ai, výslovné povolenie plateného API a obrázok z Image upload. Obrázok sa odošle do OpenAI; hotové varianty sa uložia v /local/ha-seasons-auto a môžu byť verejne dostupné. Kľúč nikdy nepatrí do karty.</p>
       <strong>🎄 Sviatky a sezónne dekorácie</strong>
       <label class="field">Sviatočné efekty<select data-bool="holidays_enabled"><option value="true" ${c.holidays_enabled!==false?'selected':''}>Zapnuté</option><option value="false" ${c.holidays_enabled===false?'selected':''}>Vypnuté</option></select></label>
       <label class="field">Nenápadný názov sviatku<select data-bool="show_holiday_label"><option value="true" ${c.show_holiday_label!==false?'selected':''}>Zobraziť v hornom rohu</option><option value="false" ${c.show_holiday_label===false?'selected':''}>Skryť</option></select></label>
@@ -550,4 +594,4 @@ class HASeasonsFinalEditor extends HTMLElement {
 if(!customElements.get('ha-seasons-ai-card'))customElements.define('ha-seasons-ai-card',HASeasonsFinal);
 if(!customElements.get('ha-seasons-ai-editor'))customElements.define('ha-seasons-ai-editor',HASeasonsFinalEditor);
 window.customCards=window.customCards||[];
-if(!window.customCards.some(x=>x.type==='ha-seasons-ai-card'))window.customCards.push({type:'ha-seasons-ai-card',name:'HA Seasons AI V1.4.1 – sviatky',description:'AI sezóny, sviatky, počasie, sneh a blokovanie šetriča pri otvorených kamerách',preview:true});
+if(!window.customCards.some(x=>x.type==='ha-seasons-ai-card'))window.customCards.push({type:'ha-seasons-ai-card',name:'HA Seasons AI V1.5.0 beta – sviatky',description:'AI sezóny, sviatky, počasie, sneh a blokovanie šetriča pri otvorených kamerách',preview:true});
