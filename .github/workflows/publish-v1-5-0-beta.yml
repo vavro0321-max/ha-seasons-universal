@@ -1,0 +1,37 @@
+name: Publish HA Seasons AI V1.5.0 Beta
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-v1-5-0-beta.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-v1-5-0-beta
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: v1.5.0-beta
+      TARGET: d9d39d0d5c5d71e0e077a45b286f4ee78147814d
+    steps:
+      - name: Publish beta without builds or artifacts
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release already exists; leaving it unchanged."
+            exit 0
+          fi
+          gh release create "$TAG" --target "$TARGET" --prerelease \
+            --title "HA Seasons AI V1.5.0 Beta" \
+            --notes "Experimental automatic AI seasonal and night variants on HA Green. Existing CI checks passed. Manual server integration setup and explicit paid API opt-in are required. Real device and live image API are not yet tested. No paid generation is started by installing the card."
